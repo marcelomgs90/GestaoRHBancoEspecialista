@@ -1,0 +1,44 @@
+# CLAUDE.md
+
+Este arquivo fornece orientacoes ao Claude Code (claude.ai/code) para trabalhar com o codigo deste repositorio.
+
+## Visao Geral do Projeto
+
+**Gestao RH Banco de Especialistas** - Aplicacao web para gestao de equipes de projetos de PD&I e Recursos Humanos do Polo de Inovacao do IFPB. O sistema aplica as regras da Resolucao 11/2022 para calculos de bolsas, limites de carga horaria e gera documentos PDF padronizados para submissao no SUAP.
+
+Conceitos-chave do dominio:
+- Coordenadores alocam pesquisadores em projetos com fontes de financiamento especificas (EMBRAPII, EMPRESA, SEBRAE, IFPB)
+- Valores de bolsas sao calculados automaticamente com base na categoria, horas semanais e tabelas de parametros com vigencia temporal
+- Alteracoes de RH geram snapshots versionados (Antes/Depois) e PDFs padronizados
+- Transferencias de pesquisadores entre projetos exigem aceite digital do coordenador cedente
+- O sistema consulta uma API externa "Banco de Especialistas" para dados de pesquisadores (AIE - nao mantidos internamente)
+
+## Documentos de Especificacao
+
+Todos os requisitos do projeto estao em `docs/`:
+- `01-visao-geral.md` - Contexto, escopo, perfis de usuario, restricoes
+- `02-modulos.md` - Detalhamento dos 6 modulos funcionais (Controle de Acesso, Parametrizacao, Projetos, Monitoramento, Transferencia de RH, Solicitacoes e Documentos)
+- `03-modelo-dados.md` - Modelo ER com nomes e tipos fisicos das colunas, alinhado ao `diagrama entidade relacionamento.png`
+- `04-regras-negocio.md` - Regras de negocio, logica de calculo, fluxos, especificacao dos PDFs, matriz de controle de acesso
+- `05-cronograma-sprints.md` - Plano de entrega em 4 Sprints
+- `06-riscos-e-mitigacao.md` - Riscos e implicacoes arquiteturais
+- `07-metricas-tamanho.md` - Dimensionamento por Pontos de Funcao (175 PF IFPUG)
+
+## Stack Tecnologica Planejada
+
+- **Backend**: FastAPI (Python) com PostgreSQL
+- **ORM/Migracoes**: SQLAlchemy + Alembic
+- **Geracao de PDF**: modulo isolado (deve ser desacoplado da logica de negocio para facilitar mudancas de layout)
+- **Integracao Externa**: API do Banco de Especialistas (consultas somente leitura para dados de pesquisadores)
+
+## Diretrizes de Arquitetura
+
+- Tabelas de parametros (valores de bolsas, limites de carga horaria) usam vigencia temporal (`vigencia_inicio`/`vigencia_fim`) - nunca sobrescrever valores historicos
+- O motor de regras (Resolucao 11/2022) deve ser orientado a dados via `Parametro_Regra`, nao hardcoded
+- `Versao_RH_Projeto` registra snapshots da composicao da equipe; registros de `Pesquisador_Projeto` se vinculam a uma versao especifica via `versao_rh_id`
+- A geracao de PDF e uma responsabilidade separada do processamento de solicitacoes - manter em modulo proprio
+- Quatro perfis de usuario com permissoes distintas: Administrador, Coordenador, Gestor do Polo, Apoio Coordenador
+
+## Tabelas do Banco de Dados (conforme diagrama ER)
+
+`Usuario_Perfil`, `Parametro_Regra`, `Projeto`, `Projeto_Anexo`, `Pesquisador_Projeto`, `Solicitacao_RH`, `Versao_RH_Projeto`, `Transferencia_RH` e a entidade externa `Pesquisador (AIE)`. Consulte `docs/03-modelo-dados.md` para definicoes completas das colunas.
