@@ -1,0 +1,30 @@
+from pydantic_settings import BaseSettings
+from functools import lru_cache
+
+
+class Settings(BaseSettings):
+    # Database
+    DATABASE_URL: str = "postgresql://gestao_rh:gestao_rh_pass@localhost:5432/gestao_rh_db"
+
+    # JWT Authentication
+    SECRET_KEY: str = "sua-chave-secreta-aqui-mude-em-producao"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    # External API
+    BANCO_ESPECIALISTAS_URL: str = "https://api.bancoespecialistas.ifpb.edu.br"
+
+    # Application
+    DEBUG: bool = False
+    ENVIRONMENT: str = "development"
+    APP_NAME: str = "Gestao RH Banco de Especialistas"
+    APP_VERSION: str = "1.0.0"
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
