@@ -20,7 +20,7 @@ export const authService = {
   },
 
   async getCurrentUser(): Promise<Usuario> {
-    const response = await api.get<Usuario>('/auth/me')
+    const response = await api.get<Usuario>('/auth/usuario-logado')
     return response.data
   },
 }
