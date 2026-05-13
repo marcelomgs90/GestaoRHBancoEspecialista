@@ -219,7 +219,7 @@ Seed mockado minimo:
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
 | 16 | TK-US-SD-02-01 | back | Endpoints CRUD para `Pesquisador_Projeto`: incluir, alterar e encerrar membro vinculado a versao de RH | Marcelo | 3 | [x] |
-| 17 | TK-US-SD-02-02 | front | Formulario de inclusao de membro: busca especialista (mock), selecao de perfil/categoria, fonte, CH, vigencia | Lucas | 3 | [ ] |
+| 17 | TK-US-SD-02-02 | front | Formulario de inclusao de membro: busca especialista (mock), selecao de perfil/categoria, fonte, CH, vigencia | Vinicius | 3 | [ ] |
 | 18 | TK-US-SD-02-03 | qa | Testar inclusao/alteracao/encerramento, validar dados persistidos em Pesquisador_Projeto | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #16:**
