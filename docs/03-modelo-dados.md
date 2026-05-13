@@ -1,5 +1,7 @@
 # Modelo de Dados
 
+> **Nota de implementacao:** Este documento usa os nomes de PK do DER original (`ref_usuario`, `ref_projeto`, `ref_parametro`, etc.). Na implementacao SQLAlchemy, todos os modelos usam `id` como nome da coluna de chave primaria (padrao do framework). Os campos representam o mesmo conceito — apenas o nome difere entre spec e codigo.
+
 ## Diagrama de Relacionamentos
 
 ```
