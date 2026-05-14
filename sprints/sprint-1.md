@@ -43,7 +43,7 @@ Fase 5: Comparacao de Versoes [US-SD-05]                ── depende da Fase 4
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 1 | TK-US-AQ-01-01 | devops/doc | Preparar artefatos tecnicos: repositorio Git, estrutura de pastas FastAPI, Docker Compose (PostgreSQL), configuracao de `.env` | Marcelo | 3 | [ ] |
+| 1 | TK-US-AQ-01-01 | devops/doc | Preparar artefatos tecnicos: repositorio Git, estrutura de pastas FastAPI, Docker Compose (PostgreSQL), configuracao de `.env` | Lucas | 3 | [x] |
 | 2 | TK-US-AQ-01-02 | doc | Documentar configuracao do ambiente, variaveis de ambiente e instrucoes de setup | Erick | 3 | [ ] |
 | 3 | TK-US-AQ-01-03 | qa | Validar que o ambiente executa localmente, verificar evidencias e rastreabilidade | Carolina | 2 | [ ] |
 
@@ -75,7 +75,7 @@ Fase 5: Comparacao de Versoes [US-SD-05]                ── depende da Fase 4
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 4 | TK-US-AQ-02-01 | devops/doc | Criar modelos SQLAlchemy e migracoes Alembic, popular seed de dados mockados | Vinicius | 3 | [ ] |
+| 4 | TK-US-AQ-02-01 | devops/doc | Criar modelos SQLAlchemy e migracoes Alembic, popular seed de dados mockados | Marcelo | 3 | [x] |
 | 5 | TK-US-AQ-02-02 | doc | Documentar estrutura do banco, relacoes e evidencias | Erick | 3 | [ ] |
 | 6 | TK-US-AQ-02-03 | qa | Validar tabelas, relacoes FK e dados mockados | Carolina | 2 | [ ] |
 
@@ -120,8 +120,8 @@ Seed mockado minimo:
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 7 | TK-US-CA-01-01 | back | Endpoint `POST /auth/login` (retorna JWT), `POST /auth/logout`, middleware de protecao de rotas | Vinicius | 3 | [ ] |
-| 8 | TK-US-CA-01-02 | front | Tela de login com formulario email/senha, tratamento de erro, redirecionamento pos-login | Lindomar | 3 | [ ] |
+| 7 | TK-US-CA-01-01 | back | Endpoint `POST /auth/login` (retorna JWT), `POST /auth/logout`, middleware de protecao de rotas | Vinicius | 3 | [x] |
+| 8 | TK-US-CA-01-02 | front | Tela de login com formulario email/senha, tratamento de erro, redirecionamento pos-login | Lindomar | 3 | [x] |
 | 9 | TK-US-CA-01-03 | qa | Testar login valido/invalido, bloqueio de rotas sem token, logout | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #7:**
@@ -151,8 +151,8 @@ Seed mockado minimo:
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 10 | TK-US-CA-02-01 | back | Middleware de autorizacao por perfil, decorator/dependency `require_role(...)`, endpoint `GET /auth/me` | Marcelo | 3 | [ ] |
-| 11 | TK-US-CA-02-02 | front | Menu dinamico renderizado conforme perfil retornado pelo JWT/me, ocultar opcoes nao permitidas | Lucas | 3 | [ ] |
+| 10 | TK-US-CA-02-01 | back | Middleware de autorizacao por perfil, decorator/dependency `require_role(...)`, endpoint `GET /auth/me` | Marcelo | 3 | [x] |
+| 11 | TK-US-CA-02-02 | front | Menu dinamico renderizado conforme perfil retornado pelo JWT/me, ocultar opcoes nao permitidas | Lucas | 3 | [x] |
 | 12 | TK-US-CA-02-03 | qa | Testar acesso de cada perfil a funcoes administrativas e nao-administrativas | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #10:**
@@ -184,7 +184,7 @@ Seed mockado minimo:
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 13 | TK-US-SD-01-01 | back | Endpoint `POST /solicitacoes/` (tipo=Implantacao), vincular a projeto ativo, criar `Versao_RH_Projeto` inicial | Vinicius | 3 | [ ] |
+| 13 | TK-US-SD-01-01 | back | Endpoint `POST /solicitacoes/` (tipo=Implantacao), vincular a projeto ativo, criar `Versao_RH_Projeto` inicial | Lucas | 3 | [x] |
 | 14 | TK-US-SD-01-02 | front | Tela de criacao: selecao de projeto, numero do documento, botao criar | Lindomar | 3 | [ ] |
 | 15 | TK-US-SD-01-03 | qa | Testar criacao vinculada a projeto ativo/inativo, validar dados persistidos | Carolina | 2 | [ ] |
 
@@ -218,8 +218,8 @@ Seed mockado minimo:
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 16 | TK-US-SD-02-01 | back | Endpoints CRUD para `Pesquisador_Projeto`: incluir, alterar e encerrar membro vinculado a versao de RH | Marcelo | 3 | [ ] |
-| 17 | TK-US-SD-02-02 | front | Formulario de inclusao de membro: busca especialista (mock), selecao de perfil/categoria, fonte, CH, vigencia | Lucas | 3 | [ ] |
+| 16 | TK-US-SD-02-01 | back | Endpoints CRUD para `Pesquisador_Projeto`: incluir, alterar e encerrar membro vinculado a versao de RH | Marcelo | 3 | [x] |
+| 17 | TK-US-SD-02-02 | front | Formulario de inclusao de membro: busca especialista (mock), selecao de perfil/categoria, fonte, CH, vigencia | Vinicius | 3 | [ ] |
 | 18 | TK-US-SD-02-03 | qa | Testar inclusao/alteracao/encerramento, validar dados persistidos em Pesquisador_Projeto | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #16:**
@@ -252,7 +252,7 @@ Seed mockado minimo:
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 19 | TK-US-SD-03-01 | back | Servico de validacao: CH global do pesquisador (todos os projetos), calculo automatico de bolsa via Parametro_Regra, retorno de erros detalhados | Vinicius | 3 | [ ] |
+| 19 | TK-US-SD-03-01 | back | Servico de validacao: CH global do pesquisador (todos os projetos), calculo automatico de bolsa via Parametro_Regra, retorno de erros detalhados | Vinicius | 3 | [x] |
 | 20 | TK-US-SD-03-02 | front | Exibir feedback de validacao em tempo real no formulario: alertas de CH excedida, valor calculado da bolsa | Lindomar | 3 | [ ] |
 | 21 | TK-US-SD-03-03 | qa | Testar cenarios: CH no limite, CH excedida, categoria inexistente, calculo proporcional | Carolina | 2 | [ ] |
 
@@ -323,7 +323,7 @@ Seed mockado minimo:
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 25 | TK-US-SD-05-01 | back | Endpoint `GET /solicitacoes/{id}/comparacao`: diff entre versao Antes e Depois, retornando listas de inclusoes, alteracoes e encerramentos | Vinicius | 3 | [ ] |
+| 25 | TK-US-SD-05-01 | back | Endpoint `GET /solicitacoes/{id}/comparacao`: diff entre versao Antes e Depois, retornando listas de inclusoes, alteracoes e encerramentos | Vinicius | 3 | [x] |
 | 26 | TK-US-SD-05-02 | front | Tela de comparacao lado a lado: destacar inclusoes (verde), alteracoes (amarelo), encerramentos (vermelho) | Lindomar | 3 | [ ] |
 | 27 | TK-US-SD-05-03 | qa | Testar comparacao com cenarios: inclusao pura, encerramento puro, alteracao de CH/fonte, misto | Carolina | 2 | [ ] |
 
@@ -362,13 +362,13 @@ Seed mockado minimo:
 
 ## Checklist de Entrega da Sprint
 
-- [ ] Ambiente local rodando (FastAPI + PostgreSQL via Docker)
-- [ ] Todas as tabelas do DER com migracoes Alembic
-- [ ] Dados mockados populados (usuarios, projeto, parametros, pesquisadores)
-- [ ] Login/logout funcional com JWT
-- [ ] Menu dinamico por perfil (4 perfis)
-- [ ] Criar solicitacao de implantacao vinculada a projeto
-- [ ] Incluir/alterar/encerrar membros em solicitacao
-- [ ] Validacao automatica de CH global e calculo de bolsa
-- [ ] Criar solicitacao de alteracao com versionamento Antes/Depois
-- [ ] Tela de comparacao de versoes com diferencas destacadas
+- [x] Ambiente local rodando (FastAPI + PostgreSQL via Docker)
+- [ ] Todas as tabelas do DER com migracoes Alembic (pendente: criar alembic/versions/)
+- [x] Dados mockados populados (usuarios, projeto, parametros, pesquisadores)
+- [x] Login/logout funcional com JWT
+- [x] Menu dinamico por perfil (4 perfis)
+- [ ] Criar solicitacao de implantacao vinculada a projeto (back [x] / front pendente)
+- [ ] Incluir/alterar/encerrar membros em solicitacao (back [x] / front pendente)
+- [ ] Validacao automatica de CH global e calculo de bolsa (back [x] / front pendente)
+- [ ] Criar solicitacao de alteracao com versionamento Antes/Depois (back parcial: clonagem de membros pendente)
+- [ ] Tela de comparacao de versoes com diferencas destacadas (back [x] / front pendente)

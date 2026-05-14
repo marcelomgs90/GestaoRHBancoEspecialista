@@ -39,6 +39,15 @@ Todos os requisitos do projeto estao em `docs/`:
 - A geracao de PDF e uma responsabilidade separada do processamento de solicitacoes - manter em modulo proprio
 - Quatro perfis de usuario com permissoes distintas: Administrador, Coordenador, Gestor do Polo, Apoio Coordenador
 
+## Camada de Services (padrao adotado)
+
+A logica de negocio fica exclusivamente em `backend/app/services/`. Os routers sao adaptadores finos: recebem o request, chamam o service e retornam a resposta — sem logica propria.
+
+- Cada service recebe `db: Session` no `__init__` e e injetado via `Depends` em `app/core/dependencies.py`
+- `ParametroService` (`services/parametro_service.py`) centraliza o motor de calculos da Resolucao 11/2022: calculo proporcional de valor de bolsa e validacao de CH global. Nao replicar essa logica em outros services — instanciá-lo por composicao quando necessario (ex.: `self.parametros = ParametroService(db)` dentro de `MembroService`)
+- Services existentes: `AuthService`, `UsuarioService`, `ProjetoService`, `SolicitacaoService`, `MembroService`, `VersaoService`, `ParametroService`
+- Ao criar endpoints novos: criar ou ampliar o service correspondente antes de tocar no router
+
 ## Tabelas do Banco de Dados (conforme diagrama ER)
 
 `Usuario_Perfil`, `Parametro_Regra`, `Projeto`, `Projeto_Anexo`, `Pesquisador_Projeto`, `Solicitacao_RH`, `Versao_RH_Projeto`, `Transferencia_RH` e a entidade externa `Pesquisador (AIE)`. Consulte `docs/03-modelo-dados.md` para definicoes completas das colunas.

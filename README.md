@@ -37,6 +37,12 @@ Em outro terminal:
 docker compose -f docker-compose.dev.yml exec backend python scripts/seed_data.py
 ```
 
+> **Nota:** As migracoes Alembic (`alembic/versions/`) ainda nao foram geradas. O seed cria as tabelas diretamente via `Base.metadata.create_all`. Para gerar a primeira migracao versionada:
+> ```bash
+> docker compose -f docker-compose.dev.yml exec backend alembic revision --autogenerate -m "initial"
+> docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
+> ```
+
 Saida esperada:
 ```
 Iniciando seed de dados...
@@ -166,11 +172,12 @@ npm run dev
 GestaoRHBancoEspecialista/
 ├── backend/                    # API FastAPI
 │   ├── app/
-│   │   ├── core/              # Config, seguranca, database
-│   │   ├── models/            # Modelos SQLAlchemy
-│   │   ├── routers/           # Endpoints da API
-│   │   ├── schemas/           # DTOs Pydantic
-│   │   ├── services/          # Logica de negocio
+│   │   ├── core/              # Config, seguranca, database, dependencias
+│   │   ├── models/            # Modelos SQLAlchemy (estrutura do banco)
+│   │   ├── routers/           # Endpoints da API (adaptadores finos, sem logica)
+│   │   ├── schemas/           # DTOs Pydantic (request/response)
+│   │   ├── services/          # Logica de negocio (toda regra fica aqui)
+│   │   ├── pdf/               # Geracao de documentos PDF (modulo isolado)
 │   │   └── utils/             # Enums e helpers
 │   ├── alembic/               # Migracoes de banco
 │   ├── scripts/               # Scripts utilitarios

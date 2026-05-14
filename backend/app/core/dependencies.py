@@ -6,6 +6,12 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.core.security import decode_access_token
 from app.models.usuario_perfil import Usuario
+from app.services.auth_service import AuthService
+from app.services.membro_service import MembroService
+from app.services.projeto_service import ProjetoService
+from app.services.solicitacao_service import SolicitacaoService
+from app.services.usuario_service import UsuarioService
+from app.services.versao_service import VersaoService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -50,3 +56,27 @@ def get_current_user(
         )
 
     return user
+
+
+def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
+    return AuthService(db)
+
+
+def get_usuario_service(db: Session = Depends(get_db)) -> UsuarioService:
+    return UsuarioService(db)
+
+
+def get_projeto_service(db: Session = Depends(get_db)) -> ProjetoService:
+    return ProjetoService(db)
+
+
+def get_solicitacao_service(db: Session = Depends(get_db)) -> SolicitacaoService:
+    return SolicitacaoService(db)
+
+
+def get_membro_service(db: Session = Depends(get_db)) -> MembroService:
+    return MembroService(db)
+
+
+def get_versao_service(db: Session = Depends(get_db)) -> VersaoService:
+    return VersaoService(db)
