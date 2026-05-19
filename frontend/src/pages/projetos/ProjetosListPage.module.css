@@ -1,0 +1,169 @@
+.container {
+  max-width: 1200px;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  margin-bottom: 0.25rem;
+}
+
+.header p {
+  color: var(--color-text-muted);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.searchWrapper {
+  position: relative;
+  max-width: 380px;
+  width: 100%;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  background: var(--color-surface);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.projectList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.projectCard {
+  display: flex;
+  align-items: center;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  gap: 1.5rem;
+}
+
+.projectCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.cardLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.codeBadge {
+  background-color: var(--color-background);
+  color: var(--color-secondary);
+  font-family: monospace;
+  font-size: 0.6875rem;
+}
+
+.cardTitle {
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardDescription {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-shrink: 0;
+}
+
+.metaItem {
+  text-align: center;
+  min-width: 80px;
+}
+
+.metaLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.metaValue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.cardArrow {
+  color: var(--color-border);
+  flex-shrink: 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--color-text-muted);
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 3rem;
+}
+
+.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
