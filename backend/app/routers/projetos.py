@@ -4,12 +4,23 @@ from fastapi import APIRouter, Depends
 
 from app.core.dependencies import get_current_user, get_projeto_service, get_versao_service
 from app.models.usuario_perfil import Usuario
+from app.schemas.projeto import ProjetoCreate, ProjetoResponse
 from app.schemas.versao import VersaoRHProjetoResponse
 from app.services.projeto_service import ProjetoService
 from app.services.versao_service import VersaoService
 from app.utils.enums import StatusProjeto
 
 router = APIRouter()
+
+
+@router.post("/", response_model=ProjetoResponse, status_code=201)
+def criar_projeto(
+    dados: ProjetoCreate,
+    service: ProjetoService = Depends(get_projeto_service),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Criar novo projeto. O coordenador_id é atribuído ao usuário autenticado."""
+    return service.criar(dados, current_user)
 
 
 @router.get("/")

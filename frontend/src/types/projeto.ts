@@ -1,5 +1,14 @@
 import { CategoriaBolsa } from './enums'
 
+export interface ProjetoCreate {
+  codigo: string
+  titulo: string
+  descricao?: string
+  data_inicio: string
+  data_fim: string
+  status?: string
+}
+
 export interface VersaoRHProjeto {
   id: number
   projeto_id: number
