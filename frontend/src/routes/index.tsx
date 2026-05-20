@@ -6,6 +6,7 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { SolicitacoesListPage } from '../pages/solicitacoes/SolicitacoesListPage'
 import { ProjetosListPage } from '../pages/projetos/ProjetosListPage'
 import { ProjetoDetailPage } from '../pages/projetos/ProjetoDetailPage'
+import { ImplantacaoPage } from '../pages/projetos/ImplantacaoPage'
 
 export function AppRoutes() {
   return (
@@ -19,6 +20,7 @@ export function AppRoutes() {
           <Route path="/solicitacoes" element={<SolicitacoesListPage />} />
           <Route path="/projetos" element={<ProjetosListPage />} />
           <Route path="/projetos/:id_projeto" element={<ProjetoDetailPage />} />
+          <Route path="/projetos/:id_projeto/implantacao" element={<ImplantacaoPage />} />
         </Route>
       </Route>
 

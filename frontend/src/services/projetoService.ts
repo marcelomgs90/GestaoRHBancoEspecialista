@@ -1,5 +1,5 @@
 import { api } from './api'
-import { Projeto } from '../types/projeto'
+import { Projeto, VersaoRHProjeto } from '../types/projeto'
 
 export const projetoService = {
   async listar(): Promise<Projeto[]> {
@@ -9,6 +9,11 @@ export const projetoService = {
 
   async obter(id: number): Promise<Projeto> {
     const response = await api.get<Projeto>(`/projetos/${id}`)
+    return response.data
+  },
+
+  async listarVersoes(id: number): Promise<VersaoRHProjeto[]> {
+    const response = await api.get<VersaoRHProjeto[]>(`/projetos/${id}/versoes`)
     return response.data
   },
 }

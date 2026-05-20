@@ -1,5 +1,14 @@
 import { CategoriaBolsa } from './enums'
 
+export interface VersaoRHProjeto {
+  id: number
+  projeto_id: number
+  numero_versao: number
+  status: string
+  solicitacao_id: number | null
+  criado_em: string
+}
+
 export interface Projeto {
   id: number
   codigo: string
@@ -15,16 +24,16 @@ export interface Projeto {
 
 export const CATEGORIA_BOLSA_LABELS: Record<CategoriaBolsa, { funcao: string; nivel: string }> = {
   [CategoriaBolsa.PESQUISADOR_MASTER]: { funcao: 'Pesquisador', nivel: 'MASTER' },
-  [CategoriaBolsa.PESQUISADOR_SENIOR]: { funcao: 'Pesquisador Sênior', nivel: 'SÊNIOR' },
-  [CategoriaBolsa.PESQUISADOR_PLENO]: { funcao: 'Pesquisador Pleno', nivel: 'PLENO' },
-  [CategoriaBolsa.PESQUISADOR_JUNIOR]: { funcao: 'Pesquisador Júnior', nivel: 'JUNIOR' },
-  [CategoriaBolsa.PROFISSIONAL_SENIOR]: { funcao: 'Profissional Sênior', nivel: 'SÊNIOR' },
-  [CategoriaBolsa.PROFISSIONAL_PLENO]: { funcao: 'Profissional Pleno', nivel: 'PLENO' },
-  [CategoriaBolsa.PROFISSIONAL_JUNIOR]: { funcao: 'Profissional Júnior', nivel: 'JUNIOR' },
-  [CategoriaBolsa.PROFISSIONAL_INICIANTE]: { funcao: 'Profissional Iniciante', nivel: 'INICIANTE' },
-  [CategoriaBolsa.ESTUDANTE_SUPERIOR_AVANCADO]: { funcao: 'Estudante Superior', nivel: 'AVANÇADO' },
-  [CategoriaBolsa.ESTUDANTE_SUPERIOR_INTERMEDIARIO]: { funcao: 'Estudante Superior', nivel: 'INTERM.' },
-  [CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE]: { funcao: 'Estudante Superior', nivel: 'INICIANTE' },
+  [CategoriaBolsa.PESQUISADOR_SENIOR]: { funcao: 'Pesquisador', nivel: 'SÊNIOR' },
+  [CategoriaBolsa.PESQUISADOR_PLENO]: { funcao: 'Pesquisador', nivel: 'PLENO' },
+  [CategoriaBolsa.PESQUISADOR_JUNIOR]: { funcao: 'Pesquisador', nivel: 'JÚNIOR' },
+  [CategoriaBolsa.PROFISSIONAL_SENIOR]: { funcao: 'Profissional', nivel: 'SÊNIOR' },
+  [CategoriaBolsa.PROFISSIONAL_PLENO]: { funcao: 'Profissional', nivel: 'PLENO' },
+  [CategoriaBolsa.PROFISSIONAL_JUNIOR]: { funcao: 'Profissional', nivel: 'JÚNIOR' },
+  [CategoriaBolsa.PROFISSIONAL_INICIANTE]: { funcao: 'Profissional', nivel: 'INICIANTE' },
+  [CategoriaBolsa.ESTUDANTE_SUPERIOR_AVANCADO]: { funcao: 'Est. Superior', nivel: 'AVANÇADO' },
+  [CategoriaBolsa.ESTUDANTE_SUPERIOR_INTERMEDIARIO]: { funcao: 'Est. Superior', nivel: 'INTERM.' },
+  [CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE]: { funcao: 'Est. Superior', nivel: 'INICIANTE' },
   [CategoriaBolsa.ESTUDANTE_MEDIO]: { funcao: 'Estudante Médio', nivel: 'MÉDIO' },
 }
 
