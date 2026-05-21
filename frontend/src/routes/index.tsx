@@ -4,6 +4,9 @@ import { MainLayout } from '../components/layout/MainLayout'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { SolicitacoesListPage } from '../pages/solicitacoes/SolicitacoesListPage'
+import { ProjetosListPage } from '../pages/projetos/ProjetosListPage'
+import { ProjetoDetailPage } from '../pages/projetos/ProjetoDetailPage'
+import { ImplantacaoPage } from '../pages/projetos/ImplantacaoPage'
 
 export function AppRoutes() {
   return (
@@ -15,6 +18,9 @@ export function AppRoutes() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/solicitacoes" element={<SolicitacoesListPage />} />
+          <Route path="/projetos" element={<ProjetosListPage />} />
+          <Route path="/projetos/:id_projeto" element={<ProjetoDetailPage />} />
+          <Route path="/projetos/:id_projeto/implantacao" element={<ImplantacaoPage />} />
         </Route>
       </Route>
 

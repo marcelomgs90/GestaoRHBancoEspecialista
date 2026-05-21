@@ -82,54 +82,53 @@ def criar_usuarios(db: Session):
 
 def criar_parametros(db: Session):
     """Criar parametros de regra conforme Resolucao 11/2022."""
-    hoje = date.today()
+    vigencia = date(2022, 1, 1)
 
-    parametros = [
-        # Valores de bolsa
-        ParametroRegra(
-            tipo_regra=TipoParametroRegra.VALOR_BOLSA,
-            categoria_bolsa=CategoriaBolsa.PESQUISADOR_MASTER,
-            descricao="Pesquisador Master - 20h semanais",
-            valor_bolsa_referencia=Decimal("4585.00"),
-            carga_horaria_referencia=20,
-            vigencia_inicio=date(2022, 1, 1),
-            ativo=True
-        ),
-        ParametroRegra(
-            tipo_regra=TipoParametroRegra.VALOR_BOLSA,
-            categoria_bolsa=CategoriaBolsa.PROFISSIONAL_JUNIOR,
-            descricao="Profissional Junior - 160h mensais",
-            valor_bolsa_referencia=Decimal("5484.80"),
-            carga_horaria_referencia=40,
-            vigencia_inicio=date(2022, 1, 1),
-            ativo=True
-        ),
-        ParametroRegra(
-            tipo_regra=TipoParametroRegra.VALOR_BOLSA,
-            categoria_bolsa=CategoriaBolsa.ESTUDANTE_SUPERIOR_AVANCADO,
-            descricao="Estudante Nivel Superior Avancado - 80h mensais",
-            valor_bolsa_referencia=Decimal("1250.40"),
-            carga_horaria_referencia=20,
-            vigencia_inicio=date(2022, 1, 1),
-            ativo=True
-        ),
-        # Limite de carga horaria
-        ParametroRegra(
+    bolsas = [
+        # categoria, descricao, valor_referencia (40h/semana), ch_referencia
+        (CategoriaBolsa.PESQUISADOR_MASTER,               "Pesquisador Master",                          Decimal("9170.00"), 40),
+        (CategoriaBolsa.PESQUISADOR_SENIOR,               "Pesquisador Senior",                          Decimal("7500.00"), 40),
+        (CategoriaBolsa.PESQUISADOR_PLENO,                "Pesquisador Pleno",                           Decimal("5500.00"), 40),
+        (CategoriaBolsa.PESQUISADOR_JUNIOR,               "Pesquisador Junior",                          Decimal("3500.00"), 40),
+        (CategoriaBolsa.PROFISSIONAL_SENIOR,              "Profissional Senior",                         Decimal("8000.00"), 40),
+        (CategoriaBolsa.PROFISSIONAL_PLENO,               "Profissional Pleno",                          Decimal("7000.00"), 40),
+        (CategoriaBolsa.PROFISSIONAL_JUNIOR,              "Profissional Junior",                         Decimal("5484.80"), 40),
+        (CategoriaBolsa.PROFISSIONAL_INICIANTE,           "Profissional Iniciante",                      Decimal("3200.00"), 40),
+        (CategoriaBolsa.ESTUDANTE_SUPERIOR_AVANCADO,      "Estudante Nivel Superior Avancado",           Decimal("2500.80"), 40),
+        (CategoriaBolsa.ESTUDANTE_SUPERIOR_INTERMEDIARIO, "Estudante Nivel Superior Intermediario",      Decimal("2000.00"), 40),
+        (CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE,     "Estudante Nivel Superior Iniciante",          Decimal("1500.00"), 40),
+        (CategoriaBolsa.ESTUDANTE_MEDIO,                  "Estudante Nivel Medio",                       Decimal("800.00"),  20),
+    ]
+
+    for categoria, descricao, valor, ch in bolsas:
+        existente = db.query(ParametroRegra).filter(
+            ParametroRegra.tipo_regra == TipoParametroRegra.VALOR_BOLSA,
+            ParametroRegra.categoria_bolsa == categoria,
+        ).first()
+        if not existente:
+            db.add(ParametroRegra(
+                tipo_regra=TipoParametroRegra.VALOR_BOLSA,
+                categoria_bolsa=categoria,
+                descricao=descricao,
+                valor_bolsa_referencia=valor,
+                carga_horaria_referencia=ch,
+                vigencia_inicio=vigencia,
+                ativo=True,
+            ))
+
+    # Limite global de carga horaria
+    limite_existente = db.query(ParametroRegra).filter(
+        ParametroRegra.tipo_regra == TipoParametroRegra.LIMITE_CARGA_HORARIA,
+        ParametroRegra.categoria_bolsa.is_(None),
+    ).first()
+    if not limite_existente:
+        db.add(ParametroRegra(
             tipo_regra=TipoParametroRegra.LIMITE_CARGA_HORARIA,
             descricao="Limite maximo de carga horaria semanal por pesquisador",
             limite_carga_horaria_semanal=40,
-            vigencia_inicio=date(2022, 1, 1),
-            ativo=True
-        ),
-    ]
-
-    for param in parametros:
-        existente = db.query(ParametroRegra).filter(
-            ParametroRegra.tipo_regra == param.tipo_regra,
-            ParametroRegra.categoria_bolsa == param.categoria_bolsa
-        ).first()
-        if not existente:
-            db.add(param)
+            vigencia_inicio=vigencia,
+            ativo=True,
+        ))
 
     db.commit()
     print("Parametros criados.")

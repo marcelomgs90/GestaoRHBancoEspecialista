@@ -5,12 +5,29 @@ from sqlalchemy.orm import Session
 
 from app.models.projeto import Projeto
 from app.models.usuario_perfil import Usuario
+from app.schemas.projeto import ProjetoCreate
 from app.utils.enums import PerfilUsuario, StatusProjeto
 
 
 class ProjetoService:
     def __init__(self, db: Session):
         self.db = db
+
+    def criar(self, dados: ProjetoCreate, current_user: Usuario) -> Projeto:
+        existente = self.db.query(Projeto).filter(Projeto.codigo == dados.codigo).first()
+        if existente:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Já existe um projeto com este código",
+            )
+        projeto = Projeto(
+            **dados.model_dump(),
+            coordenador_id=current_user.id,
+        )
+        self.db.add(projeto)
+        self.db.commit()
+        self.db.refresh(projeto)
+        return projeto
 
     def listar(self, current_user: Usuario, status_filtro: Optional[StatusProjeto] = None) -> List[Projeto]:
         query = self.db.query(Projeto)
