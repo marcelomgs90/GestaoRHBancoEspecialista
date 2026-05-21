@@ -7,7 +7,7 @@ from app.models.projeto import Projeto
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.usuario_perfil import Usuario
 from app.models.versao_rh_projeto import VersaoRHProjeto
-from app.schemas.solicitacao import SolicitacaoCreate
+from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoImplantacaoCreate
 from app.utils.enums import (
     PerfilUsuario,
     StatusSolicitacao,
@@ -15,11 +15,34 @@ from app.utils.enums import (
     TipoSolicitacao,
 )
 
-
 class SolicitacaoService:
     def __init__(self, db: Session):
         self.db = db
 
+    # --- NOVO MÉTODO ESPECÍFICO PARA A TASK 26761 ---
+    def criar_implantacao(self, dados: SolicitacaoImplantacaoCreate, current_user: Usuario) -> SolicitacaoRH:
+        projeto = self._buscar_projeto(dados.projeto_id)
+        self._verificar_permissao_coordenador(projeto, current_user)
+
+        # Força os dados corretos para uma Implantação Inicial (sem justificativa/mês)
+        solicitacao = SolicitacaoRH(
+            identificador=dados.identificador,
+            projeto_id=dados.projeto_id,
+            tipo=TipoSolicitacao.IMPLANTACAO,
+            status=StatusSolicitacao.EM_EDICAO,
+            criado_por=current_user.id,
+        )
+        self.db.add(solicitacao)
+        self.db.flush() # Gera o ID da solicitação no banco
+
+        # Cria a versão 1 vinculada
+        self._criar_versao_implantacao(dados.projeto_id, solicitacao.id)
+
+        self.db.commit()
+        self.db.refresh(solicitacao)
+        return solicitacao
+
+    # --- MÉTODO GENÉRICO MANTIDO INTACTO ---
     def criar(self, dados: SolicitacaoCreate, current_user: Usuario) -> SolicitacaoRH:
         projeto = self._buscar_projeto(dados.projeto_id)
         self._verificar_permissao_coordenador(projeto, current_user)
