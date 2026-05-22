@@ -11,71 +11,50 @@ Cria o schema completo conforme docs/03-modelo-dados.md:
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 
 revision = "0001"
 down_revision = None
 branch_labels = None
 depends_on = None
 
-
-def _create_enum_if_not_exists(name: str, values: list[str]) -> None:
-    """Cria ENUM no PostgreSQL de forma idempotente.
-
-    PostgreSQL nao suporta CREATE TYPE IF NOT EXISTS, entao usamos um bloco
-    DO com EXCEPTION WHEN duplicate_object para ignorar se ja existir.
-    """
-    quoted = ", ".join(f"'{v}'" for v in values)
-    op.execute(
-        f"""
-        DO $$ BEGIN
-            CREATE TYPE {name} AS ENUM ({quoted});
-        EXCEPTION WHEN duplicate_object THEN NULL;
-        END $$;
-        """
-    )
+# Helpers: referencias aos tipos ENUM existentes (create_type=False = nao cria nem dropa)
+def _enum(name: str) -> PG_ENUM:
+    return PG_ENUM(name=name, create_type=False)
 
 
 def upgrade() -> None:
-    # --- Criar tipos ENUM de forma idempotente ---
-    _create_enum_if_not_exists("perfilusuario", [
-        "ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR",
-    ])
-    _create_enum_if_not_exists("fontefinanciamento", [
-        "EMBRAPII", "EMPRESA", "SEBRAE", "IFPB",
-    ])
-    _create_enum_if_not_exists("tiposolicitacao", [
-        "IMPLANTACAO", "ALTERACAO", "PAGAMENTO",
-    ])
-    _create_enum_if_not_exists("statussolicitacao", [
-        "EM_EDICAO", "SUBMETIDA", "APROVADA", "REJEITADA",
-    ])
-    _create_enum_if_not_exists("statusversaorh", [
-        "PROPOSTA", "VIGENTE", "HISTORICO",
-    ])
-    _create_enum_if_not_exists("statusprojeto", [
-        "ATIVO", "FINALIZADO", "SUSPENSO",
-    ])
-    _create_enum_if_not_exists("statustransferencia", [
-        "PENDENTE", "ACEITA", "RECUSADA",
-    ])
-    _create_enum_if_not_exists("categoriabolsa", [
-        "PESQUISADOR_MASTER", "PESQUISADOR_SENIOR", "PESQUISADOR_PLENO", "PESQUISADOR_JUNIOR",
-        "PROFISSIONAL_SENIOR", "PROFISSIONAL_PLENO", "PROFISSIONAL_JUNIOR", "PROFISSIONAL_INICIANTE",
-        "ESTUDANTE_SUPERIOR_AVANCADO", "ESTUDANTE_SUPERIOR_INTERMEDIARIO",
-        "ESTUDANTE_SUPERIOR_INICIANTE", "ESTUDANTE_MEDIO",
-    ])
-    _create_enum_if_not_exists("tipoparametroregra", [
-        "VALOR_BOLSA", "LIMITE_CARGA_HORARIA",
-    ])
-
-    # --- Criar tabelas (create_type=False: nao recriar os ENUMs ja existentes) ---
+    # Cria os tipos ENUM com DO block — idempotente independente de versao de biblioteca
+    enums = [
+        ("perfilusuario",       ["ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR"]),
+        ("fontefinanciamento",  ["EMBRAPII", "EMPRESA", "SEBRAE", "IFPB"]),
+        ("tiposolicitacao",     ["IMPLANTACAO", "ALTERACAO", "PAGAMENTO"]),
+        ("statussolicitacao",   ["EM_EDICAO", "SUBMETIDA", "APROVADA", "REJEITADA"]),
+        ("statusversaorh",      ["PROPOSTA", "VIGENTE", "HISTORICO"]),
+        ("statusprojeto",       ["ATIVO", "FINALIZADO", "SUSPENSO"]),
+        ("statustransferencia", ["PENDENTE", "ACEITA", "RECUSADA"]),
+        ("categoriabolsa",      [
+            "PESQUISADOR_MASTER", "PESQUISADOR_SENIOR", "PESQUISADOR_PLENO", "PESQUISADOR_JUNIOR",
+            "PROFISSIONAL_SENIOR", "PROFISSIONAL_PLENO", "PROFISSIONAL_JUNIOR", "PROFISSIONAL_INICIANTE",
+            "ESTUDANTE_SUPERIOR_AVANCADO", "ESTUDANTE_SUPERIOR_INTERMEDIARIO",
+            "ESTUDANTE_SUPERIOR_INICIANTE", "ESTUDANTE_MEDIO",
+        ]),
+        ("tipoparametroregra",  ["VALOR_BOLSA", "LIMITE_CARGA_HORARIA"]),
+    ]
+    for name, values in enums:
+        quoted = ", ".join(f"'{v}'" for v in values)
+        op.execute(f"""
+            DO $$ BEGIN
+                CREATE TYPE {name} AS ENUM ({quoted});
+            EXCEPTION WHEN duplicate_object THEN NULL;
+            END $$;
+        """)
 
     # 1. perfil
     op.create_table(
         "perfil",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("codigo", sa.Enum("ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR",
-                                    name="perfilusuario", create_type=False), nullable=False),
+        sa.Column("codigo", _enum("perfilusuario"), nullable=False),
         sa.Column("descricao", sa.String(255), nullable=False),
         sa.Column("ativo", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.PrimaryKeyConstraint("id"),
@@ -91,8 +70,7 @@ def upgrade() -> None:
         sa.Column("nome", sa.String(255), nullable=False),
         sa.Column("email", sa.String(255), nullable=False),
         sa.Column("senha_hash", sa.String(255), nullable=False),
-        sa.Column("perfil", sa.Enum("ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR",
-                                    name="perfilusuario", create_type=False), nullable=False),
+        sa.Column("perfil", _enum("perfilusuario"), nullable=False),
         sa.Column("ativo", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("criado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
         sa.Column("atualizado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
@@ -106,15 +84,8 @@ def upgrade() -> None:
     op.create_table(
         "parametro_regra",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("tipo_regra", sa.Enum("VALOR_BOLSA", "LIMITE_CARGA_HORARIA",
-                                        name="tipoparametroregra", create_type=False), nullable=False),
-        sa.Column("categoria_bolsa", sa.Enum(
-            "PESQUISADOR_MASTER", "PESQUISADOR_SENIOR", "PESQUISADOR_PLENO", "PESQUISADOR_JUNIOR",
-            "PROFISSIONAL_SENIOR", "PROFISSIONAL_PLENO", "PROFISSIONAL_JUNIOR", "PROFISSIONAL_INICIANTE",
-            "ESTUDANTE_SUPERIOR_AVANCADO", "ESTUDANTE_SUPERIOR_INTERMEDIARIO",
-            "ESTUDANTE_SUPERIOR_INICIANTE", "ESTUDANTE_MEDIO",
-            name="categoriabolsa", create_type=False,
-        ), nullable=True),
+        sa.Column("tipo_regra", _enum("tipoparametroregra"), nullable=False),
+        sa.Column("categoria_bolsa", _enum("categoriabolsa"), nullable=True),
         sa.Column("descricao", sa.String(255), nullable=False),
         sa.Column("valor_bolsa_referencia", sa.Numeric(10, 2), nullable=True),
         sa.Column("carga_horaria_referencia", sa.Integer(), nullable=True),
@@ -142,9 +113,7 @@ def upgrade() -> None:
         sa.Column("data_inicio", sa.Date(), nullable=False),
         sa.Column("data_fim", sa.Date(), nullable=False),
         sa.Column("coordenador_id", sa.Integer(), sa.ForeignKey("usuario.id"), nullable=False),
-        sa.Column("status", sa.Enum("ATIVO", "FINALIZADO", "SUSPENSO",
-                                    name="statusprojeto", create_type=False),
-                  nullable=False, server_default="ATIVO"),
+        sa.Column("status", _enum("statusprojeto"), nullable=False, server_default="ATIVO"),
         sa.Column("criado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
         sa.Column("atualizado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
         sa.PrimaryKeyConstraint("id"),
@@ -172,11 +141,8 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("identificador", sa.String(50), nullable=False),
         sa.Column("projeto_id", sa.Integer(), sa.ForeignKey("projeto.id"), nullable=False),
-        sa.Column("tipo", sa.Enum("IMPLANTACAO", "ALTERACAO", "PAGAMENTO",
-                                  name="tiposolicitacao", create_type=False), nullable=False),
-        sa.Column("status", sa.Enum("EM_EDICAO", "SUBMETIDA", "APROVADA", "REJEITADA",
-                                    name="statussolicitacao", create_type=False),
-                  nullable=False, server_default="EM_EDICAO"),
+        sa.Column("tipo", _enum("tiposolicitacao"), nullable=False),
+        sa.Column("status", _enum("statussolicitacao"), nullable=False, server_default="EM_EDICAO"),
         sa.Column("mes_ano_referencia", sa.String(7), nullable=True),
         sa.Column("justificativa", sa.Text(), nullable=True),
         sa.Column("criado_por", sa.Integer(), sa.ForeignKey("usuario.id"), nullable=False),
@@ -193,9 +159,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("projeto_id", sa.Integer(), sa.ForeignKey("projeto.id"), nullable=False),
         sa.Column("numero_versao", sa.Integer(), nullable=False),
-        sa.Column("status", sa.Enum("PROPOSTA", "VIGENTE", "HISTORICO",
-                                    name="statusversaorh", create_type=False),
-                  nullable=False, server_default="PROPOSTA"),
+        sa.Column("status", _enum("statusversaorh"), nullable=False, server_default="PROPOSTA"),
         sa.Column("solicitacao_id", sa.Integer(), sa.ForeignKey("solicitacao_rh.id"), nullable=True),
         sa.Column("criado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
         sa.PrimaryKeyConstraint("id"),
@@ -209,15 +173,8 @@ def upgrade() -> None:
         sa.Column("ref_pesquisador", sa.String(100), nullable=False),
         sa.Column("nome_pesquisador", sa.String(255), nullable=False),
         sa.Column("versao_rh_id", sa.Integer(), sa.ForeignKey("versao_rh_projeto.id"), nullable=False),
-        sa.Column("categoria_bolsa", sa.Enum(
-            "PESQUISADOR_MASTER", "PESQUISADOR_SENIOR", "PESQUISADOR_PLENO", "PESQUISADOR_JUNIOR",
-            "PROFISSIONAL_SENIOR", "PROFISSIONAL_PLENO", "PROFISSIONAL_JUNIOR", "PROFISSIONAL_INICIANTE",
-            "ESTUDANTE_SUPERIOR_AVANCADO", "ESTUDANTE_SUPERIOR_INTERMEDIARIO",
-            "ESTUDANTE_SUPERIOR_INICIANTE", "ESTUDANTE_MEDIO",
-            name="categoriabolsa", create_type=False,
-        ), nullable=False),
-        sa.Column("fonte_financiamento", sa.Enum("EMBRAPII", "EMPRESA", "SEBRAE", "IFPB",
-                                                 name="fontefinanciamento", create_type=False), nullable=False),
+        sa.Column("categoria_bolsa", _enum("categoriabolsa"), nullable=False),
+        sa.Column("fonte_financiamento", _enum("fontefinanciamento"), nullable=False),
         sa.Column("carga_horaria_semanal", sa.Integer(), nullable=False),
         sa.Column("valor_bolsa", sa.Numeric(10, 2), nullable=False),
         sa.Column("data_inicio", sa.Date(), nullable=False),
@@ -241,9 +198,7 @@ def upgrade() -> None:
         sa.Column("projeto_destino_id", sa.Integer(), sa.ForeignKey("projeto.id"), nullable=False),
         sa.Column("coordenador_solicitante_id", sa.Integer(), sa.ForeignKey("usuario.id"), nullable=False),
         sa.Column("coordenador_cedente_id", sa.Integer(), sa.ForeignKey("usuario.id"), nullable=False),
-        sa.Column("status", sa.Enum("PENDENTE", "ACEITA", "RECUSADA",
-                                    name="statustransferencia", create_type=False),
-                  nullable=False, server_default="PENDENTE"),
+        sa.Column("status", _enum("statustransferencia"), nullable=False, server_default="PENDENTE"),
         sa.Column("justificativa_solicitacao", sa.Text(), nullable=True),
         sa.Column("justificativa_parecer", sa.Text(), nullable=True),
         sa.Column("data_parecer", sa.Date(), nullable=True),
@@ -268,9 +223,9 @@ def downgrade() -> None:
     op.drop_table("usuario")
     op.drop_table("perfil")
 
-    for enum_name in [
+    for name in [
         "statustransferencia", "categoriabolsa", "statusversaorh", "statusprojeto",
         "statussolicitacao", "tiposolicitacao", "tipoparametroregra",
         "fontefinanciamento", "perfilusuario",
     ]:
-        op.execute(f"DROP TYPE IF EXISTS {enum_name}")
+        op.execute(f"DROP TYPE IF EXISTS {name}")
