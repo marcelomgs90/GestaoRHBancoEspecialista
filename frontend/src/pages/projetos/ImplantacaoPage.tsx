@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   Users,
   Search,
-  Trash2,
   FileCheck,
   History,
   CheckCircle2,
@@ -18,13 +17,13 @@ import { solicitacaoService } from '@/services/solicitacaoService';
 import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { cn } from '@/lib/cn';
+import { MembroEditor } from './MembroEditor';
+import type { MembroLocalProps } from './MembroEditor';
 import type { Projeto } from '@/types/projeto';
 import type { MembroCreate } from '@/types/solicitacao';
 
 // Tipo de membro em edicao na tela (antes de enviar ao backend)
-interface MembroLocal extends MembroCreate {
-  _tempId: string;
-}
+type MembroLocal = MembroLocalProps;
 
 interface HistoryLog {
   id: string;
@@ -243,99 +242,12 @@ export default function ImplantacaoPage() {
 
         <div className="divide-y divide-slate-100">
           {membros.map((m) => (
-            <motion.div
-              layout
-              key={m._tempId}
-              className="p-6 flex flex-col lg:flex-row gap-6 items-start lg:items-center"
-            >
-              <div className="w-12 h-12 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xl text-slate-600 shrink-0">
-                {m.nome_pesquisador.charAt(0)}
-              </div>
-
-              <div className="flex-1 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-bold text-lg text-slate-900 leading-none mb-2">
-                      {m.nome_pesquisador}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      REF: {m.ref_pesquisador}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => removeMembro(m._tempId)}
-                    className="p-2 text-slate-300 hover:text-red-600 transition-colors cursor-pointer"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      Categoria
-                    </label>
-                    <select
-                      value={m.categoria_bolsa}
-                      onChange={(e) =>
-                        updateMembro(m._tempId, { categoria_bolsa: e.target.value as CategoriaBolsa })
-                      }
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-medium outline-none focus:border-slate-900"
-                    >
-                      {Object.entries(CATEGORIA_BOLSA_LABELS).map(([val, label]) => (
-                        <option key={val} value={val}>
-                          {label.funcao} — {label.nivel}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      Fonte
-                    </label>
-                    <select
-                      value={m.fonte_financiamento}
-                      onChange={(e) =>
-                        updateMembro(m._tempId, { fonte_financiamento: e.target.value as FonteFinanciamento })
-                      }
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-medium outline-none focus:border-slate-900"
-                    >
-                      {Object.values(FonteFinanciamento).map((f) => (
-                        <option key={f} value={f}>{f}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      CH Semanal (h)
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={80}
-                      value={m.carga_horaria_semanal}
-                      onChange={(e) =>
-                        updateMembro(m._tempId, { carga_horaria_semanal: parseInt(e.target.value) || 1 })
-                      }
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-bold outline-none focus:border-slate-900"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      Inicio
-                    </label>
-                    <input
-                      type="date"
-                      value={m.data_inicio}
-                      onChange={(e) => updateMembro(m._tempId, { data_inicio: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-bold outline-none focus:border-slate-900"
-                    />
-                  </div>
-                </div>
-              </div>
+            <motion.div layout key={m._tempId}>
+              <MembroEditor
+                membro={m}
+                onChange={(changes) => updateMembro(m._tempId, changes)}
+                onRemove={() => removeMembro(m._tempId)}
+              />
             </motion.div>
           ))}
 

@@ -10,7 +10,9 @@ import ProjetosListPage from '@/pages/projetos/ProjetosListPage';
 import ProjetoFormPage from '@/pages/projetos/ProjetoFormPage';
 import ProjetoDetailPage from '@/pages/projetos/ProjetoDetailPage';
 import ImplantacaoPage from '@/pages/projetos/ImplantacaoPage';
+import AlteracaoPage from '@/pages/projetos/AlteracaoPage';
 import SolicitacoesListPage from '@/pages/solicitacoes/SolicitacoesListPage';
+import SolicitacaoComparacaoPage from '@/pages/solicitacoes/SolicitacaoComparacaoPage';
 import BolsaManagementPage from '@/pages/parametros/BolsaManagementPage';
 
 const FEATURE_BOLSAS = import.meta.env.VITE_FEATURE_BOLSAS === 'true';
@@ -37,8 +39,13 @@ export function AppRoutes() {
           />
           <Route path="/projetos/:id_projeto" element={<ProjetoDetailPage />} />
           <Route path="/projetos/:id_projeto/implantacao" element={<ImplantacaoPage />} />
+          <Route path="/projetos/:id_projeto/alteracao" element={<AlteracaoPage />} />
 
           <Route path="/solicitacoes" element={<SolicitacoesListPage />} />
+          <Route
+            path="/solicitacoes/:id_solicitacao/comparacao"
+            element={<SolicitacaoComparacaoPage />}
+          />
 
           {FEATURE_BOLSAS && (
             <Route

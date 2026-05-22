@@ -94,6 +94,51 @@ class ParametroService:
                 ),
             )
 
+    def obter_validacao_ch_global(
+        self,
+        ref_pesquisador: str,
+        ch_nova: int,
+        data_inicio_novo: date,
+        data_fim_novo: Optional[date],
+        membro_id_excluir: Optional[int] = None,
+    ) -> dict:
+        """
+        Versao nao-throwing de validar_carga_horaria_global.
+        Retorna estrutura adequada para preview no frontend.
+        """
+        param = self._buscar_parametro_vigente(
+            tipo=TipoParametroRegra.LIMITE_CARGA_HORARIA,
+            data_referencia=data_inicio_novo,
+        )
+        limite = param.limite_carga_horaria_semanal if param else 0
+        fim_novo = data_fim_novo or _DATA_INFINITO
+
+        query = self.db.query(PesquisadorProjeto).filter(
+            PesquisadorProjeto.ref_pesquisador == ref_pesquisador,
+            PesquisadorProjeto.data_inicio <= fim_novo,
+            or_(
+                PesquisadorProjeto.data_fim.is_(None),
+                PesquisadorProjeto.data_fim >= data_inicio_novo,
+            ),
+        )
+        if membro_id_excluir is not None:
+            query = query.filter(PesquisadorProjeto.id != membro_id_excluir)
+
+        ch_concorrente = sum(m.carga_horaria_semanal for m in query.all())
+        ch_total = ch_concorrente + ch_nova
+        valido = limite == 0 or ch_total <= limite
+
+        return {
+            "valido": valido,
+            "ch_alocada_em_outros_projetos": ch_concorrente,
+            "ch_proposta": ch_nova,
+            "ch_total": ch_total,
+            "limite_semanal": limite,
+            "mensagem": None
+            if valido
+            else f"CH total ({ch_total}h) excede o limite semanal de {limite}h.",
+        }
+
     def _buscar_parametro_vigente(
         self,
         tipo: TipoParametroRegra,

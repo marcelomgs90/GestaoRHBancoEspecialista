@@ -11,9 +11,9 @@ services:
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gestao_rh"]
+      test: ["CMD-SHELL", "pg_isready -U gestao_rh -d gestao_rh_db"]
       interval: 5s
       timeout: 5s
       retries: 5

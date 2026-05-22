@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Filter,
   AlertCircle,
+  GitCompare,
 } from 'lucide-react';
 import { solicitacaoService } from '@/services/solicitacaoService';
 import { projetoService } from '@/services/projetoService';
@@ -149,11 +150,13 @@ export default function SolicitacoesListPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.03 }}
-                  onClick={() => navigate(`/projetos/${sol.projeto_id}`)}
-                  className="group bg-white border border-slate-200 p-6 rounded-lg hover:border-slate-400 hover:shadow-md transition-all cursor-pointer"
+                  className="group bg-white border border-slate-200 p-6 rounded-lg hover:border-slate-400 hover:shadow-md transition-all"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="flex-1 space-y-1">
+                    <div
+                      onClick={() => navigate(`/projetos/${sol.projeto_id}`)}
+                      className="flex-1 space-y-1 cursor-pointer"
+                    >
                       <div className="flex items-center gap-3">
                         <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[9px] font-bold rounded uppercase tracking-wider border border-slate-200">
                           #{sol.id}
@@ -181,6 +184,18 @@ export default function SolicitacoesListPage() {
                           {STATUS_SOLICITACAO_LABELS[sol.status] ?? sol.status}
                         </span>
                       </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/solicitacoes/${sol.id}/comparacao`);
+                        }}
+                        title="Comparar versoes (antes/depois)"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-900 hover:text-white border border-slate-200 hover:border-slate-900 rounded text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                      >
+                        <GitCompare size={12} />
+                        Comparar
+                      </button>
 
                       <div className="hidden lg:block">
                         <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all">

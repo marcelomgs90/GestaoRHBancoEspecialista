@@ -8,6 +8,7 @@ from app.core.security import decode_access_token
 from app.models.usuario_perfil import Usuario
 from app.services.auth_service import AuthService
 from app.services.membro_service import MembroService
+from app.services.parametro_service import ParametroService
 from app.services.projeto_service import ProjetoService
 from app.services.solicitacao_service import SolicitacaoService
 from app.services.usuario_service import UsuarioService
@@ -80,3 +81,7 @@ def get_membro_service(db: Session = Depends(get_db)) -> MembroService:
 
 def get_versao_service(db: Session = Depends(get_db)) -> VersaoService:
     return VersaoService(db)
+
+
+def get_parametro_service(db: Session = Depends(get_db)) -> ParametroService:
+    return ParametroService(db)

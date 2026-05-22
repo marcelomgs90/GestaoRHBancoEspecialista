@@ -159,13 +159,25 @@ export default function ProjetoDetailPage() {
               </div>
 
               {podeEditar && (
-                <Link
-                  to={`/projetos/${projeto.id}/implantacao`}
-                  className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm"
-                >
-                  <Plus size={14} className="mr-2" />
-                  Implantacao / Alteracao
-                </Link>
+                <div className="flex items-center gap-2">
+                  {versoes.some((v) => v.status === 'VIGENTE') ? (
+                    <Link
+                      to={`/projetos/${projeto.id}/alteracao`}
+                      className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm"
+                    >
+                      <Plus size={14} className="mr-2" />
+                      Solicitar Alteracao
+                    </Link>
+                  ) : (
+                    <Link
+                      to={`/projetos/${projeto.id}/implantacao`}
+                      className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm"
+                    >
+                      <Plus size={14} className="mr-2" />
+                      Implantacao Inicial
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
 

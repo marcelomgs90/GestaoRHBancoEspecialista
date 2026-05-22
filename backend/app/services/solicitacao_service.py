@@ -3,6 +3,7 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.projeto import Projeto
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.usuario_perfil import Usuario
@@ -157,4 +158,31 @@ class SolicitacaoService:
         )
         self.db.add(nova_versao)
         self.db.flush()
-        # TODO: clonar membros da versao vigente para a nova versao
+
+        self._clonar_membros(origem_versao_id=versao_vigente.id, destino_versao_id=nova_versao.id)
+
+    def _clonar_membros(self, origem_versao_id: int, destino_versao_id: int) -> None:
+        """
+        Clona membros ativos da versao de origem para a versao de destino.
+        Considera-se ativo o membro sem data_fim ou com data_fim no futuro.
+        Os clones servem como base editavel da versao Proposta (US-SD-04).
+        """
+        membros_origem = (
+            self.db.query(PesquisadorProjeto)
+            .filter(PesquisadorProjeto.versao_rh_id == origem_versao_id)
+            .all()
+        )
+        for membro in membros_origem:
+            clone = PesquisadorProjeto(
+                ref_pesquisador=membro.ref_pesquisador,
+                nome_pesquisador=membro.nome_pesquisador,
+                versao_rh_id=destino_versao_id,
+                categoria_bolsa=membro.categoria_bolsa,
+                fonte_financiamento=membro.fonte_financiamento,
+                carga_horaria_semanal=membro.carga_horaria_semanal,
+                valor_bolsa=membro.valor_bolsa,
+                data_inicio=membro.data_inicio,
+                data_fim=membro.data_fim,
+                origem_rh=membro.origem_rh,
+            )
+            self.db.add(clone)
