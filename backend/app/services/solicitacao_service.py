@@ -11,6 +11,7 @@ from app.models.versao_rh_projeto import VersaoRHProjeto
 from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoImplantacaoCreate
 from app.utils.enums import (
     PerfilUsuario,
+    StatusProjeto,
     StatusSolicitacao,
     StatusVersaoRH,
     TipoSolicitacao,
@@ -99,6 +100,11 @@ class SolicitacaoService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Projeto nao encontrado",
+            )
+        if projeto.status != StatusProjeto.ATIVO:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Solicitacao so pode ser vinculada a projeto ativo",
             )
         return projeto
 
