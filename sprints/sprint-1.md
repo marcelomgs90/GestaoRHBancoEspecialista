@@ -75,7 +75,7 @@ Fase 5: Comparacao de Versoes [US-SD-05]                ── depende da Fase 4
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 4 | TK-US-AQ-02-01 | devops/doc | Criar modelos SQLAlchemy e migracoes Alembic, popular seed de dados mockados | Marcelo | 3 | [x] |
+| 4 | TK-US-AQ-02-01 | devops/doc | Criar modelos SQLAlchemy e migracoes Alembic, popular seed de dados mockados | Marcelo | 3 | [x] alembic/versions/0001_schema_inicial.py criado; scripts/seed.py com 4 usuarios, 1 projeto e 13 parametros de regra |
 | 5 | TK-US-AQ-02-02 | doc | Documentar estrutura do banco, relacoes e evidencias | Erick | 3 | [ ] |
 | 6 | TK-US-AQ-02-03 | qa | Validar tabelas, relacoes FK e dados mockados | Carolina | 2 | [ ] |
 
@@ -121,7 +121,7 @@ Seed mockado minimo:
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
 | 7 | TK-US-CA-01-01 | back | Endpoint `POST /auth/login` (retorna JWT), `POST /auth/logout`, middleware de protecao de rotas | Vinicius | 3 | [x] |
-| 8 | TK-US-CA-01-02 | front | Tela de login com formulario email/senha, tratamento de erro, redirecionamento pos-login | Lindomar | 3 | [x] |
+| 8 | TK-US-CA-01-02 | front | Tela de login com formulario email/senha, tratamento de erro, redirecionamento pos-login | Lindomar | 3 | [x] pages/auth/LoginPage.tsx com RHF+Zod, erro inline, redirect /dashboard |
 | 9 | TK-US-CA-01-03 | qa | Testar login valido/invalido, bloqueio de rotas sem token, logout | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #7:**
@@ -152,7 +152,7 @@ Seed mockado minimo:
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
 | 10 | TK-US-CA-02-01 | back | Middleware de autorizacao por perfil, decorator/dependency `require_role(...)`, endpoint `GET /auth/me` | Marcelo | 3 | [x] |
-| 11 | TK-US-CA-02-02 | front | Menu dinamico renderizado conforme perfil retornado pelo JWT/me, ocultar opcoes nao permitidas | Lucas | 3 | [x] |
+| 11 | TK-US-CA-02-02 | front | Menu dinamico renderizado conforme perfil retornado pelo JWT/me, ocultar opcoes nao permitidas | Lucas | 3 | [x] AppShell.tsx + hooks/usePerfil.ts com os 4 perfis; RoleRoute para restricao por rota |
 | 12 | TK-US-CA-02-03 | qa | Testar acesso de cada perfil a funcoes administrativas e nao-administrativas | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #10:**
@@ -185,7 +185,7 @@ Seed mockado minimo:
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
 | 13 | TK-US-SD-01-01 | back | Endpoint `POST /solicitacoes/` (tipo=Implantacao), vincular a projeto ativo, criar `Versao_RH_Projeto` inicial | Lucas | 3 | [x] |
-| 14 | TK-US-SD-01-02 | front | Tela de criacao: selecao de projeto, numero do documento, botao criar | Lindomar | 3 | [ ] |
+| 14 | TK-US-SD-01-02 | front | Tela de criacao: selecao de projeto, numero do documento, botao criar | Lindomar | 3 | [x] ImplantacaoPage cria automaticamente a solicitacao ao entrar em /projetos/:id/implantacao (criacao inline sem tela dedicada pre-formulario) |
 | 15 | TK-US-SD-01-03 | qa | Testar criacao vinculada a projeto ativo/inativo, validar dados persistidos | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #13:**
@@ -219,7 +219,7 @@ Seed mockado minimo:
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
 | 16 | TK-US-SD-02-01 | back | Endpoints CRUD para `Pesquisador_Projeto`: incluir, alterar e encerrar membro vinculado a versao de RH | Marcelo | 3 | [x] |
-| 17 | TK-US-SD-02-02 | front | Formulario de inclusao de membro: busca especialista (mock), selecao de perfil/categoria, fonte, CH, vigencia | Vinicius | 3 | [ ] |
+| 17 | TK-US-SD-02-02 | front | Formulario de inclusao de membro: busca especialista (mock), selecao de perfil/categoria, fonte, CH, vigencia | Vinicius | 3 | [x] ImplantacaoPage + MembroEditor.tsx; busca via modal (candidatos e especialistas mockados ate endpoint AIE) |
 | 18 | TK-US-SD-02-03 | qa | Testar inclusao/alteracao/encerramento, validar dados persistidos em Pesquisador_Projeto | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #16:**
@@ -253,7 +253,7 @@ Seed mockado minimo:
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
 | 19 | TK-US-SD-03-01 | back | Servico de validacao: CH global do pesquisador (todos os projetos), calculo automatico de bolsa via Parametro_Regra, retorno de erros detalhados | Vinicius | 3 | [x] |
-| 20 | TK-US-SD-03-02 | front | Exibir feedback de validacao em tempo real no formulario: alertas de CH excedida, valor calculado da bolsa | Lindomar | 3 | [ ] |
+| 20 | TK-US-SD-03-02 | front | Exibir feedback de validacao em tempo real no formulario: alertas de CH excedida, valor calculado da bolsa | Lindomar | 3 | [x] MembroEditor.tsx faz debounce (400ms) e exibe cards: valor proporcional calculado (POST /parametros/calcular-bolsa) e status CH global com alerta visual (POST /parametros/validar-ch-global) |
 | 21 | TK-US-SD-03-03 | qa | Testar cenarios: CH no limite, CH excedida, categoria inexistente, calculo proporcional | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #19:**
@@ -287,8 +287,8 @@ Seed mockado minimo:
 
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 22 | TK-US-SD-04-01 | back | Endpoint `POST /solicitacoes/` (tipo=Alteracao): clonar versao vigente como "Antes", criar nova versao "Depois" editavel | Marcelo | 3 | [ ] |
-| 23 | TK-US-SD-04-02 | front | Tela de solicitacao de alteracao: exibir equipe atual, permitir edicoes na versao proposta | Lucas | 3 | [ ] |
+| 22 | TK-US-SD-04-01 | back | Endpoint `POST /solicitacoes/` (tipo=Alteracao): clonar versao vigente como "Antes", criar nova versao "Depois" editavel | Marcelo | 3 | [x] SolicitacaoService._criar_versao_alteracao + _clonar_membros() implementados |
+| 23 | TK-US-SD-04-02 | front | Tela de solicitacao de alteracao: exibir equipe atual, permitir edicoes na versao proposta | Lucas | 3 | [x] AlteracaoPage.tsx em /projetos/:id/alteracao: equipe vigente (read-only) + equipe proposta editavel com MembroEditor; salva via PUT/POST/DELETE em batch |
 | 24 | TK-US-SD-04-03 | qa | Testar criacao de alteracao, separacao Antes/Depois, edicao da versao proposta sem afetar a atual | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #22:**
@@ -324,7 +324,7 @@ Seed mockado minimo:
 | # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
 | 25 | TK-US-SD-05-01 | back | Endpoint `GET /solicitacoes/{id}/comparacao`: diff entre versao Antes e Depois, retornando listas de inclusoes, alteracoes e encerramentos | Vinicius | 3 | [x] |
-| 26 | TK-US-SD-05-02 | front | Tela de comparacao lado a lado: destacar inclusoes (verde), alteracoes (amarelo), encerramentos (vermelho) | Lindomar | 3 | [ ] |
+| 26 | TK-US-SD-05-02 | front | Tela de comparacao lado a lado: destacar inclusoes (verde), alteracoes (amarelo), encerramentos (vermelho) | Lindomar | 3 | [x] SolicitacaoComparacaoPage.tsx em /solicitacoes/:id/comparacao: cards resumo + tabelas por fonte com destaque visual de novo/removido/mantido |
 | 27 | TK-US-SD-05-03 | qa | Testar comparacao com cenarios: inclusao pura, encerramento puro, alteracao de CH/fonte, misto | Carolina | 2 | [ ] |
 
 **Detalhamento tecnico da Task #25:**
@@ -363,12 +363,18 @@ Seed mockado minimo:
 ## Checklist de Entrega da Sprint
 
 - [x] Ambiente local rodando (FastAPI + PostgreSQL via Docker)
-- [ ] Todas as tabelas do DER com migracoes Alembic (pendente: criar alembic/versions/)
-- [x] Dados mockados populados (usuarios, projeto, parametros, pesquisadores)
-- [x] Login/logout funcional com JWT
-- [x] Menu dinamico por perfil (4 perfis)
-- [ ] Criar solicitacao de implantacao vinculada a projeto (back [x] / front pendente)
-- [ ] Incluir/alterar/encerrar membros em solicitacao (back [x] / front pendente)
-- [ ] Validacao automatica de CH global e calculo de bolsa (back [x] / front pendente)
-- [ ] Criar solicitacao de alteracao com versionamento Antes/Depois (back parcial: clonagem de membros pendente)
-- [ ] Tela de comparacao de versoes com diferencas destacadas (back [x] / front pendente)
+- [x] Todas as tabelas do DER com migracoes Alembic (`alembic/versions/0001_schema_inicial.py`)
+- [x] Dados iniciais populados via `scripts/seed.py` (4 usuarios, 1 projeto, 13 parametros de regra)
+- [x] Login/logout funcional com JWT (back + front com RHF+Zod e erro inline)
+- [x] Menu dinamico por perfil — 4 perfis mapeados em AppShell.tsx + usePerfil.ts + RoleRoute
+- [x] Criar solicitacao de implantacao vinculada a projeto (back [x] / front [x] — criacao automatica ao entrar em /implantacao)
+- [x] Incluir/alterar/encerrar membros em solicitacao (back [x] / front [x] — ImplantacaoPage + MembroEditor)
+- [x] Validacao automatica de CH global e calculo de bolsa (back [x] endpoints /parametros/calcular-bolsa e /parametros/validar-ch-global / front [x] preview em tempo real com debounce no MembroEditor)
+- [x] Criar solicitacao de alteracao com versionamento Antes/Depois (back [x] clonagem implementada / front [x] AlteracaoPage.tsx em /projetos/:id/alteracao)
+- [x] Tela de comparacao de versoes com diferencas destacadas (back [x] / front [x] SolicitacaoComparacaoPage.tsx em /solicitacoes/:id/comparacao)
+
+**Pendente (fora do escopo de implementacao desta sprint):**
+- [ ] Tasks de QA (Carolina) — cenarios de teste nao executados
+- [ ] Tasks de documentacao (Erick) — evidencias e guias de configuracao
+- [ ] Busca real de especialistas (AIE) — permanece mockada ate Sprint 2 (endpoint Banco de Especialistas)
+- [ ] CRUD de tabelas de bolsas no backend (`/parametros` CRUD) — UI existe com feature-flag, backend pendente para Sprint 4

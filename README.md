@@ -29,30 +29,33 @@ cp frontend/.env.example frontend/.env
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-### 3. Criar tabelas e popular dados de teste
+### 3. Aplicar migracoes e popular dados de teste
 
 Em outro terminal:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec backend python scripts/seed_data.py
+# Criar o schema (todas as tabelas do DER)
+docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
+
+# Popular dados iniciais (usuarios, projeto, parametros de bolsa)
+docker compose -f docker-compose.dev.yml exec backend python scripts/seed.py
 ```
 
-> **Nota:** As migracoes Alembic (`alembic/versions/`) ainda nao foram geradas. O seed cria as tabelas diretamente via `Base.metadata.create_all`. Para gerar a primeira migracao versionada:
-> ```bash
-> docker compose -f docker-compose.dev.yml exec backend alembic revision --autogenerate -m "initial"
-> docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
-> ```
-
-Saida esperada:
+Saida esperada do seed:
 ```
-Iniciando seed de dados...
-Tabelas criadas.
-Perfis criados.
-Usuarios criados.
-Parametros criados.
-Projeto e pesquisadores criados.
+Executando seed...
+  [OK] Perfis criados
+  [OK] Usuarios criados (admin/coord/gestor/apoio)
+  [OK] Projeto seed criado
+  [OK] 13 parametros de regra criados
 
 Seed concluido com sucesso!
+
+Credenciais de acesso:
+  Admin:   admin@ifpb.edu.br       / admin123
+  Coord:   ana.coord@ifpb.edu.br   / coord123
+  Gestor:  carlos.gestor@ifpb.edu.br / gestor123
+  Apoio:   beatriz.apoio@ifpb.edu.br / apoio123
 ```
 
 ### 4. Acessar
@@ -70,8 +73,9 @@ Seed concluido com sucesso!
 | Email | Senha | Perfil |
 |-------|-------|--------|
 | `admin@ifpb.edu.br` | `admin123` | Administrador |
-| `maria.silva@ifpb.edu.br` | `coord123` | Coordenador |
-| `joao.santos@ifpb.edu.br` | `gestor123` | Gestor do Polo |
+| `ana.coord@ifpb.edu.br` | `coord123` | Coordenador |
+| `carlos.gestor@ifpb.edu.br` | `gestor123` | Gestor do Polo |
+| `beatriz.apoio@ifpb.edu.br` | `apoio123` | Apoio Coordenador |
 
 ---
 
@@ -105,8 +109,17 @@ docker compose -f docker-compose.dev.yml exec backend <comando>
 ### Banco de Dados
 
 ```bash
-# Rodar seed (criar usuarios e dados de teste)
-docker compose -f docker-compose.dev.yml exec backend python scripts/seed_data.py
+# Aplicar migracoes (criar schema)
+docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
+
+# Ver historico de migracoes aplicadas
+docker compose -f docker-compose.dev.yml exec backend alembic history
+
+# Rodar seed (usuarios, projeto e parametros de bolsa)
+docker compose -f docker-compose.dev.yml exec backend python scripts/seed.py
+
+# Reverter ultima migracao (cuidado em producao)
+docker compose -f docker-compose.dev.yml exec backend alembic downgrade -1
 
 # Acessar PostgreSQL via psql
 docker compose -f docker-compose.dev.yml exec db psql -U gestao_rh -d gestao_rh_db
@@ -131,13 +144,13 @@ SELECT id, nome, email, perfil FROM usuario;
 cd backend
 
 # Criar ambiente virtual
-python -m venv venv
+python -m venv .venv
 
 # Ativar (Windows PowerShell)
-.\venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 
 # Ativar (Linux/Mac)
-source venv/bin/activate
+source .venv/bin/activate
 
 # Instalar dependencias
 pip install -r requirements.txt
@@ -145,8 +158,11 @@ pip install -r requirements.txt
 # Subir banco PostgreSQL (via Docker)
 docker compose -f docker-compose.dev.yml up db -d
 
+# Aplicar migracoes
+alembic upgrade head
+
 # Rodar seed
-python scripts/seed_data.py
+python scripts/seed.py
 
 # Iniciar servidor
 uvicorn app.main:app --reload
@@ -183,13 +199,16 @@ GestaoRHBancoEspecialista/
 │   ├── scripts/               # Scripts utilitarios
 │   └── tests/                 # Testes
 │
-├── frontend/                   # React + TypeScript
+├── frontend/                   # React 19 + TypeScript 5.8 + Vite 6 + Tailwind 4
 │   ├── src/
-│   │   ├── components/        # Componentes React
-│   │   ├── contexts/          # Context API (Auth)
-│   │   ├── pages/             # Paginas
-│   │   ├── services/          # Chamadas API
-│   │   └── types/             # TypeScript types
+│   │   ├── components/        # Componentes reutilizaveis (AppShell, MembroEditor)
+│   │   ├── contexts/          # AuthContext (JWT + useAuth hook)
+│   │   ├── hooks/             # usePerfil (RBAC), useAuth
+│   │   ├── lib/               # cn (tailwind-merge), formatters
+│   │   ├── pages/             # Por modulo: auth/, dashboard/, projetos/, solicitacoes/, parametros/
+│   │   ├── routes/            # AppRoutes, PrivateRoute, RoleRoute
+│   │   ├── services/          # api, authService, projetoService, solicitacaoService, parametroService
+│   │   └── types/             # auth, enums, projeto, solicitacao
 │   └── public/
 │
 ├── docs/                       # Documentacao de requisitos
@@ -204,13 +223,18 @@ GestaoRHBancoEspecialista/
 
 | Camada | Tecnologia |
 |--------|------------|
-| **Backend** | FastAPI, Python 3.11 |
+| **Backend** | FastAPI, Python 3.12+ |
 | **Banco de Dados** | PostgreSQL 16 |
 | **ORM** | SQLAlchemy 2.0 |
-| **Migracoes** | Alembic |
+| **Migracoes** | Alembic (versao inicial: `alembic/versions/0001_schema_inicial.py`) |
 | **Autenticacao** | JWT (python-jose) + bcrypt |
-| **Frontend** | React 18, TypeScript, Vite |
-| **HTTP Client** | Axios |
+| **Frontend** | React 19, TypeScript 5.8, Vite 6 |
+| **Estilizacao** | Tailwind CSS 4 (`@import "tailwindcss"`, sem tailwind.config.js) |
+| **Animacoes** | Motion (Framer Motion v12) |
+| **Graficos** | Recharts |
+| **Forms** | React Hook Form + Zod |
+| **HTTP Client** | Axios (interceptors JWT + redirect 401) |
+| **Roteamento** | React Router 7 |
 | **Containers** | Docker, Docker Compose |
 
 ---
@@ -230,10 +254,14 @@ GestaoRHBancoEspecialista/
 
 ### Erro: "relation usuario does not exist"
 
-As tabelas nao foram criadas. Execute o seed:
+As migracoes nao foram aplicadas. Execute em ordem:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec backend python scripts/seed_data.py
+# 1. Aplicar schema
+docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
+
+# 2. Popular dados
+docker compose -f docker-compose.dev.yml exec backend python scripts/seed.py
 ```
 
 ### Erro: "password cannot be longer than 72 bytes" (bcrypt)
@@ -245,23 +273,25 @@ Reconstrua o container do backend e rode o seed novamente:
 docker compose -f docker-compose.dev.yml up --build backend -d
 
 # Rodar seed novamente
-docker compose -f docker-compose.dev.yml exec backend python scripts/seed_data.py
+docker compose -f docker-compose.dev.yml exec backend python scripts/seed.py
 ```
 
 ### Login nao funciona apos subir containers
 
-Apos subir os containers pela primeira vez, e necessario rodar o seed para criar as tabelas e usuarios:
+Apos subir os containers pela primeira vez, aplique migracoes e rode o seed:
 
 ```bash
-# 1. Reconstruir backend (garante dependencias atualizadas)
+# 1. Reconstruir backend se necessario
 docker compose -f docker-compose.dev.yml up --build backend -d
 
-# 2. Rodar seed
-docker compose -f docker-compose.dev.yml exec backend python scripts/seed_data.py
+# 2. Aplicar schema
+docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
+
+# 3. Rodar seed
+docker compose -f docker-compose.dev.yml exec backend python scripts/seed.py
 ```
 
-Se aparecer `Seed concluido com sucesso!`, teste o login:
-
+Acesse:
 - **Frontend**: http://localhost:5173
 - **Swagger**: http://localhost:8000/docs (POST /auth/login)
 
