@@ -24,12 +24,24 @@ Todos os requisitos do projeto estao em `docs/`:
 - `06-riscos-e-mitigacao.md` - Riscos e implicacoes arquiteturais
 - `07-metricas-tamanho.md` - Dimensionamento por Pontos de Funcao (175 PF IFPUG)
 
-## Stack Tecnologica Planejada
+## Stack Tecnologica
 
 - **Backend**: FastAPI (Python) com PostgreSQL
 - **ORM/Migracoes**: SQLAlchemy + Alembic
 - **Geracao de PDF**: modulo isolado (deve ser desacoplado da logica de negocio para facilitar mudancas de layout)
 - **Integracao Externa**: API do Banco de Especialistas (consultas somente leitura para dados de pesquisadores)
+- **Frontend**: React 19 + Vite 6 + TypeScript 5.8 em `frontend/`
+  - Estilizacao: Tailwind CSS 4 (sem `tailwind.config.js` — usa `@import "tailwindcss"` em `index.css`)
+  - Animacoes: Motion (Framer) + classes Tailwind
+  - Graficos: Recharts
+  - Forms: React Hook Form + Zod
+  - HTTP: Axios com interceptors (Bearer JWT + redirect 401)
+  - Roteamento: React Router 7
+  - Auth: `AuthContext` (JWT em localStorage, `token` + `user`)
+  - Services em `frontend/src/services/` (api, authService, projetoService, solicitacaoService, parametroService)
+  - Perfis RBAC em `PerfilUsuario` (ADMINISTRADOR, COORDENADOR, GESTOR_POLO, APOIO_COORDENADOR); permissoes centralizadas em `usePerfil.ts`
+  - Rotas em PT: `/login`, `/dashboard`, `/projetos`, `/projetos/novo` (RoleRoute), `/projetos/:id_projeto`, `/projetos/:id_projeto/implantacao`, `/solicitacoes`, `/parametros/bolsas` (feature-flag `VITE_FEATURE_BOLSAS=true`)
+  - `frontend_legacy/` preserva o frontend anterior para referencia (pode ser removido apos validacao)
 
 ## Diretrizes de Arquitetura
 
