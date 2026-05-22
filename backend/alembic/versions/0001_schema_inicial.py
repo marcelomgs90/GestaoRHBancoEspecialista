@@ -17,7 +17,8 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
-# --- Tipos ENUM (PostgreSQL cria tipos nativos) ---
+# --- Tipos ENUM declarados para criacao/remocao explicita ---
+# create_type=False nos op.create_table() evita recriacao automatica pelo SQLAlchemy
 
 enum_perfil = sa.Enum(
     "ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR",
@@ -61,7 +62,7 @@ enum_tipo_parametro = sa.Enum(
 
 
 def upgrade() -> None:
-    # Criar tipos ENUM primeiro
+    # Cria os tipos ENUM primeiro (checkfirst=True tolera banco pre-existente)
     enum_perfil.create(op.get_bind(), checkfirst=True)
     enum_fonte.create(op.get_bind(), checkfirst=True)
     enum_tipo_solicitacao.create(op.get_bind(), checkfirst=True)
@@ -76,7 +77,10 @@ def upgrade() -> None:
     op.create_table(
         "perfil",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("codigo", sa.Enum("ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR", name="perfilusuario"), nullable=False),
+        sa.Column("codigo", sa.Enum(
+            "ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR",
+            name="perfilusuario", create_type=False,
+        ), nullable=False),
         sa.Column("descricao", sa.String(255), nullable=False),
         sa.Column("ativo", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.PrimaryKeyConstraint("id"),
@@ -92,7 +96,10 @@ def upgrade() -> None:
         sa.Column("nome", sa.String(255), nullable=False),
         sa.Column("email", sa.String(255), nullable=False),
         sa.Column("senha_hash", sa.String(255), nullable=False),
-        sa.Column("perfil", sa.Enum("ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR", name="perfilusuario"), nullable=False),
+        sa.Column("perfil", sa.Enum(
+            "ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR",
+            name="perfilusuario", create_type=False,
+        ), nullable=False),
         sa.Column("ativo", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("criado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
         sa.Column("atualizado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
@@ -106,13 +113,16 @@ def upgrade() -> None:
     op.create_table(
         "parametro_regra",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("tipo_regra", sa.Enum("VALOR_BOLSA", "LIMITE_CARGA_HORARIA", name="tipoparametroregra"), nullable=False),
+        sa.Column("tipo_regra", sa.Enum(
+            "VALOR_BOLSA", "LIMITE_CARGA_HORARIA",
+            name="tipoparametroregra", create_type=False,
+        ), nullable=False),
         sa.Column("categoria_bolsa", sa.Enum(
             "PESQUISADOR_MASTER", "PESQUISADOR_SENIOR", "PESQUISADOR_PLENO", "PESQUISADOR_JUNIOR",
             "PROFISSIONAL_SENIOR", "PROFISSIONAL_PLENO", "PROFISSIONAL_JUNIOR", "PROFISSIONAL_INICIANTE",
             "ESTUDANTE_SUPERIOR_AVANCADO", "ESTUDANTE_SUPERIOR_INTERMEDIARIO",
             "ESTUDANTE_SUPERIOR_INICIANTE", "ESTUDANTE_MEDIO",
-            name="categoriabolsa",
+            name="categoriabolsa", create_type=False,
         ), nullable=True),
         sa.Column("descricao", sa.String(255), nullable=False),
         sa.Column("valor_bolsa_referencia", sa.Numeric(10, 2), nullable=True),
@@ -141,7 +151,10 @@ def upgrade() -> None:
         sa.Column("data_inicio", sa.Date(), nullable=False),
         sa.Column("data_fim", sa.Date(), nullable=False),
         sa.Column("coordenador_id", sa.Integer(), sa.ForeignKey("usuario.id"), nullable=False),
-        sa.Column("status", sa.Enum("ATIVO", "FINALIZADO", "SUSPENSO", name="statusprojeto"), nullable=False, server_default="ATIVO"),
+        sa.Column("status", sa.Enum(
+            "ATIVO", "FINALIZADO", "SUSPENSO",
+            name="statusprojeto", create_type=False,
+        ), nullable=False, server_default="ATIVO"),
         sa.Column("criado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
         sa.Column("atualizado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
         sa.PrimaryKeyConstraint("id"),
@@ -169,8 +182,14 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("identificador", sa.String(50), nullable=False),
         sa.Column("projeto_id", sa.Integer(), sa.ForeignKey("projeto.id"), nullable=False),
-        sa.Column("tipo", sa.Enum("IMPLANTACAO", "ALTERACAO", "PAGAMENTO", name="tiposolicitacao"), nullable=False),
-        sa.Column("status", sa.Enum("EM_EDICAO", "SUBMETIDA", "APROVADA", "REJEITADA", name="statussolicitacao"), nullable=False, server_default="EM_EDICAO"),
+        sa.Column("tipo", sa.Enum(
+            "IMPLANTACAO", "ALTERACAO", "PAGAMENTO",
+            name="tiposolicitacao", create_type=False,
+        ), nullable=False),
+        sa.Column("status", sa.Enum(
+            "EM_EDICAO", "SUBMETIDA", "APROVADA", "REJEITADA",
+            name="statussolicitacao", create_type=False,
+        ), nullable=False, server_default="EM_EDICAO"),
         sa.Column("mes_ano_referencia", sa.String(7), nullable=True),
         sa.Column("justificativa", sa.Text(), nullable=True),
         sa.Column("criado_por", sa.Integer(), sa.ForeignKey("usuario.id"), nullable=False),
@@ -187,7 +206,10 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("projeto_id", sa.Integer(), sa.ForeignKey("projeto.id"), nullable=False),
         sa.Column("numero_versao", sa.Integer(), nullable=False),
-        sa.Column("status", sa.Enum("PROPOSTA", "VIGENTE", "HISTORICO", name="statusversaorh"), nullable=False, server_default="PROPOSTA"),
+        sa.Column("status", sa.Enum(
+            "PROPOSTA", "VIGENTE", "HISTORICO",
+            name="statusversaorh", create_type=False,
+        ), nullable=False, server_default="PROPOSTA"),
         sa.Column("solicitacao_id", sa.Integer(), sa.ForeignKey("solicitacao_rh.id"), nullable=True),
         sa.Column("criado_em", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
         sa.PrimaryKeyConstraint("id"),
@@ -206,9 +228,12 @@ def upgrade() -> None:
             "PROFISSIONAL_SENIOR", "PROFISSIONAL_PLENO", "PROFISSIONAL_JUNIOR", "PROFISSIONAL_INICIANTE",
             "ESTUDANTE_SUPERIOR_AVANCADO", "ESTUDANTE_SUPERIOR_INTERMEDIARIO",
             "ESTUDANTE_SUPERIOR_INICIANTE", "ESTUDANTE_MEDIO",
-            name="categoriabolsa",
+            name="categoriabolsa", create_type=False,
         ), nullable=False),
-        sa.Column("fonte_financiamento", sa.Enum("EMBRAPII", "EMPRESA", "SEBRAE", "IFPB", name="fontefinanciamento"), nullable=False),
+        sa.Column("fonte_financiamento", sa.Enum(
+            "EMBRAPII", "EMPRESA", "SEBRAE", "IFPB",
+            name="fontefinanciamento", create_type=False,
+        ), nullable=False),
         sa.Column("carga_horaria_semanal", sa.Integer(), nullable=False),
         sa.Column("valor_bolsa", sa.Numeric(10, 2), nullable=False),
         sa.Column("data_inicio", sa.Date(), nullable=False),
@@ -232,7 +257,10 @@ def upgrade() -> None:
         sa.Column("projeto_destino_id", sa.Integer(), sa.ForeignKey("projeto.id"), nullable=False),
         sa.Column("coordenador_solicitante_id", sa.Integer(), sa.ForeignKey("usuario.id"), nullable=False),
         sa.Column("coordenador_cedente_id", sa.Integer(), sa.ForeignKey("usuario.id"), nullable=False),
-        sa.Column("status", sa.Enum("PENDENTE", "ACEITA", "RECUSADA", name="statustransferencia"), nullable=False, server_default="PENDENTE"),
+        sa.Column("status", sa.Enum(
+            "PENDENTE", "ACEITA", "RECUSADA",
+            name="statustransferencia", create_type=False,
+        ), nullable=False, server_default="PENDENTE"),
         sa.Column("justificativa_solicitacao", sa.Text(), nullable=True),
         sa.Column("justificativa_parecer", sa.Text(), nullable=True),
         sa.Column("data_parecer", sa.Date(), nullable=True),
@@ -247,7 +275,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Dropar em ordem inversa de dependencia
     op.drop_table("transferencia_rh")
     op.drop_table("pesquisador_projeto")
     op.drop_table("versao_rh_projeto")
@@ -258,7 +285,6 @@ def downgrade() -> None:
     op.drop_table("usuario")
     op.drop_table("perfil")
 
-    # Dropar tipos ENUM
     enum_status_transferencia.drop(op.get_bind(), checkfirst=True)
     enum_categoria_bolsa.drop(op.get_bind(), checkfirst=True)
     enum_status_versao.drop(op.get_bind(), checkfirst=True)
