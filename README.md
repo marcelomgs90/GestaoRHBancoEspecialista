@@ -295,6 +295,31 @@ Acesse:
 - **Frontend**: http://localhost:5173
 - **Swagger**: http://localhost:8000/docs (POST /auth/login)
 
+### Erro: "DuplicateObject / DuplicateTable" ao rodar alembic upgrade head
+
+O banco ja possui tabelas ou tipos criados anteriormente via `Base.metadata.create_all()`.
+A migracao do Alembic nao consegue criar o que ja existe. Limpe o banco e reaplique do zero:
+
+```bash
+# 1. Derrubar containers E remover volumes (apaga o banco inteiro)
+docker compose -f docker-compose.dev.yml down -v
+
+# 2. Subir apenas o banco
+docker compose -f docker-compose.dev.yml up -d db
+
+# 3. Aguardar o healthcheck ficar verde, depois aplicar o schema via Alembic
+docker compose -f docker-compose.dev.yml up -d backend
+docker compose -f docker-compose.dev.yml exec backend alembic upgrade head
+
+# 4. Popular dados iniciais
+docker compose -f docker-compose.dev.yml exec backend python scripts/seed.py
+
+# 5. Subir o restante dos servicos
+docker compose -f docker-compose.dev.yml up -d
+```
+
+> **Aviso:** o `down -v` apaga todos os dados do banco. Use apenas em ambiente de desenvolvimento.
+
 ### Erro: "port 5432 already in use"
 
 Outro PostgreSQL esta rodando. Pare-o ou altere a porta no `docker-compose.dev.yml`.
