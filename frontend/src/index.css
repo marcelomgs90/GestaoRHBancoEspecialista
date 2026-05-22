@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@utility transition-academic {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+@layer base {
+  body {
+    @apply font-sans text-slate-950 bg-slate-50;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-semibold tracking-tight text-slate-950;
+  }
+}
+
+@layer components {
+  /* Transition Presets */
+  .transition-academic {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  /* Academic/Corporate UI Components */
+  .card-academic {
+    @apply bg-white border border-slate-200 rounded-lg shadow-sm transition-academic;
+  }
+
+  .btn-academic-primary {
+    @apply bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md font-medium text-xs uppercase tracking-wider transition-academic flex items-center justify-center;
+  }
+
+  .btn-academic-secondary {
+    @apply bg-white border border-slate-300 text-slate-600 px-4 py-2 rounded-md font-medium text-xs uppercase tracking-wider hover:bg-slate-50 transition-academic flex items-center justify-center;
+  }
+
+  .input-academic {
+    @apply w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm font-normal focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 transition-academic;
+  }
+}
+
+/* Formal Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-none border-2 border-slate-100 hover:bg-slate-400 transition-colors;
+}
+
+/* Animation Refinement */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.slide-in-up {
+  animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}

@@ -1,533 +1,303 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { projetoService } from '../../services/projetoService'
-import { solicitacaoService } from '../../services/solicitacaoService'
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 import {
-  Projeto, VersaoRHProjeto, formatDate, formatCurrency,
-  CATEGORIA_BOLSA_LABELS, getAvatarColor,
-} from '../../types/projeto'
-import { Membro, Solicitacao } from '../../types/solicitacao'
-import styles from './ProjetoDetailPage.module.css'
+  ArrowLeft,
+  Users,
+  Plus,
+  Activity,
+  Calendar,
+  ClipboardList,
+} from 'lucide-react';
+import { usePerfil } from '@/hooks/usePerfil';
+import { useAuth } from '@/contexts/AuthContext';
+import { projetoService } from '@/services/projetoService';
+import { solicitacaoService } from '@/services/solicitacaoService';
+import { formatDate, CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
+import { FONTE_LABELS } from '@/types/enums';
+import type { Projeto, VersaoRHProjeto } from '@/types/projeto';
+import type { Membro } from '@/types/solicitacao';
 
-const CATEGORIAS_OPTIONS = [
-  { value: 'PESQUISADOR_MASTER', label: 'Pesquisador Master' },
-  { value: 'PESQUISADOR_SENIOR', label: 'Pesquisador Sênior' },
-  { value: 'PESQUISADOR_PLENO', label: 'Pesquisador Pleno' },
-  { value: 'PESQUISADOR_JUNIOR', label: 'Pesquisador Júnior' },
-  { value: 'PROFISSIONAL_SENIOR', label: 'Profissional Sênior' },
-  { value: 'PROFISSIONAL_PLENO', label: 'Profissional Pleno' },
-  { value: 'PROFISSIONAL_JUNIOR', label: 'Profissional Júnior' },
-  { value: 'PROFISSIONAL_INICIANTE', label: 'Profissional Iniciante' },
-  { value: 'ESTUDANTE_SUPERIOR_AVANCADO', label: 'Est. Superior Avançado' },
-  { value: 'ESTUDANTE_SUPERIOR_INTERMEDIARIO', label: 'Est. Superior Intermediário' },
-  { value: 'ESTUDANTE_SUPERIOR_INICIANTE', label: 'Est. Superior Iniciante' },
-  { value: 'ESTUDANTE_MEDIO', label: 'Estudante Médio' },
-]
+export default function ProjetoDetailPage() {
+  const { id_projeto } = useParams<{ id_projeto: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { podeCriarProjeto } = usePerfil();
 
-const FONTES_OPTIONS = [
-  { value: 'EMBRAPII', label: 'EMBRAPII' },
-  { value: 'EMPRESA', label: 'Empresa' },
-  { value: 'SEBRAE', label: 'SEBRAE' },
-  { value: 'IFPB', label: 'IFPB' },
-]
+  const [projeto, setProjeto] = useState<Projeto | null>(null);
+  const [versoes, setVersoes] = useState<VersaoRHProjeto[]>([]);
+  const [membros, setMembros] = useState<Membro[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
-const ORIGEM_OPTIONS = [
-  { value: 'Banco de Especialistas', label: 'Banco de Especialistas' },
-  { value: 'Processo Seletivo', label: 'Processo Seletivo' },
-]
-
-interface MembroForm {
-  nome_pesquisador: string
-  ref_pesquisador: string
-  categoria_bolsa: string
-  fonte_financiamento: string
-  carga_horaria_semanal: string
-  data_inicio: string
-  data_fim: string
-  origem_rh: string
-  solicitacao_id: string
-}
-
-type MembroFormErrors = Partial<Record<keyof MembroForm, string>>
-
-const FORM_VAZIO: MembroForm = {
-  nome_pesquisador: '',
-  ref_pesquisador: '',
-  categoria_bolsa: '',
-  fonte_financiamento: '',
-  carga_horaria_semanal: '',
-  data_inicio: '',
-  data_fim: '',
-  origem_rh: '',
-  solicitacao_id: '',
-}
-
-function getStatusClass(status: string): string {
-  switch (status) {
-    case 'ATIVO': return 'badge-success'
-    case 'ENCERRADO': return 'badge-danger'
-    case 'SUSPENSO': return 'badge-warning'
-    default: return 'badge-info'
-  }
-}
-
-export function ProjetoDetailPage() {
-  const { id_projeto } = useParams<{ id_projeto: string }>()
-  const navigate = useNavigate()
-
-  // Dados da página
-  const [projeto, setProjeto] = useState<Projeto | null>(null)
-  const [versoes, setVersoes] = useState<VersaoRHProjeto[]>([])
-  const [membros, setMembros] = useState<Membro[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
-
-  // Modal
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [solicitacoesDisponiveis, setSolicitacoesDisponiveis] = useState<Solicitacao[]>([])
-  const [isLoadingSol, setIsLoadingSol] = useState(false)
-  const [isSalvando, setIsSalvando] = useState(false)
-  const [modalForm, setModalForm] = useState<MembroForm>(FORM_VAZIO)
-  const [modalFormErrors, setModalFormErrors] = useState<MembroFormErrors>({})
-  const [modalError, setModalError] = useState('')
+  const projetoId = Number(id_projeto);
 
   useEffect(() => {
-    if (id_projeto) loadProjeto(Number(id_projeto))
-  }, [id_projeto])
+    if (!projetoId) return;
 
-  async function loadProjeto(id: number) {
-    try {
-      const [projetoData, versoesData, solicitacoes] = await Promise.all([
-        projetoService.obter(id),
-        projetoService.listarVersoes(id),
-        solicitacaoService.listar(id),
-      ])
-      setProjeto(projetoData)
-      setVersoes(versoesData)
+    async function load() {
+      try {
+        const [p, v, s] = await Promise.all([
+          projetoService.obter(projetoId),
+          projetoService.listarVersoes(projetoId),
+          solicitacaoService.listar(projetoId),
+        ]);
+        setProjeto(p);
+        setVersoes(v);
 
-      if (solicitacoes.length > 0) {
-        const aprovada = solicitacoes.find((s) => s.status === 'APROVADA') ?? solicitacoes[0]
-        const membrosData = await solicitacaoService.listarMembros(aprovada.id)
-        setMembros(membrosData)
+        // busca membros da versao VIGENTE ou da ultima solicitacao aprovada
+        const versaoVigente = v.find((ver) => ver.status === 'VIGENTE');
+        if (versaoVigente?.solicitacao_id) {
+          const m = await solicitacaoService.listarMembros(versaoVigente.solicitacao_id);
+          setMembros(m);
+        } else if (s.length > 0) {
+          // fallback: membros da solicitacao mais recente
+          const mFallback = await solicitacaoService.listarMembros(s[s.length - 1].id);
+          setMembros(mFallback);
+        }
+      } catch {
+        setErro('Nao foi possivel carregar os dados do projeto.');
+      } finally {
+        setIsLoading(false);
       }
-    } catch {
-      setError('Erro ao carregar projeto')
-    } finally {
-      setIsLoading(false)
     }
-  }
+    void load();
+  }, [projetoId]);
 
-  async function abrirModal() {
-    setIsModalOpen(true)
-    setModalForm(FORM_VAZIO)
-    setModalFormErrors({})
-    setModalError('')
-    setIsLoadingSol(true)
-    try {
-      const sols = await solicitacaoService.listar(Number(id_projeto))
-      setSolicitacoesDisponiveis(sols)
-    } catch {
-      setModalError('Erro ao carregar solicitações.')
-    } finally {
-      setIsLoadingSol(false)
-    }
-  }
-
-  function fecharModal() {
-    setIsModalOpen(false)
-  }
-
-  function handleModalChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target
-    setModalForm((prev) => ({ ...prev, [name]: value }))
-    setModalFormErrors((prev) => ({ ...prev, [name]: undefined }))
-  }
-
-  function validarModal(): boolean {
-    const erros: MembroFormErrors = {}
-    if (!modalForm.nome_pesquisador.trim()) erros.nome_pesquisador = 'Campo obrigatório'
-    if (!modalForm.ref_pesquisador.trim()) erros.ref_pesquisador = 'Campo obrigatório'
-    if (!modalForm.categoria_bolsa) erros.categoria_bolsa = 'Selecione uma categoria'
-    if (!modalForm.fonte_financiamento) erros.fonte_financiamento = 'Selecione uma fonte'
-    if (!modalForm.carga_horaria_semanal) erros.carga_horaria_semanal = 'Campo obrigatório'
-    if (!modalForm.data_inicio) erros.data_inicio = 'Campo obrigatório'
-    if (!modalForm.origem_rh) erros.origem_rh = 'Selecione a origem'
-    if (!modalForm.solicitacao_id) erros.solicitacao_id = 'Selecione uma solicitação'
-    setModalFormErrors(erros)
-    return Object.keys(erros).length === 0
-  }
-
-  async function handleModalSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!validarModal()) return
-
-    setIsSalvando(true)
-    setModalError('')
-    try {
-      await solicitacaoService.incluirMembro(Number(modalForm.solicitacao_id), {
-        nome_pesquisador: modalForm.nome_pesquisador,
-        ref_pesquisador: modalForm.ref_pesquisador,
-        categoria_bolsa: modalForm.categoria_bolsa as any,
-        fonte_financiamento: modalForm.fonte_financiamento as any,
-        carga_horaria_semanal: Number(modalForm.carga_horaria_semanal),
-        data_inicio: modalForm.data_inicio,
-        data_fim: modalForm.data_fim || undefined,
-        origem_rh: modalForm.origem_rh,
-      })
-      fecharModal()
-      setSuccessMessage('Membro incluído com sucesso!')
-      loadProjeto(Number(id_projeto))
-    } catch {
-      setModalError('Erro ao incluir membro. Verifique os dados e tente novamente.')
-    } finally {
-      setIsSalvando(false)
-    }
-  }
+  const isCoordenador = user?.id === projeto?.coordenador_id;
+  const podeEditar = isCoordenador || podeCriarProjeto;
 
   if (isLoading) {
-    return <div className={styles.loading}>Carregando projeto...</div>
-  }
-
-  if (error || !projeto) {
     return (
-      <div className={styles.container}>
-        <div className={styles.errorBlock}>{error || 'Projeto não encontrado.'}</div>
+      <div className="flex items-center justify-center py-24">
+        <p className="text-slate-400 text-sm">Carregando projeto...</p>
       </div>
-    )
+    );
   }
 
-  const temImplantacao = versoes.length > 0
-  const idAbreviado = projeto.codigo.replace('PROJ-', '')
+  if (erro || !projeto) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => navigate('/projetos')} className="flex items-center text-slate-500 hover:text-slate-900 text-xs font-bold uppercase tracking-widest gap-1 cursor-pointer">
+          <ArrowLeft size={14} /> Voltar
+        </button>
+        <p className="text-red-600 text-sm">{erro ?? 'Projeto nao encontrado.'}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={styles.container}>
-      <button className={styles.backBtn} onClick={() => navigate('/projetos')}>
-        ← Projetos
-      </button>
-
-      {successMessage && (
-        <div className={styles.successBanner}>
-          {successMessage}
-        </div>
-      )}
-
-      {/* Cabeçalho */}
-      <div className={styles.pageHeader}>
-        <span className={styles.idChip}>
-          <span className={styles.idChipLabel}>ID:</span>
-          {idAbreviado}
-        </span>
-        <span className={styles.headerCodigo}>{projeto.codigo}</span>
-        <button className={styles.editBtn} title="Editar projeto">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
+    <div className="space-y-8 animate-in slide-in-up">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+        <button
+          onClick={() => navigate('/projetos')}
+          className="flex items-center text-slate-600 hover:text-slate-950 transition-colors group cursor-pointer"
+        >
+          <ArrowLeft size={14} className="mr-1.5 group-hover:-translate-x-0.5 transition-transform" />
+          <span className="text-[9px] font-black uppercase tracking-[0.2em]">Voltar</span>
         </button>
       </div>
 
-      <h1 className={styles.titulo}>{projeto.titulo}</h1>
-      {projeto.descricao && <p className={styles.descricao}>{projeto.descricao}</p>}
-
-      {/* Metadados */}
-      <div className={styles.metaRow}>
-        <div>
-          <div className={styles.metaLabel}>Código</div>
-          <div className={styles.metaValue}>{projeto.codigo}</div>
-        </div>
-        <div>
-          <div className={styles.metaLabel}>Status</div>
-          <div className={styles.metaValue}>
-            <span className={`badge ${getStatusClass(projeto.status)}`}>
-              {projeto.status === 'ATIVO' ? 'Ativo' : projeto.status}
-            </span>
-          </div>
-        </div>
-        <div>
-          <div className={styles.metaLabel}>Início</div>
-          <div className={styles.metaValue}>{formatDate(projeto.data_inicio)}</div>
-        </div>
-        <div>
-          <div className={styles.metaLabel}>Fim</div>
-          <div className={styles.metaValue}>{formatDate(projeto.data_fim)}</div>
-        </div>
-      </div>
-
-      {/* Recursos Humanos */}
-      <div className={styles.rhSection}>
-        <div className={styles.rhHeader}>
-          <div className={styles.rhTitle}>
-            <span className={styles.rhTitleText}>Recursos Humanos</span>
-            <span className={styles.rhCount}>
-              {membros.length} pesquisador{membros.length !== 1 ? 'es' : ''} alocado{membros.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-          <div className={styles.rhActions}>
-            <button
-              className="btn btn-secondary"
-              onClick={() => navigate(`/projetos/${id_projeto}/implantacao`)}
-            >
-              + Implantação
-            </button>
-
-            <span
-              title={!temImplantacao ? 'Deve ser feita a primeira Implantação' : undefined}
-              className={!temImplantacao ? styles.disabledWrapper : undefined}
-            >
-              <button
-                className="btn btn-primary"
-                disabled={!temImplantacao}
-                style={{ pointerEvents: !temImplantacao ? 'none' : undefined }}
-                onClick={abrirModal}
-              >
-                ✎ Modificação
-              </button>
-            </span>
-          </div>
-        </div>
-
-        {membros.length === 0 ? (
-          <div className={styles.rhEmpty}>Nenhum pesquisador alocado neste projeto.</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Pesquisador</th>
-                <th>Função / Nível</th>
-                <th>Carga (h)</th>
-                <th>Período</th>
-                <th>Bolsa Mensal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {membros.map((membro) => {
-                const categoriaInfo = CATEGORIA_BOLSA_LABELS[membro.categoria_bolsa]
-                const avatarColor = getAvatarColor(membro.nome_pesquisador)
-                const inicial = membro.nome_pesquisador.charAt(0).toUpperCase()
-                return (
-                  <tr key={membro.id}>
-                    <td>
-                      <div className={styles.pesquisadorCell}>
-                        <div className={styles.avatar} style={{ backgroundColor: avatarColor }}>
-                          {inicial}
-                        </div>
-                        <div>
-                          <div className={styles.pesquisadorName}>{membro.nome_pesquisador}</div>
-                          <div className={styles.pesquisadorRef}>{membro.ref_pesquisador}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className={styles.funcaoNome}>{categoriaInfo?.funcao ?? membro.categoria_bolsa}</div>
-                      <span className="badge badge-info">{categoriaInfo?.nivel ?? '—'}</span>
-                    </td>
-                    <td>{membro.carga_horaria_semanal}h</td>
-                    <td className={styles.periodoValue}>
-                      {formatDate(membro.data_inicio)}
-                      {membro.data_fim ? ` — ${formatDate(membro.data_fim)}` : ' — em aberto'}
-                    </td>
-                    <td className={styles.bolsaValue}>{formatCurrency(membro.valor_bolsa)}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Modal de Modificação */}
-      {isModalOpen && (
-        <div className={styles.modalOverlay} onClick={fecharModal}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-
-            <div className={styles.modalHeader}>
-              <h2>Incluir Membro</h2>
-              <button className={styles.modalCloseBtn} onClick={fecharModal} type="button">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          {/* Informacoes gerais */}
+          <section className="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
+            <div className="flex flex-col gap-4 mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded uppercase tracking-wider border border-slate-200">
+                    ID: {projeto.id}
+                  </span>
+                  <span className="text-slate-700 font-bold text-lg">{projeto.codigo}</span>
+                </div>
+                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded uppercase tracking-wider border border-blue-100">
+                  {projeto.status}
+                </span>
+              </div>
+              <h2 className="text-3xl font-bold text-slate-950 leading-tight">{projeto.titulo}</h2>
+              {projeto.descricao && (
+                <p className="text-slate-800 text-sm leading-relaxed">{projeto.descricao}</p>
+              )}
             </div>
 
-            <form onSubmit={handleModalSubmit}>
-              <div className={styles.modalBody}>
-                {modalError && <div className={styles.modalError}>{modalError}</div>}
-
-                <div className={styles.grid2}>
-                  <div className="form-group">
-                    <label className="form-label">Nome do Pesquisador *</label>
-                    <input
-                      className="form-input"
-                      name="nome_pesquisador"
-                      value={modalForm.nome_pesquisador}
-                      onChange={handleModalChange}
-                      placeholder="Nome completo"
-                    />
-                    {modalFormErrors.nome_pesquisador && (
-                      <span className="form-error">{modalFormErrors.nome_pesquisador}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Referência / Matrícula *</label>
-                    <input
-                      className="form-input"
-                      name="ref_pesquisador"
-                      value={modalForm.ref_pesquisador}
-                      onChange={handleModalChange}
-                      placeholder="Ex: LJ001"
-                    />
-                    {modalFormErrors.ref_pesquisador && (
-                      <span className="form-error">{modalFormErrors.ref_pesquisador}</span>
-                    )}
-                  </div>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 py-6 border-y border-slate-100">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Codigo</p>
+                <p className="font-bold text-slate-900 text-sm">{projeto.codigo}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Inicio</p>
+                <div className="flex items-center gap-1 font-bold text-slate-900 text-sm">
+                  <Calendar size={12} className="text-slate-400" />
+                  {formatDate(projeto.data_inicio)}
                 </div>
-
-                <div className={styles.grid2}>
-                  <div className="form-group">
-                    <label className="form-label">Categoria da Bolsa *</label>
-                    <select
-                      className="form-input"
-                      name="categoria_bolsa"
-                      value={modalForm.categoria_bolsa}
-                      onChange={handleModalChange}
-                    >
-                      <option value="">Selecione...</option>
-                      {CATEGORIAS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    {modalFormErrors.categoria_bolsa && (
-                      <span className="form-error">{modalFormErrors.categoria_bolsa}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Fonte de Financiamento *</label>
-                    <select
-                      className="form-input"
-                      name="fonte_financiamento"
-                      value={modalForm.fonte_financiamento}
-                      onChange={handleModalChange}
-                    >
-                      <option value="">Selecione...</option>
-                      {FONTES_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    {modalFormErrors.fonte_financiamento && (
-                      <span className="form-error">{modalFormErrors.fonte_financiamento}</span>
-                    )}
-                  </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Encerramento</p>
+                <div className="flex items-center gap-1 font-bold text-slate-900 text-sm">
+                  <Calendar size={12} className="text-slate-400" />
+                  {formatDate(projeto.data_fim)}
                 </div>
+              </div>
+            </div>
+          </section>
 
-                <div className={styles.grid3}>
-                  <div className="form-group">
-                    <label className="form-label">Carga Horária Semanal (h) *</label>
-                    <input
-                      className="form-input"
-                      type="number"
-                      name="carga_horaria_semanal"
-                      value={modalForm.carga_horaria_semanal}
-                      onChange={handleModalChange}
-                      placeholder="Ex: 40"
-                      min="1"
-                      max="40"
-                    />
-                    {modalFormErrors.carga_horaria_semanal && (
-                      <span className="form-error">{modalFormErrors.carga_horaria_semanal}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Data de Início *</label>
-                    <input
-                      className="form-input"
-                      type="date"
-                      name="data_inicio"
-                      value={modalForm.data_inicio}
-                      onChange={handleModalChange}
-                    />
-                    {modalFormErrors.data_inicio && (
-                      <span className="form-error">{modalFormErrors.data_inicio}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Data de Fim</label>
-                    <input
-                      className="form-input"
-                      type="date"
-                      name="data_fim"
-                      value={modalForm.data_fim}
-                      onChange={handleModalChange}
-                    />
-                  </div>
+          {/* Quadro de RH */}
+          <section className="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-slate-100 text-slate-600 rounded">
+                  <Users size={20} />
                 </div>
-
-                <div className={styles.grid2}>
-                  <div className="form-group">
-                    <label className="form-label">Origem do RH *</label>
-                    <select
-                      className="form-input"
-                      name="origem_rh"
-                      value={modalForm.origem_rh}
-                      onChange={handleModalChange}
-                    >
-                      <option value="">Selecione...</option>
-                      {ORIGEM_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    {modalFormErrors.origem_rh && (
-                      <span className="form-error">{modalFormErrors.origem_rh}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className={styles.solicitacaoDivider} />
-
-                <div className="form-group">
-                  <label className="form-label">Solicitação *</label>
-                  {isLoadingSol ? (
-                    <p className={styles.loadingSol}>Carregando solicitações...</p>
-                  ) : solicitacoesDisponiveis.length === 0 ? (
-                    <p className={styles.emptySol}>Nenhuma solicitação disponível para este projeto.</p>
-                  ) : (
-                    <select
-                      className="form-input"
-                      name="solicitacao_id"
-                      value={modalForm.solicitacao_id}
-                      onChange={handleModalChange}
-                    >
-                      <option value="">Selecione uma solicitação...</option>
-                      {solicitacoesDisponiveis.map((sol) => (
-                        <option key={sol.id} value={sol.id}>
-                          {sol.identificador} — {sol.tipo} — {sol.status}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {modalFormErrors.solicitacao_id && (
-                    <span className="form-error">{modalFormErrors.solicitacao_id}</span>
-                  )}
+                <div>
+                  <h3 className="text-lg font-bold text-slate-950 uppercase tracking-wider">
+                    Recursos Humanos
+                  </h3>
+                  <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+                    {membros.length} pesquisadores alocados
+                  </p>
                 </div>
               </div>
 
-              <div className={styles.modalFooter}>
-                <button type="button" className="btn btn-secondary" onClick={fecharModal}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSalvando}>
-                  {isSalvando ? 'Salvando...' : 'Incluir Membro'}
-                </button>
-              </div>
-            </form>
+              {podeEditar && (
+                <Link
+                  to={`/projetos/${projeto.id}/implantacao`}
+                  className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm"
+                >
+                  <Plus size={14} className="mr-2" />
+                  Implantacao / Alteracao
+                </Link>
+              )}
+            </div>
 
+            {membros.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Nenhum membro alocado neste projeto
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-[10px] font-bold text-slate-600 uppercase tracking-widest border-b border-slate-200">
+                      <th className="pb-3 px-2">Pesquisador</th>
+                      <th className="pb-3">Categoria</th>
+                      <th className="pb-3 text-center">CH Semanal</th>
+                      <th className="pb-3">Fonte</th>
+                      <th className="pb-3 text-right">Bolsa Mensal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {membros.map((m) => {
+                      const cat = CATEGORIA_BOLSA_LABELS[m.categoria_bolsa];
+                      return (
+                        <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-4 px-2">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0">
+                                {m.nome_pesquisador.charAt(0)}
+                              </div>
+                              <span className="font-bold text-slate-950 text-sm whitespace-nowrap">
+                                {m.nome_pesquisador}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-4">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-slate-700">{cat?.funcao ?? '—'}</span>
+                              <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider">
+                                {cat?.nivel ?? m.categoria_bolsa}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-4 text-center">
+                            <span className="text-xs font-bold text-slate-600">{m.carga_horaria_semanal}h</span>
+                          </td>
+                          <td className="py-4">
+                            <span className="text-xs font-medium text-slate-700">
+                              {FONTE_LABELS[m.fonte_financiamento] ?? m.fonte_financiamento}
+                            </span>
+                          </td>
+                          <td className="py-4 text-right">
+                            <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
+                              R$ {Number(m.valor_bolsa).toLocaleString('pt-BR')}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Painel lateral */}
+        <div className="space-y-4">
+          {/* Versoes RH */}
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <ClipboardList size={14} className="text-slate-600" />
+              <h4 className="font-bold text-slate-950 uppercase tracking-wider text-[11px]">
+                Versoes de Quadro RH
+              </h4>
+            </div>
+            {versoes.length === 0 ? (
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold text-center py-4">
+                Nenhuma versao registrada
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {versoes.map((v) => (
+                  <div
+                    key={v.id}
+                    className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100"
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">Versao {v.numero_versao}</p>
+                      <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                        {formatDate(v.criado_em)}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                        v.status === 'VIGENTE'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : v.status === 'PROPOSTA'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {v.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Solicitacoes */}
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Activity size={14} className="text-slate-600" />
+                <h4 className="font-bold text-slate-950 uppercase tracking-wider text-[11px]">Solicitacoes</h4>
+              </div>
+              <Link
+                to="/solicitacoes"
+                className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+              >
+                Ver todas
+              </Link>
+            </div>
+            <p className="text-[10px] text-slate-400 text-center py-2 uppercase tracking-widest font-bold">
+              Ver em /solicitacoes
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
-  )
+  );
 }
