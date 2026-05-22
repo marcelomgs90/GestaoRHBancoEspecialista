@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.versao_rh_projeto import VersaoRHProjeto
+from app.models.projeto import Projeto  # Importado para checar o coordenador
 from app.schemas.membro import MembroCreate, MembroUpdate
 from app.services.parametro_service import ParametroService
 from app.utils.enums import StatusSolicitacao
@@ -18,9 +19,10 @@ class MembroService:
         self.parametros = ParametroService(db)
 
     def incluir(
-        self, solicitacao_id: int, dados: MembroCreate
+        self, solicitacao_id: int, dados: MembroCreate, usuario_logado_id: int
     ) -> PesquisadorProjeto:
-        solicitacao = self._buscar_solicitacao_editavel(solicitacao_id)
+        # Passa o usuário logado para validar se ele é o coordenador do projeto
+        solicitacao = self._buscar_solicitacao_editavel(solicitacao_id, usuario_logado_id)
         versao = self._buscar_versao(solicitacao.id)
 
         self.parametros.validar_carga_horaria_global(
@@ -53,6 +55,7 @@ class MembroService:
         return membro
 
     def listar(self, solicitacao_id: int) -> List[PesquisadorProjeto]:
+        # Qualquer usuário autenticado envolvido pode listar os membros
         versao = (
             self.db.query(VersaoRHProjeto)
             .filter(VersaoRHProjeto.solicitacao_id == solicitacao_id)
@@ -68,8 +71,10 @@ class MembroService:
         )
 
     def atualizar(
-        self, solicitacao_id: int, membro_id: int, dados: MembroUpdate
+        self, solicitacao_id: int, membro_id: int, dados: MembroUpdate, usuario_logado_id: int
     ) -> PesquisadorProjeto:
+        # Garante que a solicitação pertence ao coordenador antes de atualizar
+        self._buscar_solicitacao_editavel(solicitacao_id, usuario_logado_id)
         membro = self._buscar_membro_da_solicitacao(solicitacao_id, membro_id)
 
         campos_alterados = dados.model_dump(exclude_unset=True)
@@ -96,15 +101,19 @@ class MembroService:
         self.db.refresh(membro)
         return membro
 
-    def encerrar(
-        self, solicitacao_id: int, membro_id: int, motivo: Optional[str] = None
-    ) -> None:
+    def remover(self, solicitacao_id: int, membro_id: int, usuario_logado_id: int) -> None:
+        """
+        Substitui o antigo método 'encerrar' por uma deleção física real.
+        Como a solicitação está em fase de 'EM_EDICAO' (Proposta), o coordenador
+        pode remover o membro inserido incorretamente antes de enviar para homologação.
+        """
+        self._buscar_solicitacao_editavel(solicitacao_id, usuario_logado_id)
         membro = self._buscar_membro_da_solicitacao(solicitacao_id, membro_id)
-        membro.data_fim = date.today()
-        membro.motivo_encerramento = motivo
+        
+        self.db.delete(membro)
         self.db.commit()
 
-    def _buscar_solicitacao_editavel(self, solicitacao_id: int) -> SolicitacaoRH:
+    def _buscar_solicitacao_editavel(self, solicitacao_id: int, usuario_logado_id: int) -> SolicitacaoRH:
         solicitacao = (
             self.db.query(SolicitacaoRH)
             .filter(SolicitacaoRH.id == solicitacao_id)
@@ -115,11 +124,21 @@ class MembroService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Solicitacao nao encontrada",
             )
+            
         if solicitacao.status != StatusSolicitacao.EM_EDICAO:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Solicitacao nao esta em edicao",
             )
+
+        # 🛡️ VALIDAÇÃO CRÍTICA DE SEGURANÇA: O solicitante deve ser o coordenador do projeto
+        projeto = self.db.query(Projeto).filter(Projeto.id == solicitacao.projeto_id).first()
+        if not projeto or projeto.coordenador_id != usuario_logado_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Usuario nao tem permissao para alterar esta solicitacao",
+            )
+
         return solicitacao
 
     def _buscar_versao(self, solicitacao_id: int) -> VersaoRHProjeto:
@@ -145,7 +164,7 @@ class MembroService:
         )
         if not versao:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=status.HTTP_442_UNPROCESSABLE_ENTITY,
                 detail="Solicitacao nao possui versao de RH associada",
             )
 
