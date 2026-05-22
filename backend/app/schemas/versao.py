@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel
 
 from app.utils.enums import StatusVersaoRH
@@ -8,6 +11,18 @@ class VersaoResponse(BaseModel):
     projeto_id: int
     numero_versao: int
     status: StatusVersaoRH
+
+    class Config:
+        from_attributes = True
+
+
+class VersaoRHProjetoResponse(BaseModel):
+    id: int
+    projeto_id: int
+    numero_versao: int
+    status: StatusVersaoRH
+    solicitacao_id: Optional[int]
+    criado_em: datetime
 
     class Config:
         from_attributes = True

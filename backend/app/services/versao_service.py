@@ -21,6 +21,14 @@ class VersaoService:
     def __init__(self, db: Session):
         self.db = db
 
+    def listar_por_projeto(self, projeto_id: int) -> List[VersaoRHProjeto]:
+        return (
+            self.db.query(VersaoRHProjeto)
+            .filter(VersaoRHProjeto.projeto_id == projeto_id)
+            .order_by(VersaoRHProjeto.criado_em.desc())
+            .all()
+        )
+
     def listar(self, solicitacao_id: int) -> List[VersaoRHProjeto]:
         solicitacao = self._buscar_solicitacao(solicitacao_id)
         return (
