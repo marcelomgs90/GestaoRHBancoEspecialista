@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, X, Plus, Trash2, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Save, X, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { projetoService } from '@/services/projetoService';
 import type { AxiosError } from 'axios';

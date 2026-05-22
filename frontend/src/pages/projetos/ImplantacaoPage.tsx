@@ -19,7 +19,7 @@ import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao } from '@/types/enu
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { cn } from '@/lib/cn';
 import type { Projeto } from '@/types/projeto';
-import type { Membro, MembroCreate } from '@/types/solicitacao';
+import type { MembroCreate } from '@/types/solicitacao';
 
 // Tipo de membro em edicao na tela (antes de enviar ao backend)
 interface MembroLocal extends MembroCreate {
