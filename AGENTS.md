@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-Este arquivo fornece orientacoes ao Claude Code (claude.ai/code) para trabalhar com o codigo deste repositorio.
+Este arquivo fornece orientacoes a agentes de IA (Claude Code, Cursor, Copilot, Codex, Gemini etc.) para trabalhar com o codigo deste repositorio.
 
 ## Visao Geral do Projeto
 
@@ -23,6 +23,8 @@ Todos os requisitos do projeto estao em `docs/`:
 - `05-cronograma-sprints.md` - Plano de entrega em 4 Sprints
 - `06-riscos-e-mitigacao.md` - Riscos e implicacoes arquiteturais
 - `07-metricas-tamanho.md` - Dimensionamento por Pontos de Funcao (175 PF IFPUG)
+- `08-guia-implantacao-alteracao-rh.md` - Guia de implementacao do modulo de implantacao/alteracao de RH com base em PDFs reais
+- `09-backlog-sprints.md` - Backlog detalhado por sprint
 
 ## Stack Tecnologica
 
@@ -32,16 +34,16 @@ Todos os requisitos do projeto estao em `docs/`:
 - **Integracao Externa**: API do Banco de Especialistas (consultas somente leitura para dados de pesquisadores)
 - **Frontend**: React 19 + Vite 6 + TypeScript 5.8 em `frontend/`
   - Estilizacao: Tailwind CSS 4 (sem `tailwind.config.js` — usa `@import "tailwindcss"` em `index.css`)
+  - Tema: `ThemeContext` (claro/escuro, persistido em localStorage)
   - Animacoes: Motion (Framer) + classes Tailwind
   - Graficos: Recharts
   - Forms: React Hook Form + Zod
   - HTTP: Axios com interceptors (Bearer JWT + redirect 401)
-  - Roteamento: React Router 7
+  - Roteamento: React Router 7 (configurado em `frontend/src/routes/index.tsx`)
   - Auth: `AuthContext` (JWT em localStorage, `token` + `user`)
   - Services em `frontend/src/services/` (api, authService, projetoService, solicitacaoService, parametroService)
   - Perfis RBAC em `PerfilUsuario` (ADMINISTRADOR, COORDENADOR, GESTOR_POLO, APOIO_COORDENADOR); permissoes centralizadas em `usePerfil.ts`
-  - Rotas em PT: `/login`, `/dashboard`, `/projetos`, `/projetos/novo` (RoleRoute), `/projetos/:id_projeto`, `/projetos/:id_projeto/implantacao`, `/solicitacoes`, `/parametros/bolsas` (feature-flag `VITE_FEATURE_BOLSAS=true`)
-  - `frontend_legacy/` preserva o frontend anterior para referencia (pode ser removido apos validacao)
+  - Rotas em PT: `/login`, `/dashboard`, `/projetos`, `/projetos/novo` (RoleRoute), `/projetos/:id_projeto`, `/projetos/:id_projeto/implantacao`, `/projetos/:id_projeto/alteracao`, `/solicitacoes`, `/solicitacoes/:id_solicitacao/comparacao`, `/parametros/bolsas` (feature-flag `VITE_FEATURE_BOLSAS=true`)
 
 ## Diretrizes de Arquitetura
 
@@ -50,6 +52,18 @@ Todos os requisitos do projeto estao em `docs/`:
 - `Versao_RH_Projeto` registra snapshots da composicao da equipe; registros de `Pesquisador_Projeto` se vinculam a uma versao especifica via `versao_rh_id`
 - A geracao de PDF e uma responsabilidade separada do processamento de solicitacoes - manter em modulo proprio
 - Quatro perfis de usuario com permissoes distintas: Administrador, Coordenador, Gestor do Polo, Apoio Coordenador
+
+## Ciclo de Vida de Solicitacao/Versao RH
+
+Conceito de dominio central — qualquer alteracao em `SolicitacaoService` precisa respeitar:
+
+- `Solicitacao_RH.status`: `EM_EDICAO -> SUBMETIDA -> APROVADA | REJEITADA`
+- `Versao_RH_Projeto.status`: `PROPOSTA -> VIGENTE -> HISTORICO`
+- No maximo **uma** solicitacao `EM_EDICAO` por (projeto, tipo) ao mesmo tempo — `criar()` retorna a existente em vez de duplicar
+- `POST /solicitacoes/{id}/submeter` promove status e versao em uma unica operacao; em alteracao, demove a `VIGENTE` anterior para `HISTORICO`
+- `GET /solicitacoes/{id}/comparacao` retorna `antes`/`depois`/`diferencas` (inclusoes, alteracoes, encerramentos) — usado pela tela de comparacao
+- Validacao de CH global (`ParametroService.validar_carga_horaria_global`) considera apenas versoes `VIGENTE` e exclui o proprio projeto editado (`projeto_id_excluir`) para nao contar em dobro
+- Detalhes completos em `docs/04-regras-negocio.md` §3 e §5
 
 ## Camada de Services (padrao adotado)
 

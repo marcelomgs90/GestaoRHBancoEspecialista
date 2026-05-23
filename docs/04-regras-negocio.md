@@ -13,8 +13,10 @@ O sistema deve codificar as regras da Resolucao 11/2022 do IFPB para impedir fal
 ### 1.2 Limite de Carga Horaria Global
 
 - Existe um limite global de carga horaria que se aplica a todos os pesquisadores
-- O limite e verificado na consulta ao Banco de Especialistas
-- A validacao considera TODAS as alocacoes do pesquisador em TODOS os projetos (nao apenas o projeto corrente)
+- A validacao considera as alocacoes do pesquisador em todos os projetos com versao `VIGENTE` (somatorio inter-projetos)
+- **Versoes `PROPOSTA` (rascunhos) sao ignoradas** na soma — apenas a versao oficial conta
+- Ao validar uma alteracao no projeto X, as alocacoes do proprio projeto X em `VIGENTE` sao excluidas da contagem, pois serao substituidas pela nova proposta apos submissao (`projeto_id_excluir`)
+- Um mesmo `ref_pesquisador` nao pode ser incluido mais de uma vez na mesma versao de RH (validado em `MembroService.incluir`)
 
 ### 1.3 Calculo Automatico de Bolsas
 
@@ -47,21 +49,32 @@ O sistema deve controlar a alocacao de pesquisadores por 4 fontes de financiamen
 
 ### 3.1 Implantacao Inicial
 
-1. Coordenador cria solicitacao de implantacao para seu projeto
-2. Inclui pesquisadores com: fonte, carga horaria, categoria de bolsa
-3. Sistema calcula automaticamente valores de bolsa
-4. Sistema valida limites de carga horaria
-5. Gera versao de RH (composicao da equipe)
-6. Emite PDF de implantacao
+Disponivel apenas se o projeto **nao** possui versao `VIGENTE`.
+
+1. Coordenador abre a tela de implantacao e adiciona pesquisadores localmente (rascunho em memoria)
+2. Ao clicar em **Finalizar**, o sistema:
+   - Cria a `Solicitacao_RH` (tipo `IMPLANTACAO`, status `EM_EDICAO`) e a `Versao_RH_Projeto` (n=1, status `PROPOSTA`)
+   - Persiste os membros: calcula valor de bolsa via `Parametro_Regra` vigente e valida CH global
+   - Chama o submeter: solicitacao passa a `SUBMETIDA` e versao passa a `VIGENTE`
+3. Sistema emite PDF de implantacao a partir da versao `VIGENTE`
+
+> **Idempotencia:** se ja existe uma `IMPLANTACAO` em `EM_EDICAO` para o projeto, o sistema reutiliza essa solicitacao em vez de criar duplicata.
 
 ### 3.2 Alteracao de RH
 
-1. Coordenador cria solicitacao de alteracao
-2. Sistema registra estado "ANTES" (versao atual da equipe)
-3. Coordenador faz alteracoes: inclusao, alteracao ou encerramento de participacao
-4. Sistema registra estado "DEPOIS" (versao proposta)
-5. Sistema calcula diferencas (CH, valores)
-6. Emite PDF com comparativo Antes / Alteracoes Solicitadas / Depois
+Disponivel apenas se o projeto **possui** versao `VIGENTE`. No maximo uma `ALTERACAO` em `EM_EDICAO` pode existir por projeto a qualquer momento.
+
+1. Coordenador abre a tela de alteracao; o sistema carrega a versao `VIGENTE` como preview da equipe atual (sem persistir)
+2. Coordenador faz mudancas: inclusao, alteracao de campos ou encerramento de participacao
+3. Ao clicar em **Salvar Rascunho** ou **Submeter Solicitacao**, o sistema:
+   - Cria a `Solicitacao_RH` (tipo `ALTERACAO`, status `EM_EDICAO`) e a nova `Versao_RH_Projeto` (n=anterior+1, status `PROPOSTA`)
+   - Clona automaticamente a equipe da versao `VIGENTE` para a `PROPOSTA` como base editavel
+   - Aplica inclusoes, alteracoes e encerramentos sobre a `PROPOSTA`
+4. **Salvar Rascunho** mantem `EM_EDICAO`/`PROPOSTA`. **Submeter Solicitacao** promove para `SUBMETIDA`/`VIGENTE` e demove a `VIGENTE` anterior para `HISTORICO`
+5. Sistema disponibiliza endpoint `GET /solicitacoes/{id}/comparacao` para comparativo Antes vs. Depois com diferencas (inclusoes, alteracoes campo a campo, encerramentos)
+6. Sistema emite PDF com comparativo Antes / Alteracoes Solicitadas / Depois
+
+> **Idempotencia:** se ja existe uma `ALTERACAO` em `EM_EDICAO` para o projeto, o sistema reutiliza essa solicitacao em vez de criar duplicata.
 
 ### 3.3 Pagamento de RH
 
@@ -87,11 +100,31 @@ O sistema deve controlar a alocacao de pesquisadores por 4 fontes de financiamen
 
 ## 5. Versionamento de RH
 
-- Cada solicitacao de implantacao ou alteracao gera uma nova versao de composicao de RH
-- Versoes sao tipadas: "Antes" e "Depois"
-- O historico completo de versoes e mantido
-- O mesmo pesquisador pode atuar mais de uma vez no mesmo projeto em periodos distintos
-- O sistema permite comparar versoes lado a lado
+### 5.1 Ciclo de Vida das Versoes
+
+Cada solicitacao de implantacao ou alteracao gera exatamente uma `Versao_RH_Projeto`. As versoes seguem o ciclo:
+
+```
+PROPOSTA  --(submeter)-->  VIGENTE  --(nova alteracao submetida)-->  HISTORICO
+```
+
+Invariantes:
+
+- Cada projeto tem no maximo **uma** versao `VIGENTE` a qualquer momento
+- Cada projeto tem no maximo **uma** versao `PROPOSTA` ativa a qualquer momento (associada a solicitacao `EM_EDICAO` em aberto)
+- Versoes `HISTORICO` sao imutaveis e usadas para auditoria
+
+### 5.2 Comparacao Antes vs. Depois
+
+A comparacao Antes/Depois e feita entre a `PROPOSTA` da solicitacao e a versao com `numero_versao - 1` do mesmo projeto:
+
+- Em `IMPLANTACAO`: nao existe versao anterior; o Antes e vazio e todos os membros aparecem como `inclusoes`
+- Em `ALTERACAO`: o Antes e a versao anterior (a ultima `VIGENTE` antes da submissao, ou ainda `VIGENTE` se a solicitacao nao foi submetida)
+- Diferencas calculadas: `inclusoes` (refs presentes so no Depois), `encerramentos` (refs presentes so no Antes), `alteracoes` (refs comuns com mudanca em categoria, fonte ou carga horaria)
+
+### 5.3 Pesquisador em Multiplos Periodos
+
+O mesmo pesquisador pode atuar mais de uma vez no mesmo projeto em periodos distintos (registros diferentes em `Pesquisador_Projeto` ligados a versoes diferentes). Dentro de uma mesma versao, porem, um `ref_pesquisador` so pode aparecer uma vez.
 
 ---
 
