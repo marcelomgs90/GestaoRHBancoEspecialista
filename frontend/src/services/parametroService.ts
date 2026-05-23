@@ -35,6 +35,7 @@ export interface ValidarChGlobalRequest {
   data_inicio: string;
   data_fim?: string;
   membro_id_excluir?: number;
+  projeto_id_excluir?: number;
 }
 
 export interface ValidarChGlobalResponse {

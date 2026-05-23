@@ -8,6 +8,7 @@ import {
   Filter,
   AlertCircle,
   GitCompare,
+  Send,
 } from 'lucide-react';
 import { solicitacaoService } from '@/services/solicitacaoService';
 import { projetoService } from '@/services/projetoService';
@@ -38,6 +39,8 @@ export default function SolicitacoesListPage() {
   const [filtroStatus, setFiltroStatus] = useState<StatusSolicitacao | ''>('');
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [erroSubmeter, setErroSubmeter] = useState<string | null>(null);
+  const [submetendoId, setSubmetendoId] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -65,6 +68,21 @@ export default function SolicitacoesListPage() {
 
   const nomeProjeto = (id: number) =>
     projetos.find((p) => p.id === id)?.codigo ?? `Projeto ${id}`;
+
+  const handleSubmeter = async (sol: Solicitacao) => {
+    setSubmetendoId(sol.id);
+    setErroSubmeter(null);
+    try {
+      const atualizada = await solicitacaoService.submeter(sol.id);
+      setSolicitacoes((prev) =>
+        prev.map((s) => (s.id === sol.id ? atualizada : s)),
+      );
+    } catch {
+      setErroSubmeter(`Erro ao submeter solicitacao #${sol.id}.`);
+    } finally {
+      setSubmetendoId(null);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in slide-in-up">
@@ -135,6 +153,13 @@ export default function SolicitacoesListPage() {
         </div>
       )}
 
+      {erroSubmeter && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
+          <AlertCircle size={14} className="mt-0.5 shrink-0" />
+          <span>{erroSubmeter}</span>
+        </div>
+      )}
+
       {!isLoading && !erro && (
         <>
           {filtradas.length === 0 ? (
@@ -196,6 +221,21 @@ export default function SolicitacoesListPage() {
                         <GitCompare size={12} />
                         Comparar
                       </button>
+
+                      {sol.status === StatusSolicitacao.EM_EDICAO && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSubmeter(sol);
+                          }}
+                          disabled={submetendoId === sol.id}
+                          title="Submeter solicitacao"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 rounded text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Send size={12} className={submetendoId === sol.id ? 'animate-pulse' : ''} />
+                          {submetendoId === sol.id ? 'Submetendo...' : 'Submeter'}
+                        </button>
+                      )}
 
                       <div className="hidden lg:block">
                         <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all">

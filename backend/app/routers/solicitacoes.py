@@ -1,10 +1,9 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, status
 
 from app.core.dependencies import get_current_user, get_solicitacao_service
 from app.models.usuario_perfil import Usuario
-# IMPORTANTE: Adicionei o SolicitacaoImplantacaoCreate na importação abaixo
 from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoImplantacaoCreate, SolicitacaoResponse
 from app.services.solicitacao_service import SolicitacaoService
 
@@ -56,3 +55,31 @@ def obter_solicitacao(
 ):
     """Obter detalhes de uma solicitacao."""
     return service.obter_por_id(solicitacao_id)
+
+
+@router.post("/{solicitacao_id}/submeter", response_model=SolicitacaoResponse)
+def submeter_solicitacao(
+    solicitacao_id: int,
+    service: SolicitacaoService = Depends(get_solicitacao_service),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    Submeter solicitacao de RH.
+    Muda status EM_EDICAO -> SUBMETIDA e promove versao PROPOSTA -> VIGENTE.
+    Para ALTERACAO, a versao anterior VIGENTE passa a HISTORICO.
+    """
+    return service.submeter(solicitacao_id, current_user)
+
+
+@router.get("/{solicitacao_id}/comparacao")
+def comparar_solicitacao(
+    solicitacao_id: int,
+    service: SolicitacaoService = Depends(get_solicitacao_service),
+    _: Usuario = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Retorna comparacao Antes/Depois da solicitacao.
+    Para IMPLANTACAO: antes vazio, depois = equipe proposta.
+    Para ALTERACAO: antes = versao vigente, depois = versao proposta.
+    """
+    return service.comparar(solicitacao_id)

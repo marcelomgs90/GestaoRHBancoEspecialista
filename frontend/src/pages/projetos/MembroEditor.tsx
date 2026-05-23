@@ -10,12 +10,15 @@ export interface MembroLocalProps extends MembroCreate {
   _tempId: string;
   /** id real no backend (presente em alteracoes, ausente em inclusoes pendentes) */
   id?: number;
+  /** valor calculado da bolsa (preenchido apos calculo ou ao carregar membros existentes) */
+  valor_bolsa?: number;
 }
 
 interface Props {
   membro: MembroLocalProps;
-  onChange: (changes: Partial<MembroCreate>) => void;
+  onChange: (changes: Partial<MembroLocalProps>) => void;
   onRemove: () => void;
+  projetoId?: number;
 }
 
 interface PreviewState {
@@ -33,7 +36,7 @@ interface PreviewState {
 
 const DEBOUNCE_MS = 400;
 
-export function MembroEditor({ membro, onChange, onRemove }: Props) {
+export function MembroEditor({ membro, onChange, onRemove, projetoId }: Props) {
   const [preview, setPreview] = useState<PreviewState>({
     valorBolsa: null,
     validacaoCh: null,
@@ -75,6 +78,7 @@ export function MembroEditor({ membro, onChange, onRemove }: Props) {
               carga_horaria_semanal: membro.carga_horaria_semanal,
               data_inicio: membro.data_inicio,
               data_fim: membro.data_fim,
+              projeto_id_excluir: projetoId,
             })
             .catch(() => null),
         ]);
@@ -106,7 +110,14 @@ export function MembroEditor({ membro, onChange, onRemove }: Props) {
     membro.data_inicio,
     membro.data_fim,
     membro.ref_pesquisador,
+    projetoId,
   ]);
+
+  useEffect(() => {
+    if (preview.valorBolsa !== null && preview.valorBolsa !== membro.valor_bolsa) {
+      onChange({ valor_bolsa: preview.valorBolsa });
+    }
+  }, [preview.valorBolsa]);
 
   const validacao = preview.validacaoCh;
   const chInvalida = validacao && !validacao.valido;

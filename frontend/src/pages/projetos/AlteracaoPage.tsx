@@ -12,6 +12,7 @@ import {
   X,
   CheckCircle2,
   History,
+  FileCheck,
 } from 'lucide-react';
 import { projetoService } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
@@ -52,6 +53,7 @@ function membroToLocal(m: Membro): MembroLocalProps {
     carga_horaria_semanal: m.carga_horaria_semanal,
     data_inicio: m.data_inicio,
     data_fim: m.data_fim,
+    valor_bolsa: m.valor_bolsa,
   };
 }
 
@@ -72,8 +74,11 @@ export default function AlteracaoPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [history, setHistory] = useState<HistoryLog[]>([]);
   const [salvando, setSalvando] = useState(false);
+  const [submetendo, setSubmetendo] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSubmetidaModal, setShowSubmetidaModal] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [modalErro, setModalErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -103,25 +108,34 @@ export default function AlteracaoPage() {
           setEquipeAtual(membrosVigentes);
         }
 
-        // Reutiliza solicitacao ALTERACAO em edicao, ou cria nova (backend clona membros)
+        // Apenas resume um rascunho existente. A solicitacao SO e criada ao Salvar/Submeter.
         const existente = ss.find(
           (s) => s.tipo === TipoSolicitacao.ALTERACAO && s.status === 'EM_EDICAO',
         );
-        const sol = existente
-          ? existente
-          : await solicitacaoService.criar({
-              identificador: `ALT-${projetoId}-${Date.now()}`,
-              projeto_id: projetoId,
-              tipo: TipoSolicitacao.ALTERACAO,
-            });
-
-        setSolicitacaoId(sol.id);
-
-        // Carrega membros da nova versao proposta (ja foram clonados pelo backend)
-        const propostos = await solicitacaoService.listarMembros(sol.id);
-        const locais = propostos.map(membroToLocal);
-        setEquipeProposta(locais);
-        setIdsExistentesOriginais(new Set(propostos.map((m) => m.id)));
+        if (existente) {
+          setSolicitacaoId(existente.id);
+          const propostos = await solicitacaoService.listarMembros(existente.id);
+          const locais = propostos.map(membroToLocal);
+          setEquipeProposta(locais);
+          setIdsExistentesOriginais(new Set(propostos.map((m) => m.id)));
+        } else {
+          // Inicializa a equipe proposta como copia da vigente (apenas em memoria,
+          // sem persistir). O backend clona oficialmente quando a solicitacao for criada.
+          if (vigente.solicitacao_id) {
+            const membrosVigentes = await solicitacaoService.listarMembros(vigente.solicitacao_id);
+            const locais = membrosVigentes.map((m) => ({
+              _tempId: `vigente-preview-${m.id}`,
+              ref_pesquisador: m.ref_pesquisador,
+              nome_pesquisador: m.nome_pesquisador,
+              categoria_bolsa: m.categoria_bolsa,
+              fonte_financiamento: m.fonte_financiamento,
+              carga_horaria_semanal: m.carga_horaria_semanal,
+              data_inicio: m.data_inicio,
+              data_fim: m.data_fim,
+            }));
+            setEquipeProposta(locais);
+          }
+        }
       } catch (err: unknown) {
         const e = err as { response?: { data?: { detail?: string } } };
         setErro(e?.response?.data?.detail ?? 'Nao foi possivel inicializar a alteracao.');
@@ -136,6 +150,10 @@ export default function AlteracaoPage() {
     setHistory((prev) => [{ id: Math.random().toString(36).slice(2), type, nome, detail }, ...prev]);
 
   const addMembro = (ref: string, nome: string, categoria: CategoriaBolsa) => {
+    if (equipeProposta.some((m) => m.ref_pesquisador === ref)) {
+      setModalErro(`O pesquisador ${nome} ja esta na equipe proposta`);
+      return;
+    }
     setEquipeProposta((prev) => [
       ...prev,
       {
@@ -168,40 +186,94 @@ export default function AlteracaoPage() {
     );
   };
 
+  const garantirSolicitacao = async (): Promise<{
+    solicitacaoId: number;
+    membrosMapeados: MembroLocalProps[];
+  }> => {
+    if (solicitacaoId) {
+      return { solicitacaoId, membrosMapeados: equipeProposta };
+    }
+    const nova = await solicitacaoService.criar({
+      identificador: `ALT-${projetoId}-${Date.now()}`,
+      projeto_id: projetoId,
+      tipo: TipoSolicitacao.ALTERACAO,
+    });
+    setSolicitacaoId(nova.id);
+
+    // Backend acabou de clonar a vigente. Sincroniza ids para diferenciar
+    // existentes (clonados) das adicoes feitas na sessao.
+    const clonados = await solicitacaoService.listarMembros(nova.id);
+    const mapaPorRef = new Map(clonados.map((c) => [c.ref_pesquisador, c]));
+    const idsOriginais = new Set(clonados.map((c) => c.id));
+    const membrosMapeados: MembroLocalProps[] = equipeProposta.map((m) => {
+      if (m.id) return m;
+      const clone = mapaPorRef.get(m.ref_pesquisador);
+      return clone ? { ...m, id: clone.id, _tempId: `existente-${clone.id}` } : m;
+    });
+    setEquipeProposta(membrosMapeados);
+    setIdsExistentesOriginais(idsOriginais);
+    return { solicitacaoId: nova.id, membrosMapeados };
+  };
+
+  const persistirMudancas = async (
+    id_solicitacao: number,
+    membros: MembroLocalProps[],
+    idsARemover: Set<number>,
+    idsOriginais: Set<number>,
+  ) => {
+    // 1) Inclusoes (membros novos)
+    for (const m of membros.filter((x) => !x.id)) {
+      const { _tempId, id, ...dados } = m;
+      void _tempId;
+      void id;
+      await solicitacaoService.incluirMembro(id_solicitacao, dados);
+    }
+
+    // 2) Alteracoes (membros existentes que estao na lista)
+    for (const m of membros.filter((x) => !!x.id)) {
+      const { _tempId, id, ...dados } = m;
+      void _tempId;
+      await solicitacaoService.atualizarMembro(id_solicitacao, id!, dados);
+    }
+
+    // 3) Encerramentos (existentes que foram removidos da lista)
+    for (const id of idsARemover) {
+      if (idsOriginais.has(id)) {
+        await solicitacaoService.encerrarMembro(id_solicitacao, id, 'Encerrado na alteracao');
+      }
+    }
+  };
+
   const handleSalvar = async () => {
-    if (!solicitacaoId) return;
     setSalvando(true);
     setErro(null);
 
     try {
-      // 1) Inclusoes (membros novos)
-      for (const m of equipeProposta.filter((x) => !x.id)) {
-        const { _tempId, id, ...dados } = m;
-        void _tempId;
-        void id;
-        await solicitacaoService.incluirMembro(solicitacaoId, dados);
-      }
-
-      // 2) Alteracoes (membros existentes que estao na lista)
-      for (const m of equipeProposta.filter((x) => !!x.id)) {
-        const { _tempId, id, ...dados } = m;
-        void _tempId;
-        await solicitacaoService.atualizarMembro(solicitacaoId, id!, dados);
-      }
-
-      // 3) Encerramentos (existentes que foram removidos da lista)
-      for (const id of idsRemovidos) {
-        if (idsExistentesOriginais.has(id)) {
-          await solicitacaoService.encerrarMembro(solicitacaoId, id, 'Encerrado na alteracao');
-        }
-      }
-
+      const { solicitacaoId: id, membrosMapeados } = await garantirSolicitacao();
+      await persistirMudancas(id, membrosMapeados, idsRemovidos, idsExistentesOriginais);
       setShowSuccessModal(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       setErro(e?.response?.data?.detail ?? 'Erro ao salvar alteracoes. Tente novamente.');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const handleSubmeter = async () => {
+    setSubmetendo(true);
+    setErro(null);
+
+    try {
+      const { solicitacaoId: id, membrosMapeados } = await garantirSolicitacao();
+      await persistirMudancas(id, membrosMapeados, idsRemovidos, idsExistentesOriginais);
+      await solicitacaoService.submeter(id);
+      setShowSubmetidaModal(true);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      setErro(e?.response?.data?.detail ?? 'Erro ao submeter alteracao. Tente novamente.');
+    } finally {
+      setSubmetendo(false);
     }
   };
 
@@ -278,9 +350,17 @@ export default function AlteracaoPage() {
               Versao vigente — somente leitura
             </p>
           </div>
-          <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">
-            {equipeAtual.length} membros
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">
+              {equipeAtual.length} membros
+            </span>
+            <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">
+              {equipeAtual.reduce((acc, m) => acc + m.carga_horaria_semanal, 0)}h total
+            </span>            
+            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+              Total: R$ {equipeAtual.reduce((acc, m) => acc + Number(m.valor_bolsa), 0).toLocaleString('pt-BR')}
+            </span>            
+          </div>
         </div>
         {equipeAtual.length === 0 ? (
           <p className="p-8 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">
@@ -327,9 +407,17 @@ export default function AlteracaoPage() {
               Edite, adicione ou encerre membros
             </p>
           </div>
-          <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
-            {equipeProposta.length} membros
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
+              {equipeProposta.length} membros
+            </span>
+            <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">
+              {equipeProposta.reduce((acc, m) => acc + m.carga_horaria_semanal, 0)}h total
+            </span>            
+            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+              Total: R$ {equipeProposta.reduce((acc, m) => acc + (m.valor_bolsa ?? 0), 0).toLocaleString('pt-BR')}
+            </span>            
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border-b border-slate-200 bg-slate-50/30">
@@ -376,6 +464,7 @@ export default function AlteracaoPage() {
                 membro={m}
                 onChange={(changes) => updateMembro(m._tempId, changes)}
                 onRemove={() => removeMembro(m._tempId)}
+                projetoId={projetoId}
               />
             </motion.div>
           ))}
@@ -433,30 +522,55 @@ export default function AlteracaoPage() {
 
       {/* Acoes */}
       <div className="flex items-center justify-between p-6 bg-slate-100 border border-slate-200 rounded-lg">
-        <Link
-          to={`/solicitacoes/${solicitacaoId}/comparacao`}
-          className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-50 transition-all cursor-pointer"
-        >
-          <GitCompare size={14} className="mr-2" />
-          Ver Comparacao
-        </Link>
-        <button
-          onClick={handleSalvar}
-          disabled={salvando}
-          className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 shadow-sm active:scale-95 cursor-pointer"
-        >
-          {salvando ? (
-            <>
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-3"></div>
-              Salvando...
-            </>
-          ) : (
-            <>
-              <Save size={16} className="mr-2" />
-              Salvar Alteracoes
-            </>
-          )}
-        </button>
+        {solicitacaoId ? (
+          <Link
+            to={`/solicitacoes/${solicitacaoId}/comparacao`}
+            className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-50 transition-all cursor-pointer"
+          >
+            <GitCompare size={14} className="mr-2" />
+            Ver Comparacao
+          </Link>
+        ) : (
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            Salve o rascunho para ver a comparacao
+          </span>
+        )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSalvar}
+            disabled={salvando || submetendo}
+            className="flex items-center px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition-all disabled:opacity-30 shadow-sm active:scale-95 cursor-pointer"
+          >
+            {salvando ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-700 mr-3"></div>
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save size={16} className="mr-2" />
+                Salvar Rascunho
+              </>
+            )}
+          </button>
+          <button
+            onClick={handleSubmeter}
+            disabled={salvando || submetendo}
+            className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 shadow-sm active:scale-95 cursor-pointer"
+          >
+            {submetendo ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-3"></div>
+                Submetendo...
+              </>
+            ) : (
+              <>
+                <FileCheck size={16} className="mr-2" />
+                Submeter Solicitacao
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Modal de busca */}
@@ -472,7 +586,7 @@ export default function AlteracaoPage() {
                 {showSearch === 'candidatos' ? 'Processo Seletivo' : 'Banco de Especialistas'}
               </h3>
               <button
-                onClick={() => setShowSearch(null)}
+                onClick={() => { setShowSearch(null); setModalErro(null); }}
                 className="p-2 hover:bg-slate-100 rounded-full cursor-pointer"
               >
                 <X size={18} />
@@ -490,6 +604,12 @@ export default function AlteracaoPage() {
                 />
               </div>
             </div>
+            {modalErro && (
+              <div className="mx-4 mt-4 flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
+                <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                <span>{modalErro}</span>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {showSearch === 'candidatos'
                 ? filtrarCandidatos.map((c) => (
@@ -531,7 +651,7 @@ export default function AlteracaoPage() {
         </div>
       )}
 
-      {/* Modal de sucesso */}
+      {/* Modal de sucesso (rascunho salvo) */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
@@ -543,9 +663,9 @@ export default function AlteracaoPage() {
             <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 size={40} />
             </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Alteracoes Salvas!</h3>
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Rascunho Salvo!</h3>
             <p className="text-slate-500 font-medium mb-6">
-              A nova versao proposta foi atualizada com as suas mudancas.
+              Suas mudancas foram salvas. A alteracao continua em edicao ate ser submetida.
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Link
@@ -556,13 +676,39 @@ export default function AlteracaoPage() {
                 Comparar
               </Link>
               <button
-                onClick={() => navigate(`/projetos/${projetoId}`)}
+                onClick={() => setShowSuccessModal(false)}
                 className="py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
               >
-                <ArrowLeft size={14} />
-                Voltar
+                Continuar
               </button>
             </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal de submissao final */}
+      {showSubmetidaModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+          >
+            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FileCheck size={40} />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Alteracao Submetida!</h3>
+            <p className="text-slate-500 font-medium mb-6">
+              A nova versao agora e a vigente do projeto. A versao anterior foi para o historico.
+            </p>
+            <button
+              onClick={() => navigate(`/projetos/${projetoId}`)}
+              className="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+            >
+              <ArrowLeft size={14} />
+              Voltar ao Projeto
+            </button>
           </motion.div>
         </div>
       )}

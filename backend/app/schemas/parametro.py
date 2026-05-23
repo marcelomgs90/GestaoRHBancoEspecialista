@@ -24,6 +24,7 @@ class ValidarChGlobalRequest(BaseModel):
     data_inicio: date
     data_fim: Optional[date] = None
     membro_id_excluir: Optional[int] = None
+    projeto_id_excluir: Optional[int] = None
 
 
 class ValidarChGlobalResponse(BaseModel):

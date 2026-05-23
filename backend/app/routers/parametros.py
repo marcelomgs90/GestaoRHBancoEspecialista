@@ -51,5 +51,6 @@ def validar_ch_global(
         data_inicio_novo=dados.data_inicio,
         data_fim_novo=dados.data_fim,
         membro_id_excluir=dados.membro_id_excluir,
+        projeto_id_excluir=dados.projeto_id_excluir,
     )
     return ValidarChGlobalResponse(**resultado)

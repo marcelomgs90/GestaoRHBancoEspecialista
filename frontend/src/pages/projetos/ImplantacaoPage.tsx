@@ -17,13 +17,12 @@ import { solicitacaoService } from '@/services/solicitacaoService';
 import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { cn } from '@/lib/cn';
-import { MembroEditor } from './MembroEditor';
-import type { MembroLocalProps } from './MembroEditor';
+import { MembroEditor, type MembroLocalProps } from './MembroEditor';
 import type { Projeto } from '@/types/projeto';
-import type { MembroCreate } from '@/types/solicitacao';
 
 // Tipo de membro em edicao na tela (antes de enviar ao backend)
-type MembroLocal = MembroLocalProps;
+// backendId presente = já persistido; ausente = novo (ainda não enviado)
+type MembroLocal = MembroLocalProps & { backendId?: number };
 
 interface HistoryLog {
   id: string;
@@ -59,6 +58,7 @@ export default function ImplantacaoPage() {
   const [finalizando, setFinalizando] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [modalErro, setModalErro] = useState<string | null>(null);
 
   const projetoId = Number(id_projeto);
 
@@ -73,7 +73,7 @@ export default function ImplantacaoPage() {
         ]);
         setProjeto(p);
 
-        // Reutiliza solicitacao IMPLANTACAO em edicao, ou cria nova
+        // Apenas resume um rascunho existente. A solicitacao SO e criada ao clicar em Finalizar.
         const existente = ss.find(
           (s) => s.tipo === TipoSolicitacao.IMPLANTACAO && s.status === 'EM_EDICAO',
         );
@@ -83,6 +83,7 @@ export default function ImplantacaoPage() {
           setMembros(
             ms.map((m) => ({
               _tempId: String(m.id),
+              backendId: m.id,
               ref_pesquisador: m.ref_pesquisador,
               nome_pesquisador: m.nome_pesquisador,
               categoria_bolsa: m.categoria_bolsa,
@@ -92,13 +93,6 @@ export default function ImplantacaoPage() {
               data_fim: m.data_fim,
             })),
           );
-        } else {
-          const nova = await solicitacaoService.criar({
-            identificador: `IMP-${projetoId}-${Date.now()}`,
-            projeto_id: projetoId,
-            tipo: TipoSolicitacao.IMPLANTACAO,
-          });
-          setSolicitacaoId(nova.id);
         }
       } catch {
         setErro('Nao foi possivel inicializar a implantacao.');
@@ -111,6 +105,10 @@ export default function ImplantacaoPage() {
     setHistory((prev) => [{ id: Math.random().toString(36).slice(2), type, nome, detail }, ...prev]);
 
   const addMembro = (ref: string, nome: string, categoria: CategoriaBolsa) => {
+    if (membros.some((m) => m.ref_pesquisador === ref)) {
+      setModalErro(`O pesquisador ${nome} ja esta na lista de designacao`);
+      return;
+    }
     const novoMembro: MembroLocal = {
       _tempId: Math.random().toString(36).slice(2),
       ref_pesquisador: ref,
@@ -133,25 +131,41 @@ export default function ImplantacaoPage() {
     setMembros((prev) => prev.filter((x) => x._tempId !== tempId));
   };
 
-  const updateMembro = (tempId: string, changes: Partial<MembroCreate>) => {
+  const updateMembro = (tempId: string, changes: Partial<MembroLocalProps>) => {
     setMembros((prev) =>
       prev.map((m) => (m._tempId === tempId ? { ...m, ...changes } : m)),
     );
   };
 
   const handleFinalizar = async () => {
-    if (!solicitacaoId || membros.length === 0) return;
+    if (membros.length === 0) return;
     setFinalizando(true);
     setErro(null);
     try {
-      for (const m of membros) {
-        const { _tempId, ...dados } = m;
-        void _tempId;
-        await solicitacaoService.incluirMembro(solicitacaoId, dados);
+      // Cria a solicitacao apenas agora (no submit), se ainda nao existir rascunho.
+      let id = solicitacaoId;
+      if (!id) {
+        const nova = await solicitacaoService.criar({
+          identificador: `IMP-${projetoId}-${Date.now()}`,
+          projeto_id: projetoId,
+          tipo: TipoSolicitacao.IMPLANTACAO,
+        });
+        id = nova.id;
+        setSolicitacaoId(id);
       }
+      // Envia apenas membros novos (sem backendId) — os já persistidos não precisam ser re-enviados
+      const novos = membros.filter((m) => !m.backendId);
+      for (const m of novos) {
+        const { _tempId, backendId, ...dados } = m;
+        void _tempId;
+        void backendId;
+        await solicitacaoService.incluirMembro(id, dados);
+      }
+      // Submete a solicitação: EM_EDICAO → SUBMETIDA e PROPOSTA → VIGENTE
+      await solicitacaoService.submeter(id);
       setShowSuccessModal(true);
     } catch {
-      setErro('Erro ao salvar membros. Tente novamente.');
+      setErro('Erro ao finalizar solicitacao. Tente novamente.');
     } finally {
       setFinalizando(false);
     }
@@ -247,6 +261,7 @@ export default function ImplantacaoPage() {
                 membro={m}
                 onChange={(changes) => updateMembro(m._tempId, changes)}
                 onRemove={() => removeMembro(m._tempId)}
+                projetoId={projetoId}
               />
             </motion.div>
           ))}
@@ -310,7 +325,7 @@ export default function ImplantacaoPage() {
         </div>
         <button
           onClick={handleFinalizar}
-          disabled={membros.length === 0 || finalizando || !solicitacaoId}
+          disabled={membros.length === 0 || finalizando}
           className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 disabled:grayscale shadow-sm active:scale-95 cursor-pointer"
         >
           {finalizando ? (
@@ -340,7 +355,7 @@ export default function ImplantacaoPage() {
                 <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider">
                   {showSearch === 'candidatos' ? 'Processo Seletivo' : 'Banco de Especialistas'}
                 </h3>
-                <button onClick={() => setShowSearch(null)} className="p-2 hover:bg-slate-100 rounded-full cursor-pointer">
+                <button onClick={() => { setShowSearch(null); setModalErro(null); }} className="p-2 hover:bg-slate-100 rounded-full cursor-pointer">
                   <X size={18} />
                 </button>
               </div>
@@ -356,6 +371,12 @@ export default function ImplantacaoPage() {
                   />
                 </div>
               </div>
+              {modalErro && (
+                <div className="mx-4 mt-4 flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                  <span>{modalErro}</span>
+                </div>
+              )}
               <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {showSearch === 'candidatos'
                   ? filtrarCandidatos.map((c) => (

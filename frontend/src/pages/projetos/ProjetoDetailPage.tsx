@@ -7,15 +7,28 @@ import {
   Activity,
   Calendar,
   ClipboardList,
+  FileText,
 } from 'lucide-react';
 import { usePerfil } from '@/hooks/usePerfil';
 import { useAuth } from '@/contexts/AuthContext';
 import { projetoService } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
 import { formatDate, CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
-import { FONTE_LABELS } from '@/types/enums';
+import {
+  FONTE_LABELS,
+  STATUS_SOLICITACAO_LABELS,
+  TIPO_SOLICITACAO_LABELS,
+  StatusSolicitacao,
+} from '@/types/enums';
 import type { Projeto, VersaoRHProjeto } from '@/types/projeto';
-import type { Membro } from '@/types/solicitacao';
+import type { Membro, Solicitacao } from '@/types/solicitacao';
+
+const STATUS_COLORS: Record<StatusSolicitacao, string> = {
+  [StatusSolicitacao.EM_EDICAO]: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  [StatusSolicitacao.SUBMETIDA]: 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800',
+  [StatusSolicitacao.APROVADA]: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800',
+  [StatusSolicitacao.REJEITADA]: 'bg-red-50 text-red-700 border-red-100 dark:bg-red-950 dark:text-red-300 dark:border-red-800',
+};
 
 export default function ProjetoDetailPage() {
   const { id_projeto } = useParams<{ id_projeto: string }>();
@@ -26,6 +39,7 @@ export default function ProjetoDetailPage() {
   const [projeto, setProjeto] = useState<Projeto | null>(null);
   const [versoes, setVersoes] = useState<VersaoRHProjeto[]>([]);
   const [membros, setMembros] = useState<Membro[]>([]);
+  const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -43,6 +57,7 @@ export default function ProjetoDetailPage() {
         ]);
         setProjeto(p);
         setVersoes(v);
+        setSolicitacoes(s);
 
         // busca membros da versao VIGENTE ou da ultima solicitacao aprovada
         const versaoVigente = v.find((ver) => ver.status === 'VIGENTE');
@@ -65,6 +80,14 @@ export default function ProjetoDetailPage() {
 
   const isCoordenador = user?.id === projeto?.coordenador_id;
   const podeEditar = isCoordenador || podeCriarProjeto;
+
+  const versaoVigente = versoes.find((v) => v.status === 'VIGENTE');
+  const solicitacoesOrdenadas = [...solicitacoes].sort((a, b) => {
+    if (a.id === versaoVigente?.solicitacao_id) return -1;
+    if (b.id === versaoVigente?.solicitacao_id) return 1;
+    return b.id - a.id;
+  }).slice(0, 3);
+  const versoesLimitadas = [...versoes].sort((a, b) => b.id - a.id).slice(0, 4);
 
   if (isLoading) {
     return (
@@ -255,13 +278,13 @@ export default function ProjetoDetailPage() {
                 Versoes de Quadro RH
               </h4>
             </div>
-            {versoes.length === 0 ? (
+            {versoesLimitadas.length === 0 ? (
               <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold text-center py-4">
                 Nenhuma versao registrada
               </p>
             ) : (
               <div className="space-y-3">
-                {versoes.map((v) => (
+                {versoesLimitadas.map((v) => (
                   <div
                     key={v.id}
                     className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100"
@@ -303,9 +326,38 @@ export default function ProjetoDetailPage() {
                 Ver todas
               </Link>
             </div>
-            <p className="text-[10px] text-slate-400 text-center py-2 uppercase tracking-widest font-bold">
-              Ver em /solicitacoes
-            </p>
+            {solicitacoesOrdenadas.length === 0 ? (
+              <p className="text-[10px] text-slate-400 text-center py-4 uppercase tracking-widest font-bold">
+                Nenhuma solicitacao para este projeto
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {solicitacoesOrdenadas.map((sol) => (
+                  <Link
+                    key={sol.id}
+                    to={`/solicitacoes/${sol.id}/comparacao`}
+                    className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100 hover:bg-slate-100 transition-all group"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText size={12} className="text-slate-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-900 truncate">
+                          {sol.identificador}
+                        </p>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                          {TIPO_SOLICITACAO_LABELS[sol.tipo] ?? sol.tipo}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border shrink-0 ml-2 ${STATUS_COLORS[sol.status] ?? 'bg-slate-100 text-slate-500 border-slate-200'}`}
+                    >
+                      {STATUS_SOLICITACAO_LABELS[sol.status] ?? sol.status}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

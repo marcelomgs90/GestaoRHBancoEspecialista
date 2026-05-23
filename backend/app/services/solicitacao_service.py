@@ -1,4 +1,5 @@
-from typing import List, Optional
+from decimal import Decimal
+from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -10,6 +11,7 @@ from app.models.usuario_perfil import Usuario
 from app.models.versao_rh_projeto import VersaoRHProjeto
 from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoImplantacaoCreate
 from app.utils.enums import (
+    FonteFinanciamento,
     PerfilUsuario,
     StatusProjeto,
     StatusSolicitacao,
@@ -21,10 +23,35 @@ class SolicitacaoService:
     def __init__(self, db: Session):
         self.db = db
 
-    # --- NOVO MÉTODO ESPECÍFICO PARA A TASK 26761 ---
+    def _buscar_implantacao_existente(self, projeto_id: int) -> Optional[SolicitacaoRH]:
+        return (
+            self.db.query(SolicitacaoRH)
+            .filter(
+                SolicitacaoRH.projeto_id == projeto_id,
+                SolicitacaoRH.tipo == TipoSolicitacao.IMPLANTACAO,
+                SolicitacaoRH.status == StatusSolicitacao.EM_EDICAO,
+            )
+            .first()
+        )
+
+    def _buscar_alteracao_existente(self, projeto_id: int) -> Optional[SolicitacaoRH]:
+        return (
+            self.db.query(SolicitacaoRH)
+            .filter(
+                SolicitacaoRH.projeto_id == projeto_id,
+                SolicitacaoRH.tipo == TipoSolicitacao.ALTERACAO,
+                SolicitacaoRH.status == StatusSolicitacao.EM_EDICAO,
+            )
+            .first()
+        )
+
     def criar_implantacao(self, dados: SolicitacaoImplantacaoCreate, current_user: Usuario) -> SolicitacaoRH:
         projeto = self._buscar_projeto(dados.projeto_id)
         self._verificar_permissao_coordenador(projeto, current_user)
+
+        existente = self._buscar_implantacao_existente(dados.projeto_id)
+        if existente:
+            return existente
 
         # Força os dados corretos para uma Implantação Inicial (sem justificativa/mês)
         solicitacao = SolicitacaoRH(
@@ -48,6 +75,15 @@ class SolicitacaoService:
     def criar(self, dados: SolicitacaoCreate, current_user: Usuario) -> SolicitacaoRH:
         projeto = self._buscar_projeto(dados.projeto_id)
         self._verificar_permissao_coordenador(projeto, current_user)
+
+        if dados.tipo == TipoSolicitacao.IMPLANTACAO:
+            existente = self._buscar_implantacao_existente(dados.projeto_id)
+            if existente:
+                return existente
+        elif dados.tipo == TipoSolicitacao.ALTERACAO:
+            existente = self._buscar_alteracao_existente(dados.projeto_id)
+            if existente:
+                return existente
 
         solicitacao = SolicitacaoRH(
             identificador=dados.identificador,
@@ -166,6 +202,158 @@ class SolicitacaoService:
         self.db.flush()
 
         self._clonar_membros(origem_versao_id=versao_vigente.id, destino_versao_id=nova_versao.id)
+
+    def submeter(self, solicitacao_id: int, current_user: Usuario) -> SolicitacaoRH:
+        solicitacao = self.obter_por_id(solicitacao_id)
+
+        if solicitacao.status != StatusSolicitacao.EM_EDICAO:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Solicitacao nao esta em edicao.",
+            )
+
+        projeto = self._buscar_projeto(solicitacao.projeto_id)
+        self._verificar_permissao_coordenador(projeto, current_user)
+
+        solicitacao.status = StatusSolicitacao.SUBMETIDA
+
+        versao = (
+            self.db.query(VersaoRHProjeto)
+            .filter(VersaoRHProjeto.solicitacao_id == solicitacao_id)
+            .first()
+        )
+        if versao and versao.status == StatusVersaoRH.PROPOSTA:
+            if solicitacao.tipo == TipoSolicitacao.ALTERACAO:
+                versao_vigente = (
+                    self.db.query(VersaoRHProjeto)
+                    .filter(
+                        VersaoRHProjeto.projeto_id == solicitacao.projeto_id,
+                        VersaoRHProjeto.status == StatusVersaoRH.VIGENTE,
+                    )
+                    .first()
+                )
+                if versao_vigente:
+                    versao_vigente.status = StatusVersaoRH.HISTORICO
+            versao.status = StatusVersaoRH.VIGENTE
+
+        self.db.commit()
+        self.db.refresh(solicitacao)
+        return solicitacao
+
+    def comparar(self, solicitacao_id: int) -> Dict[str, Any]:
+        solicitacao = self.obter_por_id(solicitacao_id)
+
+        versao_proposta = (
+            self.db.query(VersaoRHProjeto)
+            .filter(VersaoRHProjeto.solicitacao_id == solicitacao_id)
+            .first()
+        )
+        if not versao_proposta:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Versao de RH nao encontrada para esta solicitacao.",
+            )
+
+        membros_depois = (
+            self.db.query(PesquisadorProjeto)
+            .filter(PesquisadorProjeto.versao_rh_id == versao_proposta.id)
+            .all()
+        )
+        depois = self._agrupar_por_fonte(membros_depois)
+
+        if solicitacao.tipo == TipoSolicitacao.IMPLANTACAO:
+            antes: Dict[str, List] = {}
+            inclusoes = [
+                {
+                    "pesquisador": m.nome_pesquisador,
+                    "categoria": m.categoria_bolsa.value,
+                    "fonte": m.fonte_financiamento.value,
+                }
+                for m in membros_depois
+            ]
+            return {
+                "antes": antes,
+                "depois": depois,
+                "diferencas": {"inclusoes": inclusoes, "alteracoes": [], "encerramentos": []},
+            }
+
+        # ALTERACAO: busca versão anterior pelo numero_versao - 1
+        versao_anterior = (
+            self.db.query(VersaoRHProjeto)
+            .filter(
+                VersaoRHProjeto.projeto_id == versao_proposta.projeto_id,
+                VersaoRHProjeto.numero_versao == versao_proposta.numero_versao - 1,
+            )
+            .first()
+        )
+
+        membros_antes: List[PesquisadorProjeto] = []
+        if versao_anterior:
+            membros_antes = (
+                self.db.query(PesquisadorProjeto)
+                .filter(PesquisadorProjeto.versao_rh_id == versao_anterior.id)
+                .all()
+            )
+
+        antes = self._agrupar_por_fonte(membros_antes)
+
+        refs_antes = {m.ref_pesquisador for m in membros_antes}
+        refs_depois = {m.ref_pesquisador for m in membros_depois}
+
+        inclusoes = [
+            {
+                "pesquisador": m.nome_pesquisador,
+                "categoria": m.categoria_bolsa.value,
+                "fonte": m.fonte_financiamento.value,
+            }
+            for m in membros_depois
+            if m.ref_pesquisador not in refs_antes
+        ]
+
+        encerramentos = [
+            {"pesquisador": m.nome_pesquisador, "motivo": "Removido na nova versao"}
+            for m in membros_antes
+            if m.ref_pesquisador not in refs_depois
+        ]
+
+        alteracoes = []
+        mapa_antes = {m.ref_pesquisador: m for m in membros_antes}
+        mapa_depois = {m.ref_pesquisador: m for m in membros_depois}
+        for ref in refs_antes & refs_depois:
+            m_a = mapa_antes[ref]
+            m_d = mapa_depois[ref]
+            for campo, de, para in [
+                ("categoria_bolsa", m_a.categoria_bolsa.value, m_d.categoria_bolsa.value),
+                ("fonte_financiamento", m_a.fonte_financiamento.value, m_d.fonte_financiamento.value),
+                ("carga_horaria_semanal", m_a.carga_horaria_semanal, m_d.carga_horaria_semanal),
+            ]:
+                if de != para:
+                    alteracoes.append({"pesquisador": m_a.nome_pesquisador, "campo": campo, "de": de, "para": para})
+
+        return {
+            "antes": antes,
+            "depois": depois,
+            "diferencas": {"inclusoes": inclusoes, "alteracoes": alteracoes, "encerramentos": encerramentos},
+        }
+
+    def _agrupar_por_fonte(self, membros: List[PesquisadorProjeto]) -> Dict[str, List]:
+        grupos: Dict[str, List] = {}
+        for fonte in FonteFinanciamento:
+            lista = [
+                {
+                    "id": m.id,
+                    "ref_pesquisador": m.ref_pesquisador,
+                    "nome_pesquisador": m.nome_pesquisador,
+                    "categoria_bolsa": m.categoria_bolsa.value,
+                    "carga_horaria_semanal": m.carga_horaria_semanal,
+                    "valor_bolsa": float(m.valor_bolsa) if m.valor_bolsa else 0.0,
+                }
+                for m in membros
+                if m.fonte_financiamento == fonte
+            ]
+            if lista:
+                grupos[fonte.value] = lista
+        return grupos
 
     def _clonar_membros(self, origem_versao_id: int, destino_versao_id: int) -> None:
         """

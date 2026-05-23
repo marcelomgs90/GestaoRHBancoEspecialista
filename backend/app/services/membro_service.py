@@ -25,11 +25,26 @@ class MembroService:
         solicitacao = self._buscar_solicitacao_editavel(solicitacao_id, usuario_logado_id)
         versao = self._buscar_versao(solicitacao.id)
 
+        existente = (
+            self.db.query(PesquisadorProjeto)
+            .filter(
+                PesquisadorProjeto.versao_rh_id == versao.id,
+                PesquisadorProjeto.ref_pesquisador == dados.ref_pesquisador,
+            )
+            .first()
+        )
+        if existente:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"O pesquisador {dados.nome_pesquisador} ja esta incluido nesta versao",
+            )
+
         self.parametros.validar_carga_horaria_global(
             ref_pesquisador=dados.ref_pesquisador,
             ch_nova=dados.carga_horaria_semanal,
             data_inicio_novo=dados.data_inicio,
             data_fim_novo=dados.data_fim,
+            projeto_id_excluir=solicitacao.projeto_id,
         )
         valor_bolsa = self.parametros.calcular_valor_bolsa(
             categoria=dados.categoria_bolsa,
@@ -74,7 +89,7 @@ class MembroService:
         self, solicitacao_id: int, membro_id: int, dados: MembroUpdate, usuario_logado_id: int
     ) -> PesquisadorProjeto:
         # Garante que a solicitação pertence ao coordenador antes de atualizar
-        self._buscar_solicitacao_editavel(solicitacao_id, usuario_logado_id)
+        solicitacao = self._buscar_solicitacao_editavel(solicitacao_id, usuario_logado_id)
         membro = self._buscar_membro_da_solicitacao(solicitacao_id, membro_id)
 
         campos_alterados = dados.model_dump(exclude_unset=True)
@@ -88,6 +103,7 @@ class MembroService:
                 data_inicio_novo=membro.data_inicio,
                 data_fim_novo=membro.data_fim,
                 membro_id_excluir=membro.id,
+                projeto_id_excluir=solicitacao.projeto_id,
             )
 
         if campos_alterados.keys() & {"carga_horaria_semanal", "categoria_bolsa", "data_inicio"}:
