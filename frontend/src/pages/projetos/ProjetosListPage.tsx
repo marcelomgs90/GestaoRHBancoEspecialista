@@ -1,322 +1,155 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { projetoService } from '../../services/projetoService'
-import { Projeto, ProjetoCreate, getYear } from '../../types/projeto'
-import styles from './ProjetosListPage.module.css'
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
+import { Search, Filter, Plus, ChevronRight, Calendar } from 'lucide-react';
+import { usePerfil } from '@/hooks/usePerfil';
+import { projetoService } from '@/services/projetoService';
+import { formatDate } from '@/types/projeto';
+import type { Projeto } from '@/types/projeto';
 
-const STATUS_OPTIONS = [
-  { value: 'ATIVO', label: 'Ativo' },
-  { value: 'SUSPENSO', label: 'Suspenso' },
-  { value: 'FINALIZADO', label: 'Finalizado' },
-]
+export default function ProjetosListPage() {
+  const navigate = useNavigate();
+  const { podeCriarProjeto } = usePerfil();
 
-interface NovoForm {
-  codigo: string
-  titulo: string
-  descricao: string
-  data_inicio: string
-  data_fim: string
-  status: string
-}
-
-type NovoFormErrors = Partial<Record<keyof NovoForm, string>>
-
-const FORM_VAZIO: NovoForm = {
-  codigo: '',
-  titulo: '',
-  descricao: '',
-  data_inicio: '',
-  data_fim: '',
-  status: 'ATIVO',
-}
-
-function getStatusClass(status: string): string {
-  switch (status) {
-    case 'ATIVO': return 'badge-success'
-    case 'FINALIZADO': return 'badge-danger'
-    case 'SUSPENSO': return 'badge-warning'
-    default: return 'badge-info'
-  }
-}
-
-export function ProjetosListPage() {
-  const navigate = useNavigate()
-  const [projetos, setProjetos] = useState<Projeto[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
-
-  // Modal
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [form, setForm] = useState<NovoForm>(FORM_VAZIO)
-  const [formErrors, setFormErrors] = useState<NovoFormErrors>({})
-  const [isSalvando, setIsSalvando] = useState(false)
-  const [modalError, setModalError] = useState('')
+  const [projetos, setProjetos] = useState<Projeto[]>([]);
+  const [filtro, setFiltro] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    loadProjetos()
-  }, [])
+    projetoService
+      .listar()
+      .then(setProjetos)
+      .catch(() => setErro('Nao foi possivel carregar os projetos.'))
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  async function loadProjetos() {
-    try {
-      const data = await projetoService.listar()
-      setProjetos(data)
-    } catch {
-      setError('Erro ao carregar projetos')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const projetosFiltrados = projetos.filter((p) => {
-    const termo = search.toLowerCase()
-    return p.codigo.toLowerCase().includes(termo) || p.titulo.toLowerCase().includes(termo)
-  })
-
-  function abrirModal() {
-    setForm(FORM_VAZIO)
-    setFormErrors({})
-    setModalError('')
-    setIsModalOpen(true)
-  }
-
-  function fecharModal() {
-    setIsModalOpen(false)
-  }
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
-    const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
-    setFormErrors((prev) => ({ ...prev, [name]: undefined }))
-  }
-
-  function validar(): boolean {
-    const erros: NovoFormErrors = {}
-    if (!form.codigo.trim()) erros.codigo = 'Campo obrigatório'
-    if (!form.titulo.trim()) erros.titulo = 'Campo obrigatório'
-    if (!form.data_inicio) erros.data_inicio = 'Campo obrigatório'
-    if (!form.data_fim) erros.data_fim = 'Campo obrigatório'
-    if (form.data_inicio && form.data_fim && form.data_fim < form.data_inicio) {
-      erros.data_fim = 'Data de fim deve ser posterior à data de início'
-    }
-    setFormErrors(erros)
-    return Object.keys(erros).length === 0
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!validar()) return
-
-    setIsSalvando(true)
-    setModalError('')
-    try {
-      const payload: ProjetoCreate = {
-        codigo: form.codigo,
-        titulo: form.titulo,
-        descricao: form.descricao || undefined,
-        data_inicio: form.data_inicio,
-        data_fim: form.data_fim,
-        status: form.status,
-      }
-      await projetoService.criar(payload)
-      fecharModal()
-      await loadProjetos()
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail
-      setModalError(
-        typeof detail === 'string' ? detail : 'Erro ao criar projeto. Verifique os dados.'
-      )
-    } finally {
-      setIsSalvando(false)
-    }
-  }
-
-  if (isLoading) {
-    return <div className={styles.loading}>Carregando projetos...</div>
-  }
+  const projetosFiltrados = projetos.filter(
+    (p) =>
+      p.codigo.toLowerCase().includes(filtro.toLowerCase()) ||
+      p.titulo.toLowerCase().includes(filtro.toLowerCase()),
+  );
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <h1>Catálogo de Projetos</h1>
-        <p>Lista completa de ativos institucionais sob gestão do Polo.</p>
-      </header>
-
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrapper}>
-          <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-          </svg>
-          <input
-            className={styles.searchInput}
-            type="text"
-            placeholder="Pesquisar por código ou título..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+    <div className="space-y-8 animate-in slide-in-up">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
+        <div className="space-y-4 flex-1">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-950">Catalogo de Projetos</h2>
+            <p className="text-slate-700 text-sm mt-1">
+              Lista completa de ativos institucionais sob gestao do Polo.
+            </p>
+          </div>
+          <div className="relative group max-w-lg">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-600 transition-colors"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Pesquisar por codigo ou titulo..."
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded text-sm focus:bg-white focus:border-slate-400 outline-none transition-all placeholder:text-slate-400"
+            />
+          </div>
         </div>
-        <div className={styles.spacer} />
-        <button className="btn btn-secondary">Filtros</button>
-        <button className="btn btn-primary" onClick={abrirModal}>+ Novo Projeto</button>
+
+        <div className="flex items-center gap-3">
+          <button className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded text-slate-600 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm cursor-pointer">
+            <Filter size={14} className="mr-2" />
+            Filtros
+          </button>
+          {podeCriarProjeto && (
+            <Link
+              to="/projetos/novo"
+              className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm active:scale-95 whitespace-nowrap cursor-pointer"
+            >
+              <Plus size={16} className="mr-2" />
+              Novo Projeto
+            </Link>
+          )}
+        </div>
       </div>
 
-      {error && <div className={styles.error}>{error}</div>}
-
-      {projetosFiltrados.length === 0 && !error ? (
-        <div className={styles.empty}>Nenhum projeto encontrado.</div>
-      ) : (
-        <div className={styles.projectList}>
-          {projetosFiltrados.map((projeto) => (
-            <div
-              key={projeto.id}
-              className={styles.projectCard}
-              onClick={() => navigate(`/projetos/${projeto.id}`)}
-            >
-              <div className={styles.cardLeft}>
-                <div className={styles.cardHeader}>
-                  <span className={`badge ${styles.codeBadge}`}>{projeto.codigo}</span>
-                  <span className={styles.cardTitle}>{projeto.titulo}</span>
-                </div>
-                {projeto.descricao && (
-                  <p className={styles.cardDescription}>{projeto.descricao}</p>
-                )}
-              </div>
-
-              <div className={styles.cardMeta}>
-                <div className={styles.metaItem}>
-                  <div className={styles.metaLabel}>Vigência</div>
-                  <div className={styles.metaValue}>
-                    {getYear(projeto.data_inicio)} — {getYear(projeto.data_fim)}
-                  </div>
-                </div>
-                <div className={styles.metaItem}>
-                  <div className={styles.metaLabel}>Status</div>
-                  <div className={styles.metaValue}>
-                    <span className={`badge ${getStatusClass(projeto.status)}`}>
-                      {projeto.status === 'ATIVO' ? 'Ativo'
-                        : projeto.status === 'SUSPENSO' ? 'Suspenso'
-                        : 'Finalizado'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <svg className={styles.cardArrow} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </div>
-          ))}
+      {isLoading && (
+        <div className="text-center py-16">
+          <p className="text-sm text-slate-400">Carregando projetos...</p>
         </div>
       )}
 
-      {/* Modal Novo Projeto */}
-      {isModalOpen && (
-        <div className={styles.modalOverlay} onClick={fecharModal}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2>Novo Projeto</h2>
-              <button className={styles.modalCloseBtn} type="button" onClick={fecharModal}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
+      {erro && (
+        <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+          {erro}
+        </div>
+      )}
+
+      {!isLoading && !erro && (
+        <div className="space-y-4">
+          {projetosFiltrados.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-sm text-slate-400 font-medium">Nenhum projeto encontrado.</p>
             </div>
+          ) : (
+            projetosFiltrados.map((projeto, idx) => (
+              <motion.div
+                key={projeto.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.04 }}
+              >
+                <div
+                  onClick={() => navigate(`/projetos/${projeto.id}`)}
+                  className="group block bg-white border border-slate-200 p-6 rounded-lg hover:border-slate-400 hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[9px] font-bold rounded uppercase tracking-wider border border-slate-200">
+                          ID: {projeto.id}
+                        </span>
+                        <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                          {projeto.codigo}
+                        </h3>
+                      </div>
+                      <p className="text-slate-500 text-sm font-medium line-clamp-1 leading-none">
+                        {projeto.titulo}
+                      </p>
+                    </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className={styles.modalBody}>
-                {modalError && <div className={styles.modalError}>{modalError}</div>}
+                    <div className="flex flex-wrap lg:flex-nowrap items-center gap-8 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">
+                          Vigencia
+                        </p>
+                        <div className="flex items-center text-slate-700 font-semibold text-sm">
+                          <Calendar size={14} className="mr-2 text-slate-400" />
+                          {formatDate(projeto.data_inicio)} — {formatDate(projeto.data_fim)}
+                        </div>
+                      </div>
 
-                <div className={styles.grid2}>
-                  <div className="form-group">
-                    <label className="form-label">Código *</label>
-                    <input
-                      className="form-input"
-                      name="codigo"
-                      value={form.codigo}
-                      onChange={handleChange}
-                      placeholder="Ex: PROJ-001"
-                    />
-                    {formErrors.codigo && <span className="form-error">{formErrors.codigo}</span>}
-                  </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">
+                          Status
+                        </p>
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded uppercase tracking-wider border border-slate-200">
+                          {projeto.status}
+                        </span>
+                      </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Status</label>
-                    <select
-                      className="form-input"
-                      name="status"
-                      value={form.status}
-                      onChange={handleChange}
-                    >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Título *</label>
-                  <input
-                    className="form-input"
-                    name="titulo"
-                    value={form.titulo}
-                    onChange={handleChange}
-                    placeholder="Título do projeto"
-                  />
-                  {formErrors.titulo && <span className="form-error">{formErrors.titulo}</span>}
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Descrição</label>
-                  <textarea
-                    className="form-input"
-                    name="descricao"
-                    value={form.descricao}
-                    onChange={handleChange}
-                    placeholder="Descrição opcional do projeto"
-                    rows={3}
-                  />
-                </div>
-
-                <div className={styles.grid2}>
-                  <div className="form-group">
-                    <label className="form-label">Data de Início *</label>
-                    <input
-                      className="form-input"
-                      type="date"
-                      name="data_inicio"
-                      value={form.data_inicio}
-                      onChange={handleChange}
-                    />
-                    {formErrors.data_inicio && <span className="form-error">{formErrors.data_inicio}</span>}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Data de Fim *</label>
-                    <input
-                      className="form-input"
-                      type="date"
-                      name="data_fim"
-                      value={form.data_fim}
-                      onChange={handleChange}
-                    />
-                    {formErrors.data_fim && <span className="form-error">{formErrors.data_fim}</span>}
+                      <div className="hidden lg:block">
+                        <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all">
+                          <ChevronRight size={18} />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className={styles.modalFooter}>
-                <button type="button" className="btn btn-secondary" onClick={fecharModal}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSalvando}>
-                  {isSalvando ? 'Salvando...' : 'Criar Projeto'}
-                </button>
-              </div>
-            </form>
-          </div>
+              </motion.div>
+            ))
+          )}
         </div>
       )}
     </div>
-  )
+  );
 }

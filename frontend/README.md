@@ -1,60 +1,20 @@
-# Frontend - Gestao RH Banco de Especialistas
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-Interface web React para o sistema de gestao de RH do Polo de Inovacao do IFPB.
+# Run and deploy your AI Studio app
 
-## Stack
+This contains everything you need to run your app locally.
 
-- **Framework**: React 18
-- **Linguagem**: TypeScript
-- **Build Tool**: Vite
-- **Roteamento**: React Router DOM
-- **HTTP Client**: Axios
-- **Estado Global**: Zustand
-- **Formularios**: React Hook Form + Zod
+View your app in AI Studio: https://ai.studio/apps/7c2d9be6-c369-48b3-bd7a-f0a8dae63537
 
-## Configuracao
+## Run Locally
 
-1. Copie o arquivo de ambiente:
-```bash
-cp .env.example .env
-```
+**Prerequisites:**  Node.js
 
-2. Instale as dependencias:
-```bash
-npm install
-```
 
-3. Inicie o servidor de desenvolvimento:
-```bash
-npm run dev
-```
-
-4. Acesse: http://localhost:5173
-
-## Scripts
-
-- `npm run dev` - Inicia servidor de desenvolvimento
-- `npm run build` - Gera build de producao
-- `npm run preview` - Visualiza build de producao
-- `npm run lint` - Verifica codigo com ESLint
-- `npm run format` - Formata codigo com Prettier
-
-## Estrutura
-
-```
-frontend/
-├── public/            # Assets estaticos
-└── src/
-    ├── assets/        # Estilos e imagens
-    ├── components/    # Componentes reutilizaveis
-    │   ├── common/    # Componentes genericos
-    │   ├── layout/    # Layout e navegacao
-    │   └── solicitacoes/  # Componentes de dominio
-    ├── contexts/      # React Context (AuthContext)
-    ├── hooks/         # Custom hooks
-    ├── pages/         # Paginas/views
-    ├── routes/        # Configuracao de rotas
-    ├── services/      # Chamadas API
-    ├── types/         # TypeScript types
-    └── utils/         # Utilitarios
-```
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

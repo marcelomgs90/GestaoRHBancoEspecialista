@@ -1,316 +1,452 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { solicitacaoService } from '../../services/solicitacaoService'
-import { TipoSolicitacao, FonteFinanciamento } from '../../types/enums'
-import styles from './ImplantacaoPage.module.css'
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  ArrowLeft,
+  Users,
+  Search,
+  FileCheck,
+  History,
+  CheckCircle2,
+  X,
+  UserPlus,
+  AlertCircle,
+} from 'lucide-react';
+import { projetoService } from '@/services/projetoService';
+import { solicitacaoService } from '@/services/solicitacaoService';
+import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao } from '@/types/enums';
+import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
+import { cn } from '@/lib/cn';
+import { MembroEditor, type MembroLocalProps } from './MembroEditor';
+import type { Projeto } from '@/types/projeto';
 
-const CATEGORIAS_OPTIONS = [
-  { value: 'PESQUISADOR_MASTER', label: 'Pesquisador Master' },
-  { value: 'PESQUISADOR_SENIOR', label: 'Pesquisador Sênior' },
-  { value: 'PESQUISADOR_PLENO', label: 'Pesquisador Pleno' },
-  { value: 'PESQUISADOR_JUNIOR', label: 'Pesquisador Júnior' },
-  { value: 'PROFISSIONAL_SENIOR', label: 'Profissional Sênior' },
-  { value: 'PROFISSIONAL_PLENO', label: 'Profissional Pleno' },
-  { value: 'PROFISSIONAL_JUNIOR', label: 'Profissional Júnior' },
-  { value: 'PROFISSIONAL_INICIANTE', label: 'Profissional Iniciante' },
-  { value: 'ESTUDANTE_SUPERIOR_AVANCADO', label: 'Est. Superior Avançado' },
-  { value: 'ESTUDANTE_SUPERIOR_INTERMEDIARIO', label: 'Est. Superior Intermediário' },
-  { value: 'ESTUDANTE_SUPERIOR_INICIANTE', label: 'Est. Superior Iniciante' },
-  { value: 'ESTUDANTE_MEDIO', label: 'Estudante Médio' },
-]
+// Tipo de membro em edicao na tela (antes de enviar ao backend)
+// backendId presente = já persistido; ausente = novo (ainda não enviado)
+type MembroLocal = MembroLocalProps & { backendId?: number };
 
-const FONTES_OPTIONS = [
-  { value: FonteFinanciamento.EMBRAPII, label: 'EMBRAPII' },
-  { value: FonteFinanciamento.EMPRESA, label: 'Empresa' },
-  { value: FonteFinanciamento.SEBRAE, label: 'SEBRAE' },
-  { value: FonteFinanciamento.IFPB, label: 'IFPB' },
-]
-
-const ORIGEM_OPTIONS = [
-  { value: 'Banco de Especialistas', label: 'Banco de Especialistas' },
-  { value: 'Processo Seletivo', label: 'Processo Seletivo' },
-]
-
-interface FormData {
-  nome_pesquisador: string
-  ref_pesquisador: string
-  categoria_bolsa: string
-  fonte_financiamento: string
-  carga_horaria_semanal: string
-  data_inicio: string
-  data_fim: string
-  origem_rh: string
+interface HistoryLog {
+  id: string;
+  type: 'ADD' | 'REMOVE' | 'UPDATE';
+  nome: string;
+  detail: string;
 }
 
-type FormErrors = Partial<Record<keyof FormData, string>>
+// Candidatos mockados ate existir endpoint do Banco de Especialistas
+const CANDIDATOS_MOCK = [
+  { ref: 'CAND-001', nome: 'Lucas Amado', categoria: CategoriaBolsa.PESQUISADOR_MASTER },
+  { ref: 'CAND-002', nome: 'Carla Dias', categoria: CategoriaBolsa.PESQUISADOR_PLENO },
+  { ref: 'CAND-003', nome: 'Bernardo Silva', categoria: CategoriaBolsa.PESQUISADOR_JUNIOR },
+];
 
-const FORM_INICIAL: FormData = {
-  nome_pesquisador: '',
-  ref_pesquisador: '',
-  categoria_bolsa: '',
-  fonte_financiamento: '',
-  carga_horaria_semanal: '',
-  data_inicio: '',
-  data_fim: '',
-  origem_rh: '',
-}
+// Especialistas mockados ate existir endpoint do Banco de Especialistas
+const ESPECIALISTAS_MOCK = [
+  { ref: 'ESP-001', nome: 'Joao Silva', email: 'joao.silva@if.edu.br', ch_atual: 40 },
+  { ref: 'ESP-002', nome: 'Maria Souza', email: 'maria.souza@if.edu.br', ch_atual: 20 },
+  { ref: 'ESP-003', nome: 'Pedro Oliver', email: 'pedro.oliver@ext.com', ch_atual: 0 },
+];
 
-export function ImplantacaoPage() {
-  const { id_projeto } = useParams<{ id_projeto: string }>()
-  const navigate = useNavigate()
+export default function ImplantacaoPage() {
+  const { id_projeto } = useParams<{ id_projeto: string }>();
+  const navigate = useNavigate();
 
-  const [solicitacaoId, setSolicitacaoId] = useState<number | null>(null)
-  const [isPreparando, setIsPreparando] = useState(true)
-  const [isSalvando, setIsSalvando] = useState(false)
-  const [error, setError] = useState('')
-  const [formErrors, setFormErrors] = useState<FormErrors>({})
-  const [form, setForm] = useState<FormData>(FORM_INICIAL)
+  const [projeto, setProjeto] = useState<Projeto | null>(null);
+  const [solicitacaoId, setSolicitacaoId] = useState<number | null>(null);
+  const [membros, setMembros] = useState<MembroLocal[]>([]);
+  const [showSearch, setShowSearch] = useState<'candidatos' | 'especialistas' | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [history, setHistory] = useState<HistoryLog[]>([]);
+  const [finalizando, setFinalizando] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [modalErro, setModalErro] = useState<string | null>(null);
+
+  const projetoId = Number(id_projeto);
 
   useEffect(() => {
-    criarSolicitacao()
-  }, [])
+    if (!projetoId) return;
 
-  async function criarSolicitacao() {
-    try {
-      const sol = await solicitacaoService.criar({
-        identificador: `IMPL-${id_projeto}-${Date.now()}`,
-        projeto_id: Number(id_projeto),
-        tipo: TipoSolicitacao.IMPLANTACAO,
-      })
-      setSolicitacaoId(sol.id)
-    } catch {
-      setError('Não foi possível iniciar a implantação. Tente novamente.')
-    } finally {
-      setIsPreparando(false)
+    async function init() {
+      try {
+        const [p, ss] = await Promise.all([
+          projetoService.obter(projetoId),
+          solicitacaoService.listar(projetoId),
+        ]);
+        setProjeto(p);
+
+        // Apenas resume um rascunho existente. A solicitacao SO e criada ao clicar em Finalizar.
+        const existente = ss.find(
+          (s) => s.tipo === TipoSolicitacao.IMPLANTACAO && s.status === 'EM_EDICAO',
+        );
+        if (existente) {
+          setSolicitacaoId(existente.id);
+          const ms = await solicitacaoService.listarMembros(existente.id);
+          setMembros(
+            ms.map((m) => ({
+              _tempId: String(m.id),
+              backendId: m.id,
+              ref_pesquisador: m.ref_pesquisador,
+              nome_pesquisador: m.nome_pesquisador,
+              categoria_bolsa: m.categoria_bolsa,
+              fonte_financiamento: m.fonte_financiamento,
+              carga_horaria_semanal: m.carga_horaria_semanal,
+              data_inicio: m.data_inicio,
+              data_fim: m.data_fim,
+            })),
+          );
+        }
+      } catch {
+        setErro('Nao foi possivel inicializar a implantacao.');
+      }
     }
-  }
+    void init();
+  }, [projetoId]);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
-    setFormErrors((prev) => ({ ...prev, [name]: undefined }))
-  }
+  const log = (type: HistoryLog['type'], nome: string, detail: string) =>
+    setHistory((prev) => [{ id: Math.random().toString(36).slice(2), type, nome, detail }, ...prev]);
 
-  function validar(): boolean {
-    const erros: FormErrors = {}
-    if (!form.nome_pesquisador.trim()) erros.nome_pesquisador = 'Campo obrigatório'
-    if (!form.ref_pesquisador.trim()) erros.ref_pesquisador = 'Campo obrigatório'
-    if (!form.categoria_bolsa) erros.categoria_bolsa = 'Selecione uma categoria'
-    if (!form.fonte_financiamento) erros.fonte_financiamento = 'Selecione uma fonte'
-    if (!form.carga_horaria_semanal) erros.carga_horaria_semanal = 'Campo obrigatório'
-    if (!form.data_inicio) erros.data_inicio = 'Campo obrigatório'
-    if (!form.origem_rh) erros.origem_rh = 'Selecione a origem'
-    setFormErrors(erros)
-    return Object.keys(erros).length === 0
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!solicitacaoId || !validar()) return
-
-    setIsSalvando(true)
-    setError('')
-    try {
-      await solicitacaoService.incluirMembro(solicitacaoId, {
-        nome_pesquisador: form.nome_pesquisador,
-        ref_pesquisador: form.ref_pesquisador,
-        categoria_bolsa: form.categoria_bolsa as any,
-        fonte_financiamento: form.fonte_financiamento as any,
-        carga_horaria_semanal: Number(form.carga_horaria_semanal),
-        data_inicio: form.data_inicio,
-        data_fim: form.data_fim || undefined,
-        origem_rh: form.origem_rh,
-      })
-      navigate('/projetos')
-    } catch {
-      setError('Erro ao incluir membro. Verifique os dados e tente novamente.')
-    } finally {
-      setIsSalvando(false)
+  const addMembro = (ref: string, nome: string, categoria: CategoriaBolsa) => {
+    if (membros.some((m) => m.ref_pesquisador === ref)) {
+      setModalErro(`O pesquisador ${nome} ja esta na lista de designacao`);
+      return;
     }
-  }
+    const novoMembro: MembroLocal = {
+      _tempId: Math.random().toString(36).slice(2),
+      ref_pesquisador: ref,
+      nome_pesquisador: nome,
+      categoria_bolsa: categoria,
+      fonte_financiamento: FonteFinanciamento.EMPRESA,
+      carga_horaria_semanal: 20,
+      data_inicio: projeto?.data_inicio ?? '',
+      data_fim: projeto?.data_fim,
+    };
+    setMembros((prev) => [...prev, novoMembro]);
+    log('ADD', nome, 'Adicionado a lista de designacao');
+    setShowSearch(null);
+    setSearchTerm('');
+  };
 
-  if (isPreparando) {
-    return <div className={styles.loading}>Preparando implantação...</div>
-  }
+  const removeMembro = (tempId: string) => {
+    const m = membros.find((x) => x._tempId === tempId);
+    if (m) log('REMOVE', m.nome_pesquisador, 'Removido da lista');
+    setMembros((prev) => prev.filter((x) => x._tempId !== tempId));
+  };
 
-  if (!solicitacaoId) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.errorBlock}>{error}</div>
-        <button className="btn btn-secondary" onClick={() => navigate(`/projetos/${id_projeto}`)}>
-          ← Voltar ao Projeto
-        </button>
-      </div>
-    )
-  }
+  const updateMembro = (tempId: string, changes: Partial<MembroLocalProps>) => {
+    setMembros((prev) =>
+      prev.map((m) => (m._tempId === tempId ? { ...m, ...changes } : m)),
+    );
+  };
+
+  const handleFinalizar = async () => {
+    if (membros.length === 0) return;
+    setFinalizando(true);
+    setErro(null);
+    try {
+      // Cria a solicitacao apenas agora (no submit), se ainda nao existir rascunho.
+      let id = solicitacaoId;
+      if (!id) {
+        const nova = await solicitacaoService.criar({
+          identificador: `IMP-${projetoId}-${Date.now()}`,
+          projeto_id: projetoId,
+          tipo: TipoSolicitacao.IMPLANTACAO,
+        });
+        id = nova.id;
+        setSolicitacaoId(id);
+      }
+      // Envia apenas membros novos (sem backendId) — os já persistidos não precisam ser re-enviados
+      const novos = membros.filter((m) => !m.backendId);
+      for (const m of novos) {
+        const { _tempId, backendId, ...dados } = m;
+        void _tempId;
+        void backendId;
+        await solicitacaoService.incluirMembro(id, dados);
+      }
+      // Submete a solicitação: EM_EDICAO → SUBMETIDA e PROPOSTA → VIGENTE
+      await solicitacaoService.submeter(id);
+      setShowSuccessModal(true);
+    } catch {
+      setErro('Erro ao finalizar solicitacao. Tente novamente.');
+    } finally {
+      setFinalizando(false);
+    }
+  };
+
+  const filtrarCandidatos = CANDIDATOS_MOCK.filter((c) =>
+    c.nome.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+  const filtrarEspecialistas = ESPECIALISTAS_MOCK.filter((e) =>
+    e.nome.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   return (
-    <div className={styles.container}>
-      <button className={styles.backBtn} onClick={() => navigate(`/projetos/${id_projeto}`)}>
-        ← Voltar ao Projeto
-      </button>
-
-      <header className={styles.header}>
-        <h1>Implantação de RH</h1>
-        <p>Incluir pesquisador na equipe do projeto.</p>
-      </header>
-
-      {error && <div className={styles.errorBlock}>{error}</div>}
-
-      <div className={styles.formCard}>
-        <form onSubmit={handleSubmit}>
-
-          {/* Dados do pesquisador */}
-          <div className={styles.grid2}>
-            <div className="form-group">
-              <label className="form-label">Nome do Pesquisador *</label>
-              <input
-                className="form-input"
-                name="nome_pesquisador"
-                value={form.nome_pesquisador}
-                onChange={handleChange}
-                placeholder="Nome completo"
-              />
-              {formErrors.nome_pesquisador && (
-                <span className="form-error">{formErrors.nome_pesquisador}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Referência / Matrícula *</label>
-              <input
-                className="form-input"
-                name="ref_pesquisador"
-                value={form.ref_pesquisador}
-                onChange={handleChange}
-                placeholder="Ex: LJ001"
-              />
-              {formErrors.ref_pesquisador && (
-                <span className="form-error">{formErrors.ref_pesquisador}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Categoria e fonte */}
-          <div className={styles.grid2}>
-            <div className="form-group">
-              <label className="form-label">Categoria da Bolsa *</label>
-              <select
-                className="form-input"
-                name="categoria_bolsa"
-                value={form.categoria_bolsa}
-                onChange={handleChange}
-              >
-                <option value="">Selecione...</option>
-                {CATEGORIAS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              {formErrors.categoria_bolsa && (
-                <span className="form-error">{formErrors.categoria_bolsa}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Fonte de Financiamento *</label>
-              <select
-                className="form-input"
-                name="fonte_financiamento"
-                value={form.fonte_financiamento}
-                onChange={handleChange}
-              >
-                <option value="">Selecione...</option>
-                {FONTES_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              {formErrors.fonte_financiamento && (
-                <span className="form-error">{formErrors.fonte_financiamento}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Carga horária e datas */}
-          <div className={styles.grid3}>
-            <div className="form-group">
-              <label className="form-label">Carga Horária Semanal (h) *</label>
-              <input
-                className="form-input"
-                type="number"
-                name="carga_horaria_semanal"
-                value={form.carga_horaria_semanal}
-                onChange={handleChange}
-                placeholder="Ex: 40"
-                min="1"
-                max="40"
-              />
-              {formErrors.carga_horaria_semanal && (
-                <span className="form-error">{formErrors.carga_horaria_semanal}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Data de Início *</label>
-              <input
-                className="form-input"
-                type="date"
-                name="data_inicio"
-                value={form.data_inicio}
-                onChange={handleChange}
-              />
-              {formErrors.data_inicio && (
-                <span className="form-error">{formErrors.data_inicio}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Data de Fim</label>
-              <input
-                className="form-input"
-                type="date"
-                name="data_fim"
-                value={form.data_fim}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* Origem */}
-          <div className={styles.grid2}>
-            <div className="form-group">
-              <label className="form-label">Origem do RH *</label>
-              <select
-                className="form-input"
-                name="origem_rh"
-                value={form.origem_rh}
-                onChange={handleChange}
-              >
-                <option value="">Selecione...</option>
-                {ORIGEM_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              {formErrors.origem_rh && (
-                <span className="form-error">{formErrors.origem_rh}</span>
-              )}
-            </div>
-          </div>
-
-          <div className={styles.actions}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => navigate(`/projetos/${id_projeto}`)}
-            >
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={isSalvando}>
-              {isSalvando ? 'Salvando...' : 'Incluir Membro'}
-            </button>
-          </div>
-
-        </form>
+    <div className="space-y-8 animate-in slide-in-up">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-6">
+        <button
+          onClick={() => navigate(`/projetos/${projetoId}`)}
+          className="flex items-center text-slate-500 hover:text-slate-900 font-bold uppercase text-[10px] tracking-wider transition-colors group cursor-pointer"
+        >
+          <ArrowLeft size={16} className="mr-2" />
+          Voltar ao Projeto
+        </button>
+        <div className="text-right">
+          <h2 className="text-2xl font-bold text-slate-900">Implantacao / Alteracao de RH</h2>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+            Projeto: <span className="text-slate-900">{projeto?.codigo ?? '...'}</span>
+          </p>
+        </div>
       </div>
+
+      {erro && (
+        <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <span>{erro}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          onClick={() => setShowSearch('candidatos')}
+          className="flex items-center p-6 bg-white border border-slate-200 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all group shadow-sm cursor-pointer"
+        >
+          <div className="p-3 bg-slate-100 text-slate-600 rounded mr-6">
+            <Users size={24} />
+          </div>
+          <div className="text-left">
+            <p className="font-bold text-slate-900 uppercase tracking-tight text-sm">
+              Processo Seletivo
+            </p>
+            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+              Candidatos Aprovados — mock ate endpoint AIE
+            </p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setShowSearch('especialistas')}
+          className="flex items-center p-6 bg-white border border-slate-200 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all group shadow-sm cursor-pointer"
+        >
+          <div className="p-3 bg-slate-900 text-white rounded mr-6">
+            <UserPlus size={24} />
+          </div>
+          <div className="text-left">
+            <p className="font-bold text-slate-900 uppercase tracking-tight text-sm">
+              Banco de Especialistas
+            </p>
+            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+              Servidores e Remanejados — mock ate endpoint AIE
+            </p>
+          </div>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
+              Designacoes Pendentes
+            </h3>
+            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+              Aguardando finalizacao
+            </p>
+          </div>
+          <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
+            {membros.length} Pesquisadores
+          </span>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {membros.map((m) => (
+            <motion.div layout key={m._tempId}>
+              <MembroEditor
+                membro={m}
+                onChange={(changes) => updateMembro(m._tempId, changes)}
+                onRemove={() => removeMembro(m._tempId)}
+                projetoId={projetoId}
+              />
+            </motion.div>
+          ))}
+
+          {membros.length === 0 && (
+            <div className="p-24 text-center">
+              <Users size={64} className="mx-auto mb-6 text-slate-100" />
+              <p className="font-black text-slate-300 uppercase tracking-widest text-xs italic">
+                Lista de designacao vazia
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50/30">
+          <h3 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
+            Historico de Alteracoes
+          </h3>
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <History size={14} />
+            <span>{history.length} Eventos</span>
+          </div>
+        </div>
+        <div className="divide-y divide-slate-100 max-h-[200px] overflow-y-auto">
+          {history.map((log) => (
+            <div key={log.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-md flex items-center justify-center font-bold text-[10px]',
+                  log.type === 'ADD'
+                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                    : log.type === 'REMOVE'
+                    ? 'bg-red-50 text-red-600 border border-red-100'
+                    : 'bg-blue-50 text-blue-600 border border-blue-100',
+                )}
+              >
+                {log.type}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-900">{log.nome}</p>
+                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{log.detail}</p>
+              </div>
+            </div>
+          ))}
+          {history.length === 0 && (
+            <div className="p-8 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">
+              Nenhum evento nesta sessao
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between p-8 bg-slate-100 border border-slate-200 rounded-lg">
+        <div>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+            Pesquisadores a incluir
+          </p>
+          <p className="text-2xl font-bold text-slate-900">{membros.length}</p>
+        </div>
+        <button
+          onClick={handleFinalizar}
+          disabled={membros.length === 0 || finalizando}
+          className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 disabled:grayscale shadow-sm active:scale-95 cursor-pointer"
+        >
+          {finalizando ? (
+            <>
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-3"></div>
+              Salvando...
+            </>
+          ) : (
+            <>
+              <FileCheck size={18} className="mr-3" />
+              Finalizar Solicitacao
+            </>
+          )}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {showSearch && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white w-full max-w-xl rounded-lg shadow-2xl flex flex-col overflow-hidden max-h-[80vh] border border-slate-200"
+            >
+              <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider">
+                  {showSearch === 'candidatos' ? 'Processo Seletivo' : 'Banco de Especialistas'}
+                </h3>
+                <button onClick={() => { setShowSearch(null); setModalErro(null); }} className="p-2 hover:bg-slate-100 rounded-full cursor-pointer">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-4 bg-slate-50 border-b border-slate-200">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                  <input
+                    type="text"
+                    placeholder="Filtrar por nome..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded text-xs font-medium outline-none focus:border-slate-900"
+                  />
+                </div>
+              </div>
+              {modalErro && (
+                <div className="mx-4 mt-4 flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                  <span>{modalErro}</span>
+                </div>
+              )}
+              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                {showSearch === 'candidatos'
+                  ? filtrarCandidatos.map((c) => (
+                      <button
+                        key={c.ref}
+                        onClick={() => addMembro(c.ref, c.nome, c.categoria)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded transition-all text-left group cursor-pointer"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-800 text-sm">{c.nome}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            {CATEGORIA_BOLSA_LABELS[c.categoria]?.nivel ?? c.categoria}
+                          </p>
+                        </div>
+                        <div className="p-1 px-2 border border-slate-200 text-slate-400 rounded text-[10px] font-bold group-hover:bg-slate-900 group-hover:text-white transition-all">
+                          ADICIONAR
+                        </div>
+                      </button>
+                    ))
+                  : filtrarEspecialistas.map((e) => (
+                      <button
+                        key={e.ref}
+                        onClick={() => addMembro(e.ref, e.nome, CategoriaBolsa.PESQUISADOR_PLENO)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded transition-all text-left group cursor-pointer"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-800 text-sm">{e.nome}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            {e.ch_atual}h atuais — {e.email}
+                          </p>
+                        </div>
+                        <div className="p-1 px-2 border border-slate-200 text-slate-400 rounded text-[10px] font-bold group-hover:bg-slate-900 group-hover:text-white transition-all">
+                          ADICIONAR
+                        </div>
+                      </button>
+                    ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+            >
+              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 size={40} />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-2">Solicitacao Salva!</h3>
+              <p className="text-slate-500 font-medium mb-8">
+                Os membros foram incluidos na solicitacao com sucesso.
+              </p>
+              <button
+                onClick={() => navigate(`/projetos/${projetoId}`)}
+                className="w-full py-4 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs cursor-pointer"
+              >
+                Voltar ao Projeto
+                <ArrowLeft size={18} className="rotate-180" />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
-  )
+  );
 }

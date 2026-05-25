@@ -43,9 +43,18 @@ export interface MembroCreate {
   origem_rh?: string
 }
 
+export interface MembroComparacao {
+  id: number
+  ref_pesquisador: string
+  nome_pesquisador: string
+  categoria_bolsa: CategoriaBolsa
+  carga_horaria_semanal: number
+  valor_bolsa: number
+}
+
 export interface ComparacaoResponse {
-  antes: Record<string, Membro[]>
-  depois: Record<string, Membro[]>
+  antes: Record<string, MembroComparacao[]>
+  depois: Record<string, MembroComparacao[]>
   diferencas: {
     inclusoes: Array<{ pesquisador: string; categoria: string; fonte: string }>
     alteracoes: Array<{ pesquisador: string; campo: string; de: unknown; para: unknown }>

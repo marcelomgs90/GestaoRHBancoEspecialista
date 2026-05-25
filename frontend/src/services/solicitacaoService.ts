@@ -43,4 +43,9 @@ export const solicitacaoService = {
     const response = await api.get<ComparacaoResponse>(`/solicitacoes/${solicitacaoId}/comparacao`)
     return response.data
   },
+
+  async submeter(solicitacaoId: number): Promise<Solicitacao> {
+    const response = await api.post<Solicitacao>(`/solicitacoes/${solicitacaoId}/submeter`)
+    return response.data
+  },
 }

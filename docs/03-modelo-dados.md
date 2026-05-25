@@ -142,37 +142,62 @@ Controla as solicitacoes de implantacao, alteracao e pagamento de RH.
 |--------|------|-----------|
 | ref_solicitacao | INT (PK) | Identificador unico |
 | projeto_id | INT (FK) | FK para Projeto |
-| tipo_solicitacao | VARCHAR(50) | Implantacao, Alteracao, Pagamento |
-| numero_documento | VARCHAR(45) | Numero para controle interno e PDFs |
-| mes_ano | VARCHAR | Mes/ano de referencia (para pagamento) |
-| status | VARCHAR(30) | Status corrente da solicitacao |
+| tipo | ENUM | `IMPLANTACAO`, `ALTERACAO`, `PAGAMENTO` |
+| identificador | VARCHAR(50) | Numero manual para controle interno e PDFs (`numero_documento` na spec) |
+| mes_ano_referencia | VARCHAR(7) | Formato `YYYY-MM` (usado em pagamento) |
+| justificativa | TEXT | Texto livre do coordenador |
+| status | ENUM | `EM_EDICAO`, `SUBMETIDA`, `APROVADA`, `REJEITADA` |
+| criado_por | INT (FK) | FK para Usuario_Perfil (autor) |
 | data_abertura | DATE | Data de criacao |
+
+**Enum `TipoSolicitacao`:**
+- `IMPLANTACAO` — primeira versao de RH do projeto
+- `ALTERACAO` — modificacao da equipe vigente
+- `PAGAMENTO` — folha de um mes/ano especifico
+
+**Enum `StatusSolicitacao`:**
+- `EM_EDICAO` — rascunho editavel; no maximo um por tipo/projeto
+- `SUBMETIDA` — coordenador finalizou; versao associada virou `VIGENTE`
+- `APROVADA` / `REJEITADA` — estados pos-aprovacao (fluxo de homologacao do Polo)
 
 **Relacionamentos:**
 - `(N:1)` com **Projeto** via `projeto_id`
-- `(1:N)` com **Versao_RH_Projeto** via `Versao_RH_Projeto.solicitacao_id`
+- `(N:1)` com **Usuario_Perfil** via `criado_por`
+- `(1:1)` com **Versao_RH_Projeto** via `Versao_RH_Projeto.solicitacao_id` (cada solicitacao gera exatamente uma versao)
 
 ---
 
 ## Tabela: Versao_RH_Projeto
 
-Registra as versoes de composicao de equipe de RH geradas a partir das solicitacoes. Cada solicitacao pode gerar versoes "Antes" e "Depois" para comparacao.
+Registra as versoes de composicao de equipe de RH geradas a partir das solicitacoes. Cada solicitacao gera exatamente uma versao; a comparacao Antes/Depois e feita entre versoes sequenciais do mesmo projeto.
 
 | Coluna | Tipo | Descricao |
 |--------|------|-----------|
 | ref_versao_rh | INT (PK) | Identificador unico |
-| solicitacao_id | INT (FK) | FK para Solicitacao_RH |
+| solicitacao_id | INT (FK) | FK para Solicitacao_RH (1:1) |
 | projeto_id | INT (FK) | FK para Projeto |
-| numero_versao | INT | Sequencial da versao |
-| status | VARCHAR(25) | Status da versao |
-| data_versao | DATE | Data de criacao da versao |
+| numero_versao | INT | Sequencial da versao no projeto (1, 2, 3...) |
+| status | ENUM | `PROPOSTA`, `VIGENTE`, `HISTORICO` |
+| criado_em | DATETIME | Data/hora de criacao |
+
+**Enum `StatusVersaoRH`:**
+- `PROPOSTA` — rascunho em edicao, ainda nao oficializado
+- `VIGENTE` — versao oficial atual; uma unica por projeto
+- `HISTORICO` — versao anteriormente vigente, mantida para auditoria
+
+**Transicoes de estado:**
+
+```
+PROPOSTA --(submeter implantacao)--> VIGENTE
+PROPOSTA --(submeter alteracao)----> VIGENTE    (versao VIGENTE anterior vai para HISTORICO)
+```
 
 **Relacionamentos:**
-- `(N:1)` com **Solicitacao_RH** via `solicitacao_id`
+- `(1:1)` com **Solicitacao_RH** via `solicitacao_id`
 - `(N:1)` com **Projeto** via `projeto_id`
 - `(1:N)` com **Pesquisador_Projeto** via `Pesquisador_Projeto.versao_rh_id`
 
-**Nota:** A versao de RH permite controlar as diferentes composicoes de equipe ao longo do projeto, viabilizando a comparacao Antes vs. Depois nas solicitacoes de alteracao.
+**Nota:** Ao criar uma `ALTERACAO`, o backend clona automaticamente os membros da versao `VIGENTE` para a nova `PROPOSTA`, servindo como base editavel para o coordenador.
 
 ---
 

@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.models.parametro_regra import ParametroRegra
 from app.models.pesquisador_projeto import PesquisadorProjeto
-from app.utils.enums import CategoriaBolsa, TipoParametroRegra
+from app.models.versao_rh_projeto import VersaoRHProjeto
+from app.utils.enums import CategoriaBolsa, StatusVersaoRH, TipoParametroRegra
 
 _DATA_INFINITO = date(9999, 12, 31)
 
@@ -59,6 +60,7 @@ class ParametroService:
         data_inicio_novo: date,
         data_fim_novo: Optional[date],
         membro_id_excluir: Optional[int] = None,
+        projeto_id_excluir: Optional[int] = None,
     ) -> None:
         param = self._buscar_parametro_vigente(
             tipo=TipoParametroRegra.LIMITE_CARGA_HORARIA,
@@ -70,16 +72,23 @@ class ParametroService:
         limite = param.limite_carga_horaria_semanal
         fim_novo = data_fim_novo or _DATA_INFINITO
 
-        query = self.db.query(PesquisadorProjeto).filter(
-            PesquisadorProjeto.ref_pesquisador == ref_pesquisador,
-            PesquisadorProjeto.data_inicio <= fim_novo,
-            or_(
-                PesquisadorProjeto.data_fim.is_(None),
-                PesquisadorProjeto.data_fim >= data_inicio_novo,
-            ),
+        query = (
+            self.db.query(PesquisadorProjeto)
+            .join(VersaoRHProjeto, PesquisadorProjeto.versao_rh_id == VersaoRHProjeto.id)
+            .filter(
+                VersaoRHProjeto.status == StatusVersaoRH.VIGENTE,
+                PesquisadorProjeto.ref_pesquisador == ref_pesquisador,
+                PesquisadorProjeto.data_inicio <= fim_novo,
+                or_(
+                    PesquisadorProjeto.data_fim.is_(None),
+                    PesquisadorProjeto.data_fim >= data_inicio_novo,
+                ),
+            )
         )
         if membro_id_excluir is not None:
             query = query.filter(PesquisadorProjeto.id != membro_id_excluir)
+        if projeto_id_excluir is not None:
+            query = query.filter(VersaoRHProjeto.projeto_id != projeto_id_excluir)
 
         ch_concorrente = sum(m.carga_horaria_semanal for m in query.all())
         ch_total = ch_concorrente + ch_nova
@@ -93,6 +102,59 @@ class ParametroService:
                     f"{ch_nova}h o total seria {ch_total}h (limite: {limite}h)."
                 ),
             )
+
+    def obter_validacao_ch_global(
+        self,
+        ref_pesquisador: str,
+        ch_nova: int,
+        data_inicio_novo: date,
+        data_fim_novo: Optional[date],
+        membro_id_excluir: Optional[int] = None,
+        projeto_id_excluir: Optional[int] = None,
+    ) -> dict:
+        """
+        Versao nao-throwing de validar_carga_horaria_global.
+        Retorna estrutura adequada para preview no frontend.
+        """
+        param = self._buscar_parametro_vigente(
+            tipo=TipoParametroRegra.LIMITE_CARGA_HORARIA,
+            data_referencia=data_inicio_novo,
+        )
+        limite = param.limite_carga_horaria_semanal if param else 0
+        fim_novo = data_fim_novo or _DATA_INFINITO
+
+        query = (
+            self.db.query(PesquisadorProjeto)
+            .join(VersaoRHProjeto, PesquisadorProjeto.versao_rh_id == VersaoRHProjeto.id)
+            .filter(
+                VersaoRHProjeto.status == StatusVersaoRH.VIGENTE,
+                PesquisadorProjeto.ref_pesquisador == ref_pesquisador,
+                PesquisadorProjeto.data_inicio <= fim_novo,
+                or_(
+                    PesquisadorProjeto.data_fim.is_(None),
+                    PesquisadorProjeto.data_fim >= data_inicio_novo,
+                ),
+            )
+        )
+        if membro_id_excluir is not None:
+            query = query.filter(PesquisadorProjeto.id != membro_id_excluir)
+        if projeto_id_excluir is not None:
+            query = query.filter(VersaoRHProjeto.projeto_id != projeto_id_excluir)
+
+        ch_concorrente = sum(m.carga_horaria_semanal for m in query.all())
+        ch_total = ch_concorrente + ch_nova
+        valido = limite == 0 or ch_total <= limite
+
+        return {
+            "valido": valido,
+            "ch_alocada_em_outros_projetos": ch_concorrente,
+            "ch_proposta": ch_nova,
+            "ch_total": ch_total,
+            "limite_semanal": limite,
+            "mensagem": None
+            if valido
+            else f"CH total ({ch_total}h) excede o limite semanal de {limite}h.",
+        }
 
     def _buscar_parametro_vigente(
         self,

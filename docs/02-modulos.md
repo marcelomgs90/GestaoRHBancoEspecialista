@@ -93,15 +93,40 @@ Quando um pesquisador e transferido entre projetos, o coordenador do projeto de 
 
 ## Modulo 6: Solicitacoes e Documentos
 
+### Ciclo de Vida da Solicitacao
+
+Toda solicitacao de RH segue o ciclo:
+
+```
+EM_EDICAO  --(submeter)-->  SUBMETIDA  --(aprovar/rejeitar)-->  APROVADA | REJEITADA
+```
+
+E gera uma `Versao_RH_Projeto` que segue o ciclo paralelo:
+
+```
+PROPOSTA  --(submeter)-->  VIGENTE  --(nova alteracao submetida)-->  HISTORICO
+```
+
+Regras:
+
+- Cada projeto pode ter **no maximo uma** solicitacao `EM_EDICAO` por tipo (Implantacao ou Alteracao) ativa ao mesmo tempo
+- Ao submeter uma `IMPLANTACAO`: a versao `PROPOSTA` (n=1) passa a `VIGENTE`
+- Ao submeter uma `ALTERACAO`: a versao `VIGENTE` anterior passa a `HISTORICO` e a nova `PROPOSTA` passa a `VIGENTE`
+- A solicitacao so e efetivamente persistida quando o usuario aciona Salvar/Submeter. Abrir a tela e sair sem acionar nao cria registro
+- Quando uma `ALTERACAO` e criada, o backend clona a equipe da versao `VIGENTE` para a nova `PROPOSTA` (base editavel)
+
 ### Funcionalidades
 
 - **Solicitacao de Implantacao Inicial de RH**
-  - Composicao inicial da equipe do projeto
+  - Composicao inicial da equipe do projeto (primeira versao do RH)
   - Lista de pesquisadores com fonte, carga horaria, valor de bolsa, categoria
+  - Disponivel apenas se o projeto **nao** possui versao `VIGENTE`
 
 - **Solicitacao de Alteracao de RH**
-  - Modificacao da composicao da equipe
-  - Tipo de alteracao, participacao atual vs. proposta, justificativa, data de vigencia
+  - Modificacao da composicao da equipe a partir da versao `VIGENTE`
+  - Inclusoes, alteracoes e encerramentos de participacao
+  - Justificativa e mes/ano de referencia
+  - Disponivel apenas se o projeto possui versao `VIGENTE`
 
 - **Solicitacao de Pagamento de RH**
   - Referente a um mes/ano especifico
@@ -110,25 +135,34 @@ Quando um pesquisador e transferido entre projetos, o coordenador do projeto de 
 - **Inclusao de Participacao de Pesquisador**
   - Vinculacao de pesquisador a um projeto via solicitacao
   - Campos: fonte, carga horaria, categoria da bolsa, data de inicio
+  - Um mesmo `ref_pesquisador` nao pode ser incluido mais de uma vez na mesma versao
 
 - **Alteracao de Participacao de Pesquisador**
   - Mudanca de carga horaria, valor, fonte, data de vigencia
 
 - **Encerramento de Participacao de Pesquisador**
-  - Data de encerramento, motivo, observacao, justificativa
+  - Aplicado quando um membro presente na versao `VIGENTE` e removido da `PROPOSTA`
+  - Registra data e motivo
 
 - **Calculo Automatico e Validacao**
-  - Valores de bolsas calculados com base na Resolucao 11/2022
-  - Validacao de horas semanais contra limites globais
-  - A partir das solicitacoes de implantacao ou alteracao
+  - Valores de bolsas calculados via `ParametroService` (Resolucao 11/2022)
+  - Validacao de carga horaria global considera apenas alocacoes em versoes `VIGENTE`
+  - Alocacoes em versoes `PROPOSTA` (rascunhos) sao ignoradas na soma do CH global
+  - Ao validar uma alteracao no projeto X, as alocacoes do proprio projeto X em `VIGENTE` sao excluidas da contagem (sao substituidas pela nova proposta)
+
+- **Submeter Solicitacao**
+  - Endpoint: `POST /solicitacoes/{id}/submeter`
+  - Promove status `EM_EDICAO -> SUBMETIDA` e versao `PROPOSTA -> VIGENTE`
+  - Em alteracao, demove a `VIGENTE` anterior para `HISTORICO`
 
 - **Visualizacao de Mudancas entre Versoes de RH**
-  - Comparacao lado a lado: Versao Atual vs. Versao Proposta
-  - Diferencas de carga horaria e valor
-  - Alertas de violacao de regras
+  - Endpoint: `GET /solicitacoes/{id}/comparacao`
+  - Retorna `antes` (versao anterior, vazia em implantacao) e `depois` (versao desta solicitacao) agrupados por fonte
+  - Retorna `diferencas`: lista de inclusoes, alteracoes (campo a campo) e encerramentos
+  - UI exibe comparacao lado a lado por fonte de financiamento
 
 - **Registro Manual do Numero da Solicitacao**
-  - Numero/identificador para inclusao nos PDFs
+  - Numero/identificador (`identificador`) para inclusao nos PDFs
   - Apoio ao controle interno do Coordenador e do Polo
 
 ### Geracao de PDFs
