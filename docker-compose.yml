@@ -43,6 +43,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=https://gestaorh.softmgs.com.br/api
     container_name: gestao_rh_frontend
     restart: unless-stopped
     ports:
