@@ -9,14 +9,14 @@ import type { AxiosError } from 'axios';
 
 const schema = z
   .object({
-    codigo: z.string().min(1, 'Informe o codigo do projeto'),
-    titulo: z.string().min(3, 'Titulo deve ter pelo menos 3 caracteres'),
+    codigo: z.string().min(1, 'Informe o código do projeto'),
+    titulo: z.string().min(3, 'Título deve ter pelo menos 3 caracteres'),
     descricao: z.string().optional(),
-    data_inicio: z.string().min(1, 'Informe a data de inicio'),
+    data_inicio: z.string().min(1, 'Informe a data de início'),
     data_fim: z.string().min(1, 'Informe a data de encerramento'),
   })
   .refine((d) => !d.data_inicio || !d.data_fim || d.data_fim >= d.data_inicio, {
-    message: 'Data de encerramento deve ser posterior ao inicio',
+    message: 'Data de encerramento deve ser posterior ao início',
     path: ['data_fim'],
   });
 
@@ -51,7 +51,7 @@ export default function ProjetoFormPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-black text-slate-950 tracking-tight">Novo Projeto</h2>
-          <p className="text-slate-700 font-medium">Configure os parametros basicos do projeto.</p>
+          <p className="text-slate-700 font-medium">Configure os parâmetros básicos do projeto.</p>
         </div>
         <button
           onClick={() => navigate('/projetos')}
@@ -73,14 +73,14 @@ export default function ProjetoFormPage() {
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
             <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">
-              Identificacao
+              Identificação
             </h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="md:col-span-3 space-y-1.5">
               <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                Titulo do Projeto
+                Título do Projeto
               </label>
               <input
                 type="text"
@@ -95,7 +95,7 @@ export default function ProjetoFormPage() {
 
             <div className="space-y-1.5">
               <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                Codigo
+                Código
               </label>
               <input
                 type="text"
@@ -111,7 +111,7 @@ export default function ProjetoFormPage() {
 
           <div className="space-y-1.5">
             <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">
-              Descricao (opcional)
+              Descrição (opcional)
             </label>
             <textarea
               rows={3}
@@ -124,7 +124,7 @@ export default function ProjetoFormPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
               <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                Inicio da Operacao
+                Início da Operação
               </label>
               <input
                 type="date"

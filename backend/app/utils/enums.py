@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class PerfilUsuario(str, Enum):
-    """Perfis de usuario conforme docs/01-visao-geral.md"""
+    """Perfis de usuário conforme docs/01-visao-geral.md"""
     ADMINISTRADOR = "ADMINISTRADOR"
     COORDENADOR = "COORDENADOR"
     GESTOR_POLO = "GESTOR_POLO"
@@ -18,14 +18,14 @@ class FonteFinanciamento(str, Enum):
 
 
 class TipoSolicitacao(str, Enum):
-    """Tipos de solicitacao de RH"""
+    """Tipos de solicitação de RH"""
     IMPLANTACAO = "IMPLANTACAO"
     ALTERACAO = "ALTERACAO"
     PAGAMENTO = "PAGAMENTO"
 
 
 class StatusSolicitacao(str, Enum):
-    """Status da solicitacao"""
+    """Status da solicitação"""
     EM_EDICAO = "EM_EDICAO"
     SUBMETIDA = "SUBMETIDA"
     APROVADA = "APROVADA"
@@ -33,14 +33,14 @@ class StatusSolicitacao(str, Enum):
 
 
 class StatusVersaoRH(str, Enum):
-    """Status da versao de RH do projeto"""
+    """Status da versão de RH do projeto"""
     PROPOSTA = "PROPOSTA"
     VIGENTE = "VIGENTE"
     HISTORICO = "HISTORICO"
 
 
 class StatusTransferencia(str, Enum):
-    """Status da transferencia de pesquisador"""
+    """Status da transferência de pesquisador"""
     PENDENTE = "PENDENTE"
     ACEITA = "ACEITA"
     RECUSADA = "RECUSADA"
@@ -54,7 +54,7 @@ class StatusProjeto(str, Enum):
 
 
 class CategoriaBolsa(str, Enum):
-    """Categorias de bolsa conforme Resolucao 11/2022"""
+    """Categorias de bolsa conforme Resolução 11/2022"""
     PESQUISADOR_MASTER = "PESQUISADOR_MASTER"
     PESQUISADOR_SENIOR = "PESQUISADOR_SENIOR"
     PESQUISADOR_PLENO = "PESQUISADOR_PLENO"
@@ -70,6 +70,6 @@ class CategoriaBolsa(str, Enum):
 
 
 class TipoParametroRegra(str, Enum):
-    """Tipos de parametros/regras"""
+    """Tipos de parâmetros/regras"""
     VALOR_BOLSA = "VALOR_BOLSA"
     LIMITE_CARGA_HORARIA = "LIMITE_CARGA_HORARIA"

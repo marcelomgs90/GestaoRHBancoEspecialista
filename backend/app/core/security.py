@@ -22,7 +22,7 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Cria token JWT com dados e expiracao."""
+    """Cria token JWT com dados e expiração."""
     to_encode = data.copy()
 
     if expires_delta:
@@ -44,6 +44,6 @@ def decode_access_token(token: str) -> dict:
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token invalido ou expirado",
+            detail="Token inválido ou expirado",
             headers={"WWW-Authenticate": "Bearer"},
         )

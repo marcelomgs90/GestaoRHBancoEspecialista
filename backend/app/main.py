@@ -9,7 +9,7 @@ settings = get_settings()
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="API para gestao de equipes de projetos de PD&I e Recursos Humanos do Polo de Inovacao do IFPB",
+    description="API para gestão de equipes de projetos de PD&I e Recursos Humanos do Polo de Inovação do IFPB",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -24,13 +24,13 @@ app.add_middleware(
 )
 
 # Routers
-app.include_router(auth.router, prefix="/auth", tags=["Autenticacao"])
-app.include_router(usuarios.router, prefix="/usuarios", tags=["Usuarios"])
+app.include_router(auth.router, prefix="/auth", tags=["Autenticação"])
+app.include_router(usuarios.router, prefix="/usuarios", tags=["Usuários"])
 app.include_router(projetos.router, prefix="/projetos", tags=["Projetos"])
-app.include_router(solicitacoes.router, prefix="/solicitacoes", tags=["Solicitacoes"])
+app.include_router(solicitacoes.router, prefix="/solicitacoes", tags=["Solicitações"])
 app.include_router(membros.router, prefix="/solicitacoes", tags=["Membros"])
-app.include_router(versoes.router, prefix="/solicitacoes", tags=["Versoes"])
-app.include_router(parametros.router, prefix="/parametros", tags=["Parametros"])
+app.include_router(versoes.router, prefix="/solicitacoes", tags=["Versões"])
+app.include_router(parametros.router, prefix="/parametros", tags=["Parâmetros"])
 
 
 @app.get("/", tags=["Root"])

@@ -22,7 +22,7 @@ class AuthService:
         if not user.ativo:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Usuario inativo",
+                detail="Usuário inativo",
             )
 
         return user

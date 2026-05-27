@@ -37,14 +37,14 @@ export default function SolicitacaoComparacaoPage() {
     solicitacaoService
       .comparar(solicitacaoId)
       .then(setComparacao)
-      .catch(() => setErro('Nao foi possivel carregar a comparacao.'))
+      .catch(() => setErro('Não foi possível carregar a comparação.'))
       .finally(() => setIsLoading(false));
   }, [solicitacaoId]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-slate-400 text-sm">Carregando comparacao...</p>
+        <p className="text-slate-400 text-sm">Carregando comparação...</p>
       </div>
     );
   }
@@ -60,7 +60,7 @@ export default function SolicitacaoComparacaoPage() {
         </button>
         <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <span>{erro ?? 'Comparacao nao disponivel.'}</span>
+          <span>{erro ?? 'Comparação não disponível.'}</span>
         </div>
       </div>
     );
@@ -79,13 +79,13 @@ export default function SolicitacaoComparacaoPage() {
           className="flex items-center text-slate-500 hover:text-slate-900 font-bold uppercase text-[10px] tracking-wider transition-colors cursor-pointer"
         >
           <ArrowLeft size={16} className="mr-2" />
-          Voltar para Solicitacoes
+          Voltar para Solicitações
         </button>
         <div className="text-right">
-          <h2 className="text-2xl font-bold text-slate-900">Comparacao de Versoes</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Comparação de Versões</h2>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center justify-end gap-2">
             <GitCompare size={12} />
-            Solicitacao #{solicitacaoId}
+            Solicitação #{solicitacaoId}
           </p>
         </div>
       </div>
@@ -93,13 +93,13 @@ export default function SolicitacaoComparacaoPage() {
       {/* Resumo de diferenças */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <DiffBox
-          label="Inclusoes"
+          label="Inclusões"
           count={comparacao.diferencas.inclusoes.length}
           icon={<Plus size={20} />}
           tone="emerald"
         />
         <DiffBox
-          label="Alteracoes"
+          label="Alterações"
           count={comparacao.diferencas.alteracoes.length}
           icon={<Edit3 size={20} />}
           tone="amber"
@@ -114,9 +114,9 @@ export default function SolicitacaoComparacaoPage() {
 
       {totalDif === 0 && (
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center">
-          <p className="text-sm font-bold text-slate-500">Nenhuma diferenca entre as versoes.</p>
+          <p className="text-sm font-bold text-slate-500">Nenhuma diferença entre as versões.</p>
           <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-1">
-            As equipes Atual e Proposta sao identicas
+            As equipes Atual e Proposta são idênticas
           </p>
         </div>
       )}
@@ -125,7 +125,7 @@ export default function SolicitacaoComparacaoPage() {
       {totalDif > 0 && (
         <section className="bg-white border border-slate-200 rounded-lg p-6 space-y-4">
           <h3 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
-            Detalhamento das Mudancas
+            Detalhamento das Mudanças
           </h3>
           <div className="space-y-2">
             {comparacao.diferencas.inclusoes.map((inc, idx) => (
@@ -134,7 +134,7 @@ export default function SolicitacaoComparacaoPage() {
                 tone="emerald"
                 icon={<Plus size={14} />}
                 title={inc.pesquisador}
-                detail={`Incluido em ${FONTE_LABELS[inc.fonte as FonteFinanciamento] ?? inc.fonte} como ${CATEGORIA_BOLSA_LABELS[inc.categoria as keyof typeof CATEGORIA_BOLSA_LABELS]?.nivel ?? inc.categoria}`}
+                detail={`Incluído em ${FONTE_LABELS[inc.fonte as FonteFinanciamento] ?? inc.fonte} como ${CATEGORIA_BOLSA_LABELS[inc.categoria as keyof typeof CATEGORIA_BOLSA_LABELS]?.nivel ?? inc.categoria}`}
               />
             ))}
             {comparacao.diferencas.alteracoes.map((alt, idx) => (
@@ -189,13 +189,13 @@ export default function SolicitacaoComparacaoPage() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 divide-x divide-slate-200">
                 <VersaoColuna
-                  titulo="Versao Atual (Antes)"
+                    titulo="Versão Atual (Antes)"
                   membros={antes}
                   tipo="antes"
                   refsContraparte={refsDepois}
                 />
                 <VersaoColuna
-                  titulo="Versao Proposta (Depois)"
+                    titulo="Versão Proposta (Depois)"
                   membros={depois}
                   tipo="depois"
                   refsContraparte={refsAntes}

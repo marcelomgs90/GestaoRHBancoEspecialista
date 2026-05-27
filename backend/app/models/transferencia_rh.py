@@ -6,7 +6,7 @@ from app.utils.enums import StatusTransferencia
 
 
 class TransferenciaRH(Base, TimestampMixin):
-    """Transferencia de pesquisador entre projetos."""
+    """Transferência de pesquisador entre projetos."""
     __tablename__ = "transferencia_rh"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -29,6 +29,6 @@ class TransferenciaRH(Base, TimestampMixin):
     justificativa_parecer = Column(Text, nullable=True)
     data_parecer = Column(Date, nullable=True)
 
-    # Solicitacoes geradas (origem e destino)
+    # Solicitações geradas (origem e destino)
     solicitacao_origem_id = Column(Integer, ForeignKey("solicitacao_rh.id"), nullable=True)
     solicitacao_destino_id = Column(Integer, ForeignKey("solicitacao_rh.id"), nullable=True)

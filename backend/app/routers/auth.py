@@ -23,7 +23,7 @@ def login(
 @router.post("/logout")
 def logout(current_user: Usuario = Depends(get_current_user)):
     """
-    Invalidar sessao do usuario (client-side token removal).
+    Invalidar sessão do usuário (client-side token removal).
 
     Nota: JWT e stateless, entao o logout real acontece no cliente
     removendo o token. Este endpoint existe para consistencia da API.
@@ -33,5 +33,5 @@ def logout(current_user: Usuario = Depends(get_current_user)):
 
 @router.get("/usuario-logado", response_model=UsuarioResponse)
 def get_current_user_info(current_user: Usuario = Depends(get_current_user)):
-    """Retornar dados do usuario autenticado."""
+    """Retornar dados do usuário autenticado."""
     return current_user

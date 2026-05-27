@@ -18,7 +18,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def get_db() -> Generator[Session, None, None]:
-    """Dependency para obter sessao do banco de dados."""
+    """Dependency para obter sessão do banco de dados."""
     db = SessionLocal()
     try:
         yield db
@@ -30,14 +30,14 @@ def get_current_user(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)
 ) -> Usuario:
-    """Obtem usuario atual a partir do token JWT."""
+    """Obtém usuário atual a partir do token JWT."""
     payload = decode_access_token(token)
     user_id: str = payload.get("sub")
 
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token invalido",
+            detail="Token inválido",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -46,14 +46,14 @@ def get_current_user(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario nao encontrado",
+            detail="Usuário não encontrado",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not user.ativo:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario inativo",
+            detail="Usuário inativo",
         )
 
     return user

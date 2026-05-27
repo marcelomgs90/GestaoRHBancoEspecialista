@@ -16,7 +16,7 @@ def listar_versoes(
     service: VersaoService = Depends(get_versao_service),
     _: Usuario = Depends(get_current_user),
 ):
-    """Listar todas as versoes de RH relacionadas a solicitacao."""
+    """Listar todas as versões de RH relacionadas à solicitação."""
     return service.listar(solicitacao_id)
 
 
@@ -30,6 +30,6 @@ def comparar_versoes(
     Comparar equipe atual (antes) vs proposta (depois).
 
     Retorna membros agrupados por fonte de financiamento e
-    lista de diferencas (inclusoes, alteracoes, encerramentos).
+    lista de diferenças (inclusões, alterações, encerramentos).
     """
     return service.comparar(solicitacao_id)

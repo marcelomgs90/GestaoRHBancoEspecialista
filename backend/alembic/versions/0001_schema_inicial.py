@@ -24,7 +24,7 @@ def _enum(name: str) -> PG_ENUM:
 
 
 def upgrade() -> None:
-    # Cria os tipos ENUM com DO block — idempotente independente de versao de biblioteca
+    # Cria os tipos ENUM com DO block — idempotente independente de versão de biblioteca
     enums = [
         ("perfilusuario",       ["ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR"]),
         ("fontefinanciamento",  ["EMBRAPII", "EMPRESA", "SEBRAE", "IFPB"]),

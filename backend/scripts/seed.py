@@ -1,13 +1,13 @@
 """
-Script de seed para Sprint 1 — popula dados minimos para desenvolvimento e testes.
+Script de seed para Sprint 1 — popula dados mínimos para desenvolvimento e testes.
 
-Execucao:
+Execução:
     cd backend
     python scripts/seed.py
 
 Pressupostos:
-  - Banco ja existe e as migracoes foram aplicadas (alembic upgrade head)
-  - DATABASE_URL disponivel via variavel de ambiente ou .env
+  - Banco já existe e as migrações foram aplicadas (alembic upgrade head)
+  - DATABASE_URL disponível via variável de ambiente ou .env
 """
 
 import sys
@@ -31,7 +31,7 @@ from app.utils.enums import (
 )
 from app.core.database import engine
 
-# Garante que todas as tabelas existam (util em dev sem alembic)
+# Garante que todas as tabelas existam (util em dev sem Alembic)
 Base.metadata.create_all(bind=engine)
 
 
@@ -44,16 +44,16 @@ def run_seed():
             for perfil_enum, descricao in [
                 (PerfilUsuario.ADMINISTRADOR, "Administrador do sistema"),
                 (PerfilUsuario.COORDENADOR, "Coordenador de projeto"),
-                (PerfilUsuario.GESTOR_POLO, "Gestor do Polo de Inovacao"),
+                (PerfilUsuario.GESTOR_POLO, "Gestor do Polo de Inovação"),
                 (PerfilUsuario.APOIO_COORDENADOR, "Apoio ao coordenador"),
             ]:
                 db.add(Perfil(codigo=perfil_enum, descricao=descricao))
             db.flush()
             print("  [OK] Perfis criados")
         else:
-            print("  [--] Perfis ja existem, pulando")
+            print("  [--] Perfis já existem, pulando")
 
-        # ----- Usuarios -----
+        # ----- Usuários -----
         usuarios_existentes = db.query(Usuario).count()
         if usuarios_existentes == 0:
             usuarios_seed = [
@@ -96,9 +96,9 @@ def run_seed():
                     ativo=True,
                 ))
             db.flush()
-            print("  [OK] Usuarios criados (admin/coord/gestor/apoio)")
+            print("  [OK] Usuários criados (admin/coord/gestor/apoio)")
         else:
-            print("  [--] Usuarios ja existem, pulando")
+            print("  [--] Usuários já existem, pulando")
 
         # ----- Projetos -----
         projetos_existentes = db.query(Projeto).count()
@@ -109,10 +109,10 @@ def run_seed():
             if coordenador:
                 db.add(Projeto(
                     codigo="PROJ-2026-001",
-                    titulo="Desenvolvimento de Novas Tecnologias de Armazenamento de Energia",
+                    titulo="Desenvolvimento de Novas Tecnologias de Armazenamento de Energia (Teste)",
                     descricao=(
                         "Projeto de P&D focado em pesquisa aplicada a novas tecnologias "
-                        "de baterias de alto desempenho para aplicacoes industriais."
+                        "de baterias de alto desempenho para aplicações industriais."
                     ),
                     data_inicio=date(2025, 1, 1),
                     data_fim=date(2026, 12, 31),
@@ -124,37 +124,37 @@ def run_seed():
             else:
                 print("  [!] Nenhum coordenador encontrado; projeto nao criado")
         else:
-            print("  [--] Projetos ja existem, pulando")
+            print("  [--] Projetos já existem, pulando")
 
-        # ----- Parametros de Regra -----
+        # ----- Parâmetros de Regra -----
         params_existentes = db.query(ParametroRegra).count()
         if params_existentes == 0:
             vigencia_inicio = date(2024, 1, 1)
 
-            # Limite global de carga horaria semanal (80h/mes ~ 20h/sem)
+            # Limite global de carga horária semanal (80h/mês ~ 20h/sem)
             db.add(ParametroRegra(
                 tipo_regra=TipoParametroRegra.LIMITE_CARGA_HORARIA,
-                descricao="Limite semanal global de carga horaria por pesquisador (Res. 11/2022)",
+                descricao="Limite semanal global de carga horária por pesquisador (Res. 11/2022)",
                 limite_carga_horaria_semanal=20,
                 vigencia_inicio=vigencia_inicio,
                 ativo=True,
             ))
 
             # Valores de bolsa (valor_referencia @ ch_referencia por semana)
-            # Baseados na Resolucao 11/2022 — valores ilustrativos para seed
+            # Baseados na Resolução 11/2022 — valores ilustrativos para seed
             valores_bolsa = [
                 (CategoriaBolsa.PESQUISADOR_MASTER,               "Pesquisador Master",                6000.00, 20),
                 (CategoriaBolsa.PESQUISADOR_SENIOR,               "Pesquisador Senior",                5000.00, 20),
                 (CategoriaBolsa.PESQUISADOR_PLENO,                "Pesquisador Pleno",                 4000.00, 20),
-                (CategoriaBolsa.PESQUISADOR_JUNIOR,               "Pesquisador Junior",                2000.00, 20),
+                (CategoriaBolsa.PESQUISADOR_JUNIOR,               "Pesquisador Júnior",                2000.00, 20),
                 (CategoriaBolsa.PROFISSIONAL_SENIOR,              "Profissional Senior",               4500.00, 20),
                 (CategoriaBolsa.PROFISSIONAL_PLENO,               "Profissional Pleno",                3500.00, 20),
-                (CategoriaBolsa.PROFISSIONAL_JUNIOR,              "Profissional Junior",               2500.00, 40),
+                (CategoriaBolsa.PROFISSIONAL_JUNIOR,              "Profissional Júnior",               2500.00, 40),
                 (CategoriaBolsa.PROFISSIONAL_INICIANTE,           "Profissional Iniciante",            1500.00, 40),
-                (CategoriaBolsa.ESTUDANTE_SUPERIOR_AVANCADO,      "Estudante Superior Avancado",       1500.00, 20),
-                (CategoriaBolsa.ESTUDANTE_SUPERIOR_INTERMEDIARIO, "Estudante Superior Intermediario",  1200.00, 20),
+                (CategoriaBolsa.ESTUDANTE_SUPERIOR_AVANCADO,      "Estudante Superior Avançado",       1500.00, 20),
+                (CategoriaBolsa.ESTUDANTE_SUPERIOR_INTERMEDIARIO, "Estudante Superior Intermediário",  1200.00, 20),
                 (CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE,     "Estudante Superior Iniciante",       800.00, 20),
-                (CategoriaBolsa.ESTUDANTE_MEDIO,                  "Estudante de Nivel Medio",           600.00, 20),
+                (CategoriaBolsa.ESTUDANTE_MEDIO,                  "Estudante de Nível Médio",           600.00, 20),
             ]
             for categoria, descricao, valor, ch_ref in valores_bolsa:
                 db.add(ParametroRegra(
@@ -168,12 +168,12 @@ def run_seed():
                 ))
 
             db.flush()
-            print(f"  [OK] {len(valores_bolsa) + 1} parametros de regra criados")
+            print(f"  [OK] {len(valores_bolsa) + 1} parâmetros de regra criados")
         else:
-            print("  [--] Parametros ja existem, pulando")
+            print("  [--] Parâmetros já existem, pulando")
 
         db.commit()
-        print("\nSeed concluido com sucesso!")
+        print("\nSeed concluído com sucesso!")
         print("\nCredenciais de acesso:")
         print("  Admin:   admin@ifpb.edu.br       / admin123")
         print("  Coord:   ana.coord@ifpb.edu.br   / coord123")

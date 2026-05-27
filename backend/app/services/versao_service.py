@@ -49,7 +49,7 @@ class VersaoService:
         if not versao_proposta:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Solicitacao nao possui versao de RH",
+                detail="Solicitação não possui versão de RH",
             )
 
         versao_vigente = (
@@ -80,7 +80,7 @@ class VersaoService:
         if not solicitacao:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Solicitacao nao encontrada",
+                detail="Solicitação não encontrada",
             )
         return solicitacao
 
@@ -152,7 +152,7 @@ class VersaoService:
                 encerramentos.append(
                     {
                         "pesquisador": membro_antes["nome_pesquisador"],
-                        "motivo": "Encerramento de participacao",
+                        "motivo": "Encerramento de participação",
                     }
                 )
 

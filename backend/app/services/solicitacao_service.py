@@ -126,7 +126,7 @@ class SolicitacaoService:
         if not solicitacao:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Solicitacao nao encontrada",
+                detail="Solicitação não encontrada",
             )
         return solicitacao
 
@@ -135,12 +135,12 @@ class SolicitacaoService:
         if not projeto:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Projeto nao encontrado",
+                detail="Projeto não encontrado",
             )
         if projeto.status != StatusProjeto.ATIVO:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Solicitacao so pode ser vinculada a projeto ativo",
+                detail="Solicitação só pode ser vinculada a projeto ativo",
             )
         return projeto
 
@@ -153,7 +153,7 @@ class SolicitacaoService:
         ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Voce nao e coordenador deste projeto",
+                detail="Você não é coordenador deste projeto",
             )
 
     def _criar_versao_implantacao(self, projeto_id: int, solicitacao_id: int) -> None:
@@ -165,7 +165,7 @@ class SolicitacaoService:
         if versao_existente:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Projeto ja possui versao de RH. Use tipo ALTERACAO.",
+                detail="Projeto já possui versão de RH. Use tipo ALTERACAO.",
             )
 
         self.db.add(
@@ -189,7 +189,7 @@ class SolicitacaoService:
         if not versao_vigente:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Nao existe versao vigente para alteracao. Use tipo IMPLANTACAO.",
+                detail="Não existe versão vigente para alteração. Use tipo IMPLANTAÇÃO.",
             )
 
         nova_versao = VersaoRHProjeto(
@@ -209,7 +209,7 @@ class SolicitacaoService:
         if solicitacao.status != StatusSolicitacao.EM_EDICAO:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Solicitacao nao esta em edicao.",
+                detail="Solicitação não está em edição.",
             )
 
         projeto = self._buscar_projeto(solicitacao.projeto_id)
@@ -251,7 +251,7 @@ class SolicitacaoService:
         if not versao_proposta:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Versao de RH nao encontrada para esta solicitacao.",
+                detail="Versão de RH não encontrada para esta solicitação.",
             )
 
         membros_depois = (
@@ -311,7 +311,7 @@ class SolicitacaoService:
         ]
 
         encerramentos = [
-            {"pesquisador": m.nome_pesquisador, "motivo": "Removido na nova versao"}
+            {"pesquisador": m.nome_pesquisador, "motivo": "Removido na nova versão"}
             for m in membros_antes
             if m.ref_pesquisador not in refs_depois
         ]
@@ -357,9 +357,9 @@ class SolicitacaoService:
 
     def _clonar_membros(self, origem_versao_id: int, destino_versao_id: int) -> None:
         """
-        Clona membros ativos da versao de origem para a versao de destino.
+        Clona membros ativos da versão de origem para a versão de destino.
         Considera-se ativo o membro sem data_fim ou com data_fim no futuro.
-        Os clones servem como base editavel da versao Proposta (US-SD-04).
+        Os clones servem como base editável da versão Proposta (US-SD-04).
         """
         membros_origem = (
             self.db.query(PesquisadorProjeto)

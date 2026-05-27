@@ -1,7 +1,7 @@
 import { api } from './api';
 import { CategoriaBolsa, FonteFinanciamento } from '@/types/enums';
 
-// --- Tipos para gestao de tabelas (BolsaManagement - sem endpoint ainda) ---
+// --- Tipos para gestão de tabelas (BolsaManagement - sem endpoint ainda) ---
 export interface TabelaBolsa {
   id: number;
   nome: string;
@@ -16,7 +16,7 @@ export interface TabelaBolsa {
 
 const TODO_MSG = 'TODO: endpoint /parametros (CRUD de tabelas) nao implementado no backend ainda';
 
-// --- Tipos para preview de calculo/validacao (US-SD-03) ---
+// --- Tipos para preview de cálculo/validação (US-SD-03) ---
 export interface CalcularBolsaRequest {
   categoria: CategoriaBolsa;
   carga_horaria_semanal: number;

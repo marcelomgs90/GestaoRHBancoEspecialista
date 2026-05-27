@@ -2,7 +2,7 @@
 
 Fonte: OpenProject (backlog_openproject_banco_especialistas_v2.xlsx)
 
-> **Atualizacao v2:** introduzida a prioridade **Imediata** (acima de Alta) e revisadas as prioridades das User Stories conforme repriorizacao do PO. Prioridades aceitas: **Imediata, Alta, Normal, Baixa**.
+> **Atualização v2:** introduzida a prioridade **Imediata** (acima de Alta) e revisadas as prioridades das User Stories conforme repriorização do PO. Prioridades aceitas: **Imediata, Alta, Normal, Baixa**.
 
 ---
 
@@ -22,19 +22,19 @@ EP-00 Aplicacao Web - Gestao RH Banco de Especialistas
 
 ## Resumo das Sprints
 
-| Sprint | US | Story Points | Esforco (h) | Foco |
+| Sprint | US | Story Points | Esforço (h) | Foco |
 |--------|-----|-------------|-------------|------|
-| Sprint 1 - Solicitacoes de RH Base (MVP) | 9 | 53 | 72 | Fluxo principal de solicitacoes, validacoes e ambiente inicial |
-| Sprint 2 - Projetos e Banco de Especialistas | 7 | 31 | 56 | Projetos, anexos, especialistas e vinculos |
-| Sprint 3 - Monitoramento e Documentos | 7 | 31 | 56 | PDFs, pagamento e relatorios |
-| Sprint 4 - Transferencia e Parametrizacao | 6 | 24 | 48 | Transferencia de RH, parametrizacao e evidencias finais |
+| Sprint 1 - Solicitações de RH Base (MVP) | 9 | 53 | 72 | Fluxo principal de solicitações, validações e ambiente inicial |
+| Sprint 2 - Projetos e Banco de Especialistas | 7 | 31 | 56 | Projetos, anexos, especialistas e vínculos |
+| Sprint 3 - Monitoramento e Documentos | 7 | 31 | 56 | PDFs, pagamento e relatórios |
+| Sprint 4 - Transferência e Parametrização | 6 | 24 | 48 | Transferência de RH, parametrização e evidências finais |
 | **Total** | **29** | **139** | **232** | |
 
 ---
 
-## Distribuicao por Responsavel
+## Distribuição por Responsável
 
-| Responsavel | Funcao | Tags de Task |
+| Responsável | Função | Tags de Task |
 |-------------|--------|-------------|
 | Vinicius Lopes de Alencar | Back-end | [back], [devops/doc] |
 | Marcelo Gomes da Silva | Back-end | [back], [devops/doc] |
@@ -45,11 +45,11 @@ EP-00 Aplicacao Web - Gestao RH Banco de Especialistas
 
 ---
 
-# Sprint 1 - Solicitacoes de RH Base (MVP)
+# Sprint 1 - Solicitações de RH Base (MVP)
 
-**Objetivo:** Entregar o fluxo central de solicitacao de RH com dados/regras mockadas quando necessario.
+**Objetivo:** Entregar o fluxo central de solicitação de RH com dados/regras mockadas quando necessário.
 
-**Metricas:** 9 US | 53 Story Points | 72 horas estimadas
+**Métricas:** 9 US | 53 Story Points | 72 horas estimadas
 
 ---
 
@@ -58,195 +58,193 @@ EP-00 Aplicacao Web - Gestao RH Banco de Especialistas
 **Feature:** F-AQ-01 - Preparacao do ambiente e repositorio (EP-08)
 **Prioridade:** Baixa
 
-**Descricao:** Como equipe tecnica, quero preparar repositorio e ambiente para iniciar o desenvolvimento com rastreabilidade.
+**Descrição:** Como equipe técnica, quero preparar repositório e ambiente para iniciar o desenvolvimento com rastreabilidade.
 
-**BDD:** DADO que o projeto foi iniciado, QUANDO o ambiente for configurado, ENTAO frontend e backend devem executar localmente com documentacao minima.
+**BDD:** DADO que o projeto foi iniciado, QUANDO o ambiente for configurado, ENTAO frontend e backend devem executar localmente com documentação mínima.
 
-**Criterios de Aceitacao:**
-- CA-F-AQ-01-01: O repositorio deve estar criado com estrutura de branches minima
+**Critérios de Aceitação:**
+- CA-F-AQ-01-01: O repositório deve estar criado com estrutura de branches mínima
 - CA-F-AQ-01-02: O ambiente local deve executar frontend e backend
-- CA-F-AQ-01-03: As variaveis de ambiente essenciais devem estar documentadas
+- CA-F-AQ-01-03: As variáveis de ambiente essenciais devem estar documentadas
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
-| TK-US-AQ-01-01 [devops/doc] Preparar artefatos tecnicos | Marcelo Gomes da Silva | 3 |
-| TK-US-AQ-01-02 [doc] Documentar evidencias/configuracao | Erick Victor Carvalho de Araujo | 3 |
-| TK-US-AQ-01-03 [qa] Validar evidencias e rastreabilidade | Carolina Araujo de Sousa | 2 |
+| TK-US-AQ-01-01 [devops/doc] Preparar artefatos técnicos | Marcelo Gomes da Silva | 3 |
+| TK-US-AQ-01-02 [doc] Documentar evidências/configuração | Erick Victor Carvalho de Araujo | 3 |
+| TK-US-AQ-01-03 [qa] Validar evidências e rastreabilidade | Carolina Araujo de Sousa | 2 |
 
 ---
 
 ### US-AQ-02 | Criar banco inicial com dados mockados (5 pts)
 
-**Feature:** F-AQ-02 - Modelagem do banco de dados e migracoes (EP-08)
+**Feature:** F-AQ-02 - Modelagem do banco de dados e migrações (EP-08)
 **Prioridade:** Normal
 
-**Descricao:** Como equipe tecnica, quero criar a estrutura inicial do banco com dados mockados para antecipar validacoes da Sprint 1.
+**Descrição:** Como equipe técnica, quero criar a estrutura inicial do banco com dados mockados para antecipar validações da Sprint 1.
 
-**BDD:** DADO que as entidades principais foram definidas, QUANDO as migracoes forem executadas, ENTAO a base deve permitir testar solicitacoes de RH.
+**BDD:** DADO que as entidades principais foram definidas, QUANDO as migrações forem executadas, ENTAO a base deve permitir testar solicitações de RH.
 
-**Criterios de Aceitacao:**
+**Critérios de Aceitação:**
 - CA-F-AQ-02-01: As tabelas principais devem possuir migracoes iniciais
 - CA-F-AQ-02-02: As relacoes devem seguir o DER revisado
 - CA-F-AQ-02-03: A base deve possuir dados mockados minimos para Sprint 1
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
-| TK-US-AQ-02-01 [devops/doc] Preparar artefatos tecnicos | Vinicius Lopes de Alencar | 3 |
-| TK-US-AQ-02-02 [doc] Documentar evidencias/configuracao | Erick Victor Carvalho de Araujo | 3 |
-| TK-US-AQ-02-03 [qa] Validar evidencias e rastreabilidade | Carolina Araujo de Sousa | 2 |
-
+| TK-US-AQ-02-01 [devops/doc] Preparar artefatos técnicos | Vinicius Lopes de Alencar | 3 |
+| TK-US-AQ-02-02 [doc] Documentar evidências/configuração | Erick Victor Carvalho de Araujo | 3 |
+| TK-US-AQ-02-03 [qa] Validar evidências e rastreabilidade | Carolina Araujo de Sousa | 2 |
 ---
 
 ### US-CA-01 | Login e logout (3 pts)
 
-**Feature:** F-CA-01 - Autenticacao e sessao de usuarios (EP-01)
+**Feature:** F-CA-01 - Autenticação e sessão de usuários (EP-01)
 **Prioridade:** Alta
 
-**Descricao:** Como usuario autorizado, quero acessar o sistema com seguranca para utilizar as funcoes conforme meu perfil.
+**Descrição:** Como usuário autorizado, quero acessar o sistema com segurança para utilizar as funções conforme meu perfil.
 
-**BDD:** DADO que o usuario possui credenciais validas, QUANDO informar login e senha e confirmar, ENTAO o sistema deve criar a sessao e direcionar para a area inicial.
+**BDD:** DADO que o usuário possui credenciais válidas, QUANDO informar login e senha e confirmar, ENTAO o sistema deve criar a sessão e direcionar para a área inicial.
 
-**Criterios de Aceitacao:**
-- CA-F-CA-01-01: O usuario deve autenticar-se com credenciais validas
-- CA-F-CA-01-02: O sistema deve bloquear acesso a rotas protegidas sem sessao ativa
-- CA-F-CA-01-03: O usuario deve conseguir encerrar a sessao com seguranca
+**Critérios de Aceitação:**
+- CA-F-CA-01-01: O usuário deve autenticar-se com credenciais válidas
+- CA-F-CA-01-02: O sistema deve bloquear acesso a rotas protegidas sem sessão ativa
+- CA-F-CA-01-03: O usuário deve conseguir encerrar a sessão com segurança
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-CA-01-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-CA-01-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-CA-01-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-CA-01-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-CA-02 | Aplicacao de perfis no menu (3 pts)
+### US-CA-02 | Aplicação de perfis no menu (3 pts)
 
-**Feature:** F-CA-02 - Gestao de perfis e permissoes (EP-01)
+**Feature:** F-CA-02 - Gestão de perfis e permissões (EP-01)
 **Prioridade:** Normal
 
-**Descricao:** Como administrador, quero que o menu respeite o perfil do usuario para evitar acesso indevido.
+**Descrição:** Como administrador, quero que o menu respeite o perfil do usuário para evitar acesso indevido.
 
-**BDD:** DADO que o usuario esteja autenticado, QUANDO acessar o menu, ENTAO o sistema deve exibir apenas as opcoes permitidas para seu perfil.
+**BDD:** DADO que o usuário esteja autenticado, QUANDO acessar o menu, ENTAO o sistema deve exibir apenas as opções permitidas para seu perfil.
 
-**Criterios de Aceitacao:**
-- CA-F-CA-02-01: O sistema deve controlar permissoes por perfil
-- CA-F-CA-02-02: Apenas perfis autorizados devem acessar funcoes administrativas
-- CA-F-CA-02-03: Os perfis Administrador, Coordenador, Gestor do Polo e Apoio Coordenador devem estar disponiveis
+**Critérios de Aceitação:**
+- CA-F-CA-02-01: O sistema deve controlar permissões por perfil
+- CA-F-CA-02-02: Apenas perfis autorizados devem acessar funções administrativas
+- CA-F-CA-02-03: Os perfis Administrador, Coordenador, Gestor do Polo e Apoio Coordenador devem estar disponíveis
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-CA-02-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-CA-02-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-CA-02-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
-
+| TK-US-CA-02-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 ---
 
-### US-SD-01 | Criar solicitacao de implantacao inicial (8 pts)
+### US-SD-01 | Criar solicitação de implantação inicial (8 pts)
 
-**Feature:** F-SD-01 - Solicitacao de implantacao inicial de RH (EP-02)
+**Feature:** F-SD-01 - Solicitação de implantação inicial de RH (EP-02)
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador, quero criar uma solicitacao de implantacao inicial de RH para iniciar a equipe de um projeto.
+**Descrição:** Como coordenador, quero criar uma solicitação de implantação inicial de RH para iniciar a equipe de um projeto.
 
-**BDD:** DADO que exista um projeto selecionado, QUANDO o coordenador iniciar a implantacao inicial, ENTAO o sistema deve criar uma solicitacao vinculada ao projeto.
+**BDD:** DADO que exista um projeto selecionado, QUANDO o coordenador iniciar a implantação inicial, ENTAO o sistema deve criar uma solicitação vinculada ao projeto.
 
-**Criterios de Aceitacao:**
-- CA-F-SD-01-01: A implantacao inicial deve estar vinculada a um projeto ativo
-- CA-F-SD-01-02: A solicitacao deve possuir membros e fontes de financiamento validas
-- CA-F-SD-01-03: A solicitacao deve receber identificador manual/informado pelo usuario quando aplicavel
+**Critérios de Aceitação:**
+- CA-F-SD-01-01: A implantação inicial deve estar vinculada a um projeto ativo
+- CA-F-SD-01-02: A solicitação deve possuir membros e fontes de financiamento válidas
+- CA-F-SD-01-03: A solicitação deve receber identificador manual/informado pelo usuário quando aplicável
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-SD-01-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-SD-01-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-SD-01-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-SD-01-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-SD-02 | Incluir membro na solicitacao de RH (8 pts)
+### US-SD-02 | Incluir membro na solicitação de RH (8 pts)
 
-**Feature:** F-SD-03 - Inclusao, alteracao e encerramento de membros (EP-02)
+**Feature:** F-SD-03 - Inclusão, alteração e encerramento de membros (EP-02)
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador, quero incluir membros na solicitacao de RH para compor a equipe do projeto.
+**Descrição:** Como coordenador, quero incluir membros na solicitação de RH para compor a equipe do projeto.
 
-**BDD:** DADO que exista uma solicitacao em edicao, QUANDO o coordenador informar especialista, perfil, fonte e vigencia, ENTAO o membro deve ser incluido na proposta.
+**BDD:** DADO que exista uma solicitação em edição, QUANDO o coordenador informar especialista, perfil, fonte e vigência, ENTAO o membro deve ser incluído na proposta.
 
-**Criterios de Aceitacao:**
-- CA-F-SD-03-01: O sistema deve permitir inclusao, alteracao e encerramento de membros
-- CA-F-SD-03-02: O sistema deve validar carga horaria maxima e regras de bolsas
-- CA-F-SD-03-03: O sistema deve registrar vigencia, fonte e perfil de cada vinculo
+**Critérios de Aceitação:**
+- CA-F-SD-03-01: O sistema deve permitir inclusão, alteração e encerramento de membros
+- CA-F-SD-03-02: O sistema deve validar carga horária máxima e regras de bolsas
+- CA-F-SD-03-03: O sistema deve registrar vigência, fonte e perfil de cada vínculo
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-SD-02-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-SD-02-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-SD-02-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-SD-02-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-SD-03 | Validar carga horaria e bolsa do membro (8 pts)
+### US-SD-03 | Validar carga horária e bolsa do membro (8 pts)
 
-**Feature:** F-SD-03 - Inclusao, alteracao e encerramento de membros (EP-02)
+**Feature:** F-SD-03 - Inclusão, alteração e encerramento de membros (EP-02)
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador, quero que o sistema valide carga horaria e bolsa para reduzir erros administrativos.
+**Descrição:** Como coordenador, quero que o sistema valide carga horária e bolsa para reduzir erros administrativos.
 
-**BDD:** DADO que um membro foi informado, QUANDO a carga horaria ou categoria for alterada, ENTAO o sistema deve validar limites e informar inconsistencias.
+**BDD:** DADO que um membro foi informado, QUANDO a carga horária ou categoria for alterada, ENTAO o sistema deve validar limites e informar inconsistências.
 
-**Criterios de Aceitacao:**
-- CA-F-SD-03-02: O sistema deve validar carga horaria maxima e regras de bolsas
-- CA-F-SD-03-03: O sistema deve registrar vigencia, fonte e perfil de cada vinculo
+**Critérios de Aceitação:**
+- CA-F-SD-03-02: O sistema deve validar carga horária máxima e regras de bolsas
+- CA-F-SD-03-03: O sistema deve registrar vigência, fonte e perfil de cada vínculo
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-SD-03-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-SD-03-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-SD-03-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-SD-03-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-SD-04 | Criar solicitacao de alteracao de RH (8 pts)
+### US-SD-04 | Criar solicitação de alteração de RH (8 pts)
 
-**Feature:** F-SD-02 - Solicitacao de alteracao de RH (EP-02)
+**Feature:** F-SD-02 - Solicitação de alteração de RH (EP-02)
 **Prioridade:** Alta
 
-**Descricao:** Como coordenador, quero abrir uma alteracao de RH para mudar uma equipe ja implantada.
+**Descrição:** Como coordenador, quero abrir uma alteração de RH para mudar uma equipe já implantada.
 
-**BDD:** DADO que exista uma versao vigente de RH, QUANDO o coordenador solicitar alteracao, ENTAO o sistema deve criar uma versao proposta separada da atual.
+**BDD:** DADO que exista uma versão vigente de RH, QUANDO o coordenador solicitar alteração, ENTAO o sistema deve criar uma versão proposta separada da atual.
 
-**Criterios de Aceitacao:**
-- CA-F-SD-02-01: A alteracao deve partir de uma versao de RH ja existente
+**Critérios de Aceitação:**
+- CA-F-SD-02-01: A alteração deve partir de uma versão de RH já existente
 - CA-F-SD-02-02: O sistema deve permitir registrar motivo e dados alterados
-- CA-F-SD-02-03: A versao proposta deve ficar separada da versao atual ate homologacao
+- CA-F-SD-02-03: A versão proposta deve ficar separada da versão atual até homologação
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-SD-04-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-SD-04-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-SD-04-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-SD-04-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
 ### US-SD-05 | Comparar equipe atual e proposta (5 pts)
 
-**Feature:** F-SD-04 - Versoes de RH e comparacao Atual x Proposta (EP-02)
+**Feature:** F-SD-04 - Versões de RH e comparação Atual x Proposta (EP-02)
 **Prioridade:** Alta
 
-**Descricao:** Como gestor, quero comparar equipe atual e proposta para entender as mudancas antes da homologacao.
+**Descrição:** Como gestor, quero comparar equipe atual e proposta para entender as mudanças antes da homologação.
 
-**BDD:** DADO que exista uma versao atual e uma proposta, QUANDO o usuario abrir a comparacao, ENTAO o sistema deve exibir inclusoes, alteracoes e encerramentos.
+**BDD:** DADO que exista uma versão atual e uma proposta, QUANDO o usuário abrir a comparação, ENTAO o sistema deve exibir inclusões, alterações e encerramentos.
 
-**Criterios de Aceitacao:**
-- CA-F-SD-04-01: O sistema deve listar versoes de RH por projeto
+**Critérios de Aceitação:**
+- CA-F-SD-04-01: O sistema deve listar versões de RH por projeto
 - CA-F-SD-04-02: O sistema deve comparar equipe atual e equipe proposta
-- CA-F-SD-04-03: As diferencas devem ser exibidas de forma clara para homologacao
+- CA-F-SD-04-03: As diferenças devem ser exibidas de forma clara para homologação
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-SD-05-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-SD-05-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-SD-05-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-SD-05-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
@@ -254,72 +252,72 @@ EP-00 Aplicacao Web - Gestao RH Banco de Especialistas
 
 **Objetivo:** Cadastrar projetos, anexos e consultar/vincular especialistas.
 
-**Metricas:** 7 US | 31 Story Points | 56 horas estimadas
+**Métricas:** 7 US | 31 Story Points | 56 horas estimadas
 
 ---
 
 ### US-PR-01 | Cadastrar projeto (5 pts)
 
-**Feature:** F-PR-01 - Cadastro e manutencao de projetos (EP-03)
+**Feature:** F-PR-01 - Cadastro e manutenção de projetos (EP-03)
 **Prioridade:** Imediata
 
-**Descricao:** Como gestor do Polo, quero cadastrar projetos para que solicitacoes de RH sejam vinculadas corretamente.
+**Descrição:** Como gestor do Polo, quero cadastrar projetos para que solicitações de RH sejam vinculadas corretamente.
 
-**BDD:** DADO que o usuario tenha permissao, QUANDO preencher os dados obrigatorios do projeto, ENTAO o sistema deve salvar o projeto ativo.
+**BDD:** DADO que o usuário tenha permissão, QUANDO preencher os dados obrigatórios do projeto, ENTAO o sistema deve salvar o projeto ativo.
 
-**Criterios de Aceitacao:**
-- CA-F-PR-01-01: O projeto deve possuir dados basicos obrigatorios
-- CA-F-PR-01-02: O sistema deve permitir consulta, inclusao e alteracao de projeto
-- CA-F-PR-01-03: Projetos inativos nao devem aparecer como opcao principal para novas solicitacoes
+**Critérios de Aceitação:**
+- CA-F-PR-01-01: O projeto deve possuir dados básicos obrigatórios
+- CA-F-PR-01-02: O sistema deve permitir consulta, inclusão e alteração de projeto
+- CA-F-PR-01-03: Projetos inativos não devem aparecer como opção principal para novas solicitações
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-PR-01-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-PR-01-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-PR-01-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-PR-01-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
 ### US-PR-02 | Consultar e alterar projeto (3 pts)
 
-**Feature:** F-PR-01 - Cadastro e manutencao de projetos (EP-03)
+**Feature:** F-PR-01 - Cadastro e manutenção de projetos (EP-03)
 **Prioridade:** Normal
 
-**Descricao:** Como gestor do Polo, quero consultar e alterar projetos para manter dados atualizados.
+**Descrição:** Como gestor do Polo, quero consultar e alterar projetos para manter dados atualizados.
 
-**BDD:** DADO que existam projetos cadastrados, QUANDO o usuario pesquisar e editar um projeto, ENTAO as alteracoes validas devem ser persistidas.
+**BDD:** DADO que existam projetos cadastrados, QUANDO o usuário pesquisar e editar um projeto, ENTAO as alterações válidas devem ser persistidas.
 
-**Criterios de Aceitacao:**
-- CA-F-PR-01-01: O projeto deve possuir dados basicos obrigatorios
-- CA-F-PR-01-02: O sistema deve permitir consulta, inclusao e alteracao de projeto
+**Critérios de Aceitação:**
+- CA-F-PR-01-01: O projeto deve possuir dados básicos obrigatórios
+- CA-F-PR-01-02: O sistema deve permitir consulta, inclusão e alteração de projeto
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-PR-02-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-PR-02-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-PR-02-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-PR-02-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-PR-03 | Gerenciar anexos multiplos do projeto (5 pts)
+### US-PR-03 | Gerenciar anexos múltiplos do projeto (5 pts)
 
-**Feature:** F-PR-02 - Anexos multiplos do projeto (EP-03)
+**Feature:** F-PR-02 - Anexos múltiplos do projeto (EP-03)
 **Prioridade:** Normal
 
-**Descricao:** Como apoio coordenador, quero anexar documentos do projeto para manter o processo completo.
+**Descrição:** Como apoio coordenador, quero anexar documentos do projeto para manter o processo completo.
 
-**BDD:** DADO que o projeto esteja cadastrado, QUANDO o usuario anexar arquivos, ENTAO o sistema deve registrar tipo, data e arquivo para consulta.
+**BDD:** DADO que o projeto esteja cadastrado, QUANDO o usuário anexar arquivos, ENTAO o sistema deve registrar tipo, data e arquivo para consulta.
 
-**Criterios de Aceitacao:**
-- CA-F-PR-02-01: O sistema deve permitir multiplos anexos por projeto
+**Critérios de Aceitação:**
+- CA-F-PR-02-01: O sistema deve permitir múltiplos anexos por projeto
 - CA-F-PR-02-02: Cada anexo deve possuir tipo, data e arquivo associado
 - CA-F-PR-02-03: A lista de anexos deve permitir consulta posterior
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-PR-03-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-PR-03-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-PR-03-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-PR-03-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
@@ -328,389 +326,389 @@ EP-00 Aplicacao Web - Gestao RH Banco de Especialistas
 **Feature:** F-BE-01 - Consulta ao Banco de Especialistas (EP-04)
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador, quero consultar o Banco de Especialistas para localizar pesquisadores aptos.
+**Descrição:** Como coordenador, quero consultar o Banco de Especialistas para localizar pesquisadores aptos.
 
-**BDD:** DADO que exista uma base de especialistas disponivel, QUANDO pesquisar por nome, matricula ou perfil, ENTAO o sistema deve listar resultados compativeis.
+**BDD:** DADO que exista uma base de especialistas disponível, QUANDO pesquisar por nome, matrícula ou perfil, ENTAO o sistema deve listar resultados compatíveis.
 
-**Criterios de Aceitacao:**
-- CA-F-BE-01-01: A consulta deve permitir buscar especialista por nome, matricula/identificador ou perfil
-- CA-F-BE-01-02: A consulta deve retornar dados minimos necessarios para vinculacao
-- CA-F-BE-01-03: Ausencia de resultado deve gerar mensagem clara ao usuario
+**Critérios de Aceitação:**
+- CA-F-BE-01-01: A consulta deve permitir buscar especialista por nome, matrícula/identificador ou perfil
+- CA-F-BE-01-02: A consulta deve retornar dados mínimos necessários para vinculação
+- CA-F-BE-01-03: Ausência de resultado deve gerar mensagem clara ao usuário
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-BE-01-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-BE-01-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-BE-01-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-BE-01-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
 ### US-BE-02 | Vincular pesquisador ao projeto (5 pts)
 
-**Feature:** F-BE-02 - Vinculacao de pesquisador ao projeto (EP-04)
+**Feature:** F-BE-02 - Vinculação de pesquisador ao projeto (EP-04)
 **Prioridade:** Alta
 
-**Descricao:** Como coordenador, quero vincular pesquisador ao projeto para montar a equipe de RH.
+**Descrição:** Como coordenador, quero vincular pesquisador ao projeto para montar a equipe de RH.
 
-**BDD:** DADO que o pesquisador foi localizado, QUANDO informar projeto, perfil, origem, fonte e vigencia, ENTAO o vinculo deve ser registrado.
+**BDD:** DADO que o pesquisador foi localizado, QUANDO informar projeto, perfil, origem, fonte e vigência, ENTAO o vínculo deve ser registrado.
 
-**Criterios de Aceitacao:**
-- CA-F-BE-02-01: A vinculacao deve exigir projeto, especialista, perfil, fonte e vigencia
+**Critérios de Aceitação:**
+- CA-F-BE-02-01: A vinculação deve exigir projeto, especialista, perfil, fonte e vigência
 - CA-F-BE-02-02: A origem de RH deve ser informada conforme tipos cadastrados
-- CA-F-BE-02-03: O sistema deve registrar historico da vinculacao
+- CA-F-BE-02-03: O sistema deve registrar histórico da vinculação
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-BE-02-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-BE-02-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-BE-02-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-BE-02-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-PR-04 | Vincular coordenador/especialista responsavel pelo projeto (5 pts)
+### US-PR-04 | Vincular coordenador/especialista responsável pelo projeto (5 pts)
 
-**Feature:** F-PR-03 - Vinculacao de coordenador/especialista ao projeto (EP-03)
+**Feature:** F-PR-03 - Vinculação de coordenador/especialista ao projeto (EP-03)
 **Prioridade:** Alta
 
-**Descricao:** Como gestor do Polo, quero vincular o coordenador/especialista responsavel para identificar o responsavel pelo projeto.
+**Descrição:** Como gestor do Polo, quero vincular o coordenador/especialista responsável para identificar o responsável pelo projeto.
 
-**BDD:** DADO que o projeto e especialista existam, QUANDO o gestor confirmar a vinculacao, ENTAO o projeto deve registrar o responsavel vigente.
+**BDD:** DADO que o projeto e especialista existam, QUANDO o gestor confirmar a vinculação, ENTAO o projeto deve registrar o responsável vigente.
 
-**Criterios de Aceitacao:**
+**Critérios de Aceitação:**
 - CA-F-PR-03-01: O coordenador/especialista deve ser localizado no Banco de Especialistas
-- CA-F-PR-03-02: A vinculacao deve registrar papel e vigencia
-- CA-F-PR-03-03: O sistema deve impedir vinculo duplicado ativo para a mesma funcao quando aplicavel
+- CA-F-PR-03-02: A vinculação deve registrar papel e vigência
+- CA-F-PR-03-03: O sistema deve impedir vínculo duplicado ativo para a mesma função quando aplicável
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-PR-04-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-PR-04-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-PR-04-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-PR-04-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-AQ-03 | Evoluir DER e migracoes da Sprint 2 (3 pts)
+### US-AQ-03 | Evoluir DER e migrações da Sprint 2 (3 pts)
 
-**Feature:** F-AQ-02 - Modelagem do banco de dados e migracoes (EP-08)
+**Feature:** F-AQ-02 - Modelagem do banco de dados e migrações (EP-08)
 **Prioridade:** Baixa
 
-**Descricao:** Como equipe tecnica, quero evoluir o banco para projetos, anexos e vinculos para suportar as features da Sprint 2.
+**Descrição:** Como equipe técnica, quero evoluir o banco para projetos, anexos e vínculos para suportar as features da Sprint 2.
 
-**BDD:** DADO que a base inicial existe, QUANDO forem aplicadas novas migracoes, ENTAO projetos, anexos e vinculos devem ser armazenados corretamente.
+**BDD:** DADO que a base inicial existe, QUANDO forem aplicadas novas migrações, ENTAO projetos, anexos e vínculos devem ser armazenados corretamente.
 
-**Criterios de Aceitacao:**
-- CA-F-AQ-02-01: As tabelas principais devem possuir migracoes iniciais
-- CA-F-AQ-02-02: As relacoes devem seguir o DER revisado
+**Critérios de Aceitação:**
+- CA-F-AQ-02-01: As tabelas principais devem possuir migrações iniciais
+- CA-F-AQ-02-02: As relações devem seguir o DER revisado
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
-| TK-US-AQ-03-01 [devops/doc] Preparar artefatos tecnicos | Marcelo Gomes da Silva | 3 |
-| TK-US-AQ-03-02 [doc] Documentar evidencias/configuracao | Erick Victor Carvalho de Araujo | 3 |
-| TK-US-AQ-03-03 [qa] Validar evidencias e rastreabilidade | Carolina Araujo de Sousa | 2 |
+| TK-US-AQ-03-01 [devops/doc] Preparar artefatos técnicos | Marcelo Gomes da Silva | 3 |
+| TK-US-AQ-03-02 [doc] Documentar evidências/configuração | Erick Victor Carvalho de Araujo | 3 |
+| TK-US-AQ-03-03 [qa] Validar evidências e rastreabilidade | Carolina Araujo de Sousa | 2 |
 
 ---
 
 # Sprint 3 - Monitoramento e Documentos
 
-**Objetivo:** Emitir documentos PDF e consultas/relatorios consolidados.
+**Objetivo:** Emitir documentos PDF e consultas/relatórios consolidados.
 
-**Metricas:** 7 US | 31 Story Points | 56 horas estimadas
+**Métricas:** 7 US | 31 Story Points | 56 horas estimadas
 
 ---
 
-### US-SD-06 | Criar solicitacao de pagamento por competencia (5 pts)
+### US-SD-06 | Criar solicitação de pagamento por competência (5 pts)
 
-**Feature:** F-SD-05 - Solicitacao de pagamento de RH por mes/ano (EP-02)
+**Feature:** F-SD-05 - Solicitação de pagamento de RH por mês/ano (EP-02)
 **Prioridade:** Alta
 
-**Descricao:** Como coordenador, quero solicitar pagamento de RH por mes e ano para gerar a documentacao da competencia.
+**Descrição:** Como coordenador, quero solicitar pagamento de RH por mês e ano para gerar a documentação da competência.
 
-**BDD:** DADO que exista equipe vigente, QUANDO o coordenador informar mes e ano, ENTAO o sistema deve listar membros ativos e valores da competencia.
+**BDD:** DADO que exista equipe vigente, QUANDO o coordenador informar mês e ano, ENTAO o sistema deve listar membros ativos e valores da competência.
 
-**Criterios de Aceitacao:**
-- CA-F-SD-05-01: A solicitacao de pagamento deve exigir mes e ano de referencia
-- CA-F-SD-05-02: O sistema deve listar somente membros ativos na competencia
-- CA-F-SD-05-03: O pagamento deve considerar fonte e carga horaria vigente
+**Critérios de Aceitação:**
+- CA-F-SD-05-01: A solicitação de pagamento deve exigir mês e ano de referência
+- CA-F-SD-05-02: O sistema deve listar somente membros ativos na competência
+- CA-F-SD-05-03: O pagamento deve considerar fonte e carga horária vigente
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-SD-06-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-SD-06-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-SD-06-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-SD-06-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-SD-07 | Gerar PDF de implantacao inicial (5 pts)
+### US-SD-07 | Gerar PDF de implantação inicial (5 pts)
 
-**Feature:** F-SD-06 - Geracao automatizada de PDFs padronizados (EP-02)
+**Feature:** F-SD-06 - Geração automatizada de PDFs padronizados (EP-02)
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador, quero gerar PDF de implantacao inicial para anexar ao processo administrativo.
+**Descrição:** Como coordenador, quero gerar PDF de implantação inicial para anexar ao processo administrativo.
 
-**BDD:** DADO que a implantacao inicial esteja valida, QUANDO o usuario acionar a emissao, ENTAO o PDF deve ser gerado no padrao definido.
+**BDD:** DADO que a implantação inicial esteja válida, QUANDO o usuário acionar a emissão, ENTAO o PDF deve ser gerado no padrão definido.
 
-**Criterios de Aceitacao:**
-- CA-F-SD-06-01: O sistema deve gerar PDF de implantacao inicial
+**Critérios de Aceitação:**
+- CA-F-SD-06-01: O sistema deve gerar PDF de implantação inicial
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-SD-07-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-SD-07-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-SD-07-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-SD-07-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-SD-08 | Gerar PDF de alteracao de RH (5 pts)
+### US-SD-08 | Gerar PDF de alteração de RH (5 pts)
 
-**Feature:** F-SD-06 - Geracao automatizada de PDFs padronizados (EP-02)
+**Feature:** F-SD-06 - Geração automatizada de PDFs padronizados (EP-02)
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador, quero gerar PDF de alteracao de RH com estado atual e proposto para formalizar mudancas.
+**Descrição:** Como coordenador, quero gerar PDF de alteração de RH com estado atual e proposto para formalizar mudanças.
 
-**BDD:** DADO que exista alteracao de RH validada, QUANDO o usuario emitir o documento, ENTAO o PDF deve apresentar as informacoes antes e depois.
+**BDD:** DADO que exista alteração de RH validada, QUANDO o usuário emitir o documento, ENTAO o PDF deve apresentar as informações antes e depois.
 
-**Criterios de Aceitacao:**
-- CA-F-SD-06-02: O sistema deve gerar PDF de alteracao de RH
+**Critérios de Aceitação:**
+- CA-F-SD-06-02: O sistema deve gerar PDF de alteração de RH
 - CA-F-SD-04-02: O sistema deve comparar equipe atual e equipe proposta
-- CA-F-SD-04-03: As diferencas devem ser exibidas de forma clara para homologacao
+- CA-F-SD-04-03: As diferenças devem ser exibidas de forma clara para homologação
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-SD-08-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-SD-08-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-SD-08-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-SD-08-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-SD-09 | Gerar PDF de folha/solicitacao de pagamento (5 pts)
+### US-SD-09 | Gerar PDF de folha/solicitação de pagamento (5 pts)
 
-**Feature:** F-SD-06 - Geracao automatizada de PDFs padronizados (EP-02)
+**Feature:** F-SD-06 - Geração automatizada de PDFs padronizados (EP-02)
 **Prioridade:** Alta
 
-**Descricao:** Como coordenador, quero gerar PDF de folha de pagamento para a competencia selecionada.
+**Descrição:** Como coordenador, quero gerar PDF de folha de pagamento para a competência selecionada.
 
-**BDD:** DADO que a solicitacao de pagamento foi calculada, QUANDO o usuario emitir o documento, ENTAO o PDF deve listar membros, fonte, horas e valores.
+**BDD:** DADO que a solicitação de pagamento foi calculada, QUANDO o usuário emitir o documento, ENTAO o PDF deve listar membros, fonte, horas e valores.
 
-**Criterios de Aceitacao:**
-- CA-F-SD-06-03: O sistema deve gerar PDF de folha/solicitacao de pagamento
-- CA-F-SD-05-01: A solicitacao de pagamento deve exigir mes e ano de referencia
-- CA-F-SD-05-02: O sistema deve listar somente membros ativos na competencia
+**Critérios de Aceitação:**
+- CA-F-SD-06-03: O sistema deve gerar PDF de folha/solicitação de pagamento
+- CA-F-SD-05-01: A solicitação de pagamento deve exigir mês e ano de referência
+- CA-F-SD-05-02: O sistema deve listar somente membros ativos na competência
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-SD-09-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-SD-09-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-SD-09-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-SD-09-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-MO-01 | Consultar alocacao por projeto, fonte e perfil (5 pts)
+### US-MO-01 | Consultar alocação por projeto, fonte e perfil (5 pts)
 
-**Feature:** F-MO-01 - Consulta e relatorio de alocacao por projeto, fonte e perfil (EP-05)
+**Feature:** F-MO-01 - Consulta e relatório de alocação por projeto, fonte e perfil (EP-05)
 **Prioridade:** Normal
 
-**Descricao:** Como gestor do Polo, quero consultar alocacao por projeto, fonte e perfil para acompanhar a composicao das equipes.
+**Descrição:** Como gestor do Polo, quero consultar alocação por projeto, fonte e perfil para acompanhar a composição das equipes.
 
-**BDD:** DADO que existam vinculos cadastrados, QUANDO aplicar filtros de projeto, fonte ou perfil, ENTAO o relatorio deve exibir os dados vigentes.
+**BDD:** DADO que existam vínculos cadastrados, QUANDO aplicar filtros de projeto, fonte ou perfil, ENTAO o relatório deve exibir os dados vigentes.
 
-**Criterios de Aceitacao:**
-- CA-F-MO-01-01: O relatorio deve permitir filtrar por projeto, fonte e perfil
-- CA-F-MO-01-02: O relatorio deve permitir exportar/visualizar dados consolidados
-- CA-F-MO-01-03: Os dados devem refletir a versao vigente de RH
+**Critérios de Aceitação:**
+- CA-F-MO-01-01: O relatório deve permitir filtrar por projeto, fonte e perfil
+- CA-F-MO-01-02: O relatório deve permitir exportar/visualizar dados consolidados
+- CA-F-MO-01-03: Os dados devem refletir a versão vigente de RH
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-MO-01-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-MO-01-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-MO-01-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-MO-01-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-MO-02 | Visualizar consolidacao por fonte (3 pts)
+### US-MO-02 | Visualizar consolidação por fonte (3 pts)
 
-**Feature:** F-MO-02 - Visao consolidada por fonte de financiamento (EP-05)
+**Feature:** F-MO-02 - Visão consolidada por fonte de financiamento (EP-05)
 **Prioridade:** Normal
 
-**Descricao:** Como gestor do Polo, quero visualizar a distribuicao por fonte de financiamento para acompanhar EMBRAPII, EMPRESA, SEBRAE e IFPB.
+**Descrição:** Como gestor do Polo, quero visualizar a distribuição por fonte de financiamento para acompanhar EMBRAPII, EMPRESA, SEBRAE e IFPB.
 
-**BDD:** DADO que existam vinculos com fontes cadastradas, QUANDO abrir a visao consolidada, ENTAO o sistema deve apresentar totais separados por fonte.
+**BDD:** DADO que existam vínculos com fontes cadastradas, QUANDO abrir a visão consolidada, ENTAO o sistema deve apresentar totais separados por fonte.
 
-**Criterios de Aceitacao:**
-- CA-F-MO-02-01: A visao deve separar fontes EMBRAPII, EMPRESA, SEBRAE e IFPB
+**Critérios de Aceitação:**
+- CA-F-MO-02-01: A visão deve separar fontes EMBRAPII, EMPRESA, SEBRAE e IFPB
 - CA-F-MO-02-02: O sistema deve apresentar totais por fonte
-- CA-F-MO-02-03: A consulta deve considerar apenas vinculos ativos ou vigentes no filtro
+- CA-F-MO-02-03: A consulta deve considerar apenas vínculos ativos ou vigentes no filtro
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-MO-02-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-MO-02-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-MO-02-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-MO-02-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-AQ-04 | Registrar evidencias de testes da Sprint 3 (3 pts)
+### US-AQ-04 | Registrar evidências de testes da Sprint 3 (3 pts)
 
-**Feature:** F-AQ-03 - Qualidade, evidencias e apoio ao OpenProject (EP-08)
+**Feature:** F-AQ-03 - Qualidade, evidências e apoio ao OpenProject (EP-08)
 **Prioridade:** Baixa
 
-**Descricao:** Como QA, quero registrar evidencias de testes para comprovar a execucao das US da sprint.
+**Descrição:** Como QA, quero registrar evidências de testes para comprovar a execução das US da sprint.
 
-**BDD:** DADO que as US estejam implementadas, QUANDO os testes forem realizados, ENTAO as evidencias devem ser organizadas para entrega.
+**BDD:** DADO que as US estejam implementadas, QUANDO os testes forem realizados, ENTAO as evidências devem ser organizadas para entrega.
 
-**Criterios de Aceitacao:**
-- CA-F-AQ-03-01: Cada US deve possuir evidencia de teste ou validacao
-- CA-F-AQ-03-03: O PDF de evidencias deve comprovar criterios, BDD, tasks, horas e responsaveis
+**Critérios de Aceitação:**
+- CA-F-AQ-03-01: Cada US deve possuir evidência de teste ou validação
+- CA-F-AQ-03-03: O PDF de evidências deve comprovar critérios, BDD, tasks, horas e responsáveis
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
-| TK-US-AQ-04-01 [devops/doc] Preparar artefatos tecnicos | Vinicius Lopes de Alencar | 3 |
-| TK-US-AQ-04-02 [doc] Documentar evidencias/configuracao | Erick Victor Carvalho de Araujo | 3 |
-| TK-US-AQ-04-03 [qa] Validar evidencias e rastreabilidade | Carolina Araujo de Sousa | 2 |
+| TK-US-AQ-04-01 [devops/doc] Preparar artefatos técnicos | Vinicius Lopes de Alencar | 3 |
+| TK-US-AQ-04-02 [doc] Documentar evidências/configuração | Erick Victor Carvalho de Araujo | 3 |
+| TK-US-AQ-04-03 [qa] Validar evidências e rastreabilidade | Carolina Araujo de Sousa | 2 |
 
 ---
 
-# Sprint 4 - Transferencia e Parametrizacao
+# Sprint 4 - Transferência e Parametrização
 
-**Objetivo:** Finalizar transferencias, parametrizacao e homologacao integrada.
+**Objetivo:** Finalizar transferências, parametrização e homologação integrada.
 
-**Metricas:** 6 US | 24 Story Points | 48 horas estimadas
+**Métricas:** 6 US | 24 Story Points | 48 horas estimadas
 
 ---
 
-### US-TR-01 | Solicitar transferencia de pesquisador (5 pts)
+### US-TR-01 | Solicitar transferência de pesquisador (5 pts)
 
-**Feature:** F-TR-01 - Solicitacao de transferencia de RH (EP-06)
+**Feature:** F-TR-01 - Solicitação de transferência de RH (EP-06)
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador solicitante, quero pedir transferencia de pesquisador entre projetos para reaproveitar especialistas.
+**Descrição:** Como coordenador solicitante, quero pedir transferência de pesquisador entre projetos para reaproveitar especialistas.
 
-**BDD:** DADO que exista pesquisador vinculado em projeto origem, QUANDO informar projeto destino e justificativa, ENTAO o sistema deve criar pendencia de aceite.
+**BDD:** DADO que exista pesquisador vinculado em projeto origem, QUANDO informar projeto destino e justificativa, ENTAO o sistema deve criar pendência de aceite.
 
-**Criterios de Aceitacao:**
-- CA-F-TR-01-01: A transferencia deve indicar projeto origem, projeto destino e pesquisador
-- CA-F-TR-01-02: A transferencia deve gerar pendencia para o coordenador cedente
-- CA-F-TR-01-03: A solicitacao deve manter status de acompanhamento
+**Critérios de Aceitação:**
+- CA-F-TR-01-01: A transferência deve indicar projeto origem, projeto destino e pesquisador
+- CA-F-TR-01-02: A transferência deve gerar pendência para o coordenador cedente
+- CA-F-TR-01-03: A solicitação deve manter status de acompanhamento
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-TR-01-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-TR-01-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-TR-01-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-TR-01-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-TR-02 | Aceitar ou recusar transferencia (5 pts)
+### US-TR-02 | Aceitar ou recusar transferência (5 pts)
 
 **Feature:** F-TR-02 - Aceite ou recusa pelo coordenador cedente (EP-06)
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador cedente, quero aceitar ou recusar transferencia para controlar saida de pesquisador do meu projeto.
+**Descrição:** Como coordenador cedente, quero aceitar ou recusar transferência para controlar saída de pesquisador do meu projeto.
 
-**BDD:** DADO que exista uma pendencia de transferencia, QUANDO o coordenador cedente aceitar ou recusar, ENTAO o sistema deve atualizar o status e registrar a decisao.
+**BDD:** DADO que exista uma pendência de transferência, QUANDO o coordenador cedente aceitar ou recusar, ENTAO o sistema deve atualizar o status e registrar a decisão.
 
-**Criterios de Aceitacao:**
-- CA-F-TR-02-01: O coordenador cedente deve conseguir aceitar ou recusar a transferencia
+**Critérios de Aceitação:**
+- CA-F-TR-02-01: O coordenador cedente deve conseguir aceitar ou recusar a transferência
 - CA-F-TR-02-02: A recusa deve exigir justificativa
-- CA-F-TR-02-03: O aceite deve liberar a transferencia para continuidade/homologacao
+- CA-F-TR-02-03: O aceite deve liberar a transferência para continuidade/homologação
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-TR-02-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-TR-02-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-TR-02-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-TR-02-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-TR-03 | Consultar historico de transferencias (3 pts)
+### US-TR-03 | Consultar histórico de transferências (3 pts)
 
-**Feature:** F-TR-03 - Historico de transferencias (EP-06)
+**Feature:** F-TR-03 - Histórico de transferências (EP-06)
 **Prioridade:** Baixa
 
-**Descricao:** Como gestor do Polo, quero consultar historico de transferencias para manter rastreabilidade administrativa.
+**Descrição:** Como gestor do Polo, quero consultar histórico de transferências para manter rastreabilidade administrativa.
 
-**BDD:** DADO que existam transferencias registradas, QUANDO aplicar filtros de status/projeto, ENTAO o sistema deve exibir historico com datas e responsaveis.
+**BDD:** DADO que existam transferências registradas, QUANDO aplicar filtros de status/projeto, ENTAO o sistema deve exibir histórico com datas e responsáveis.
 
-**Criterios de Aceitacao:**
-- CA-F-TR-03-01: O sistema deve listar transferencias por status
-- CA-F-TR-03-02: O historico deve preservar datas, responsaveis e justificativas
-- CA-F-TR-03-03: A consulta deve permitir rastrear a solicitacao associada
+**Critérios de Aceitação:**
+- CA-F-TR-03-01: O sistema deve listar transferências por status
+- CA-F-TR-03-02: O histórico deve preservar datas, responsáveis e justificativas
+- CA-F-TR-03-03: A consulta deve permitir rastrear a solicitação associada
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-TR-03-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-TR-03-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-TR-03-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-TR-03-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-PA-01 | Cadastrar regra de carga horaria e bolsa com vigencia (5 pts)
+### US-PA-01 | Cadastrar regra de carga horária e bolsa com vigência (5 pts)
 
-**Feature:** F-PA-01 - Parametrizacao de carga horaria, bolsas e vigencia (EP-07)
+**Feature:** F-PA-01 - Parametrização de carga horária, bolsas e vigência (EP-07)
 **Prioridade:** Alta
 
-**Descricao:** Como administrador, quero cadastrar regras com vigencia para controlar calculos sem alterar codigo.
+**Descrição:** Como administrador, quero cadastrar regras com vigência para controlar cálculos sem alterar código.
 
-**BDD:** DADO que o administrador esteja no modulo de parametrizacao, QUANDO informar valores, limites e vigencia, ENTAO a regra deve ser salva e validada.
+**BDD:** DADO que o administrador esteja no módulo de parametrização, QUANDO informar valores, limites e vigência, ENTAO a regra deve ser salva e validada.
 
-**Criterios de Aceitacao:**
-- CA-F-PA-01-01: O administrador deve cadastrar regras com vigencia
-- CA-F-PA-01-02: Alteracoes novas nao devem corromper calculos historicos
+**Critérios de Aceitação:**
+- CA-F-PA-01-01: O administrador deve cadastrar regras com vigência
+- CA-F-PA-01-02: Alterações novas não devem corromper cálculos históricos
 - CA-F-PA-01-03: Valores e limites devem ser validados antes de salvar
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-PA-01-01 [back] Implementar regras/endpoint | Vinicius Lopes de Alencar | 3 |
 | TK-US-PA-01-02 [front] Implementar tela/componente | Lindomar da Silva Junior | 3 |
-| TK-US-PA-01-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-PA-01-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-PA-02 | Cadastrar tipos de solicitacao/origem de RH (3 pts)
+### US-PA-02 | Cadastrar tipos de solicitação/origem de RH (3 pts)
 
-**Feature:** F-PA-02 - Parametrizacao de tipos de solicitacao/origem de RH (EP-07)
+**Feature:** F-PA-02 - Parametrização de tipos de solicitação/origem de RH (EP-07)
 **Prioridade:** Normal
 
-**Descricao:** Como administrador, quero manter tipos de solicitacao/origem de RH (pesquisador prospector, processo seletivo e transferencia entre projetos) para padronizar os fluxos do sistema.
+**Descrição:** Como administrador, quero manter tipos de solicitação/origem de RH (pesquisador prospector, processo seletivo e transferência entre projetos) para padronizar os fluxos do sistema.
 
-**BDD:** DADO que o administrador tenha permissao, QUANDO cadastrar ou inativar um tipo, ENTAO o sistema deve refletir a mudanca nos formularios.
+**BDD:** DADO que o administrador tenha permissão, QUANDO cadastrar ou inativar um tipo, ENTAO o sistema deve refletir a mudança nos formulários.
 
-**Criterios de Aceitacao:**
-- CA-F-PA-02-01: O administrador deve manter tipos de solicitacao/origem de RH
-- CA-F-PA-02-02: Tipos inativos nao devem aparecer em novos cadastros
-- CA-F-PA-02-03: O sistema deve manter historico de alteracoes de parametrizacao
+**Critérios de Aceitação:**
+- CA-F-PA-02-01: O administrador deve manter tipos de solicitação/origem de RH
+- CA-F-PA-02-02: Tipos inativos não devem aparecer em novos cadastros
+- CA-F-PA-02-03: O sistema deve manter histórico de alterações de parametrização
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
 | TK-US-PA-02-01 [back] Implementar regras/endpoint | Marcelo Gomes da Silva | 3 |
 | TK-US-PA-02-02 [front] Implementar tela/componente | Lucas Matheus Santos da Silva | 3 |
-| TK-US-PA-02-03 [qa] Testar BDD e criterios associados | Carolina Araujo de Sousa | 2 |
+| TK-US-PA-02-03 [qa] Testar BDD e critérios associados | Carolina Araujo de Sousa | 2 |
 
 ---
 
-### US-AQ-05 | Consolidar bugs, melhorias e evidencias finais (3 pts)
+### US-AQ-05 | Consolidar bugs, melhorias e evidências finais (3 pts)
 
-**Feature:** F-AQ-03 - Qualidade, evidencias e apoio ao OpenProject (EP-08)
+**Feature:** F-AQ-03 - Qualidade, evidências e apoio ao OpenProject (EP-08)
 **Prioridade:** Baixa
 
-**Descricao:** Como equipe, quero consolidar evidencias finais e registrar bugs/melhorias para demonstrar rastreabilidade da entrega.
+**Descrição:** Como equipe, quero consolidar evidências finais e registrar bugs/melhorias para demonstrar rastreabilidade da entrega.
 
-**BDD:** DADO que as sprints foram executadas, QUANDO finalizar a entrega, ENTAO o OpenProject deve conter evidencias, bugs/melhorias e registros atualizados.
+**BDD:** DADO que as sprints foram executadas, QUANDO finalizar a entrega, ENTAO o OpenProject deve conter evidências, bugs/melhorias e registros atualizados.
 
-**Criterios de Aceitacao:**
-- CA-F-AQ-03-01: Cada US deve possuir evidencia de teste ou validacao
-- CA-F-AQ-03-02: Bugs e melhorias devem ser registrados na versao correta
-- CA-F-AQ-03-03: O PDF de evidencias deve comprovar criterios, BDD, tasks, horas e responsaveis
+**Critérios de Aceitação:**
+- CA-F-AQ-03-01: Cada US deve possuir evidência de teste ou validação
+- CA-F-AQ-03-02: Bugs e melhorias devem ser registrados na versão correta
+- CA-F-AQ-03-03: O PDF de evidências deve comprovar critérios, BDD, tasks, horas e responsáveis
 
-| Task | Responsavel | Horas |
+| Task | Responsável | Horas |
 |------|-------------|-------|
-| TK-US-AQ-05-01 [devops/doc] Preparar artefatos tecnicos | Vinicius Lopes de Alencar | 3 |
-| TK-US-AQ-05-02 [doc] Documentar evidencias/configuracao | Erick Victor Carvalho de Araujo | 3 |
-| TK-US-AQ-05-03 [qa] Validar evidencias e rastreabilidade | Carolina Araujo de Sousa | 2 |
+| TK-US-AQ-05-01 [devops/doc] Preparar artefatos técnicos | Vinicius Lopes de Alencar | 3 |
+| TK-US-AQ-05-02 [doc] Documentar evidências/configuração | Erick Victor Carvalho de Araujo | 3 |
+| TK-US-AQ-05-03 [qa] Validar evidências e rastreabilidade | Carolina Araujo de Sousa | 2 |
 
 ---
 
-# Versao de Bugs/Melhorias
+# Versão de Bugs/Melhorias
 
 **BUGS/MELHORIAS - Banco de Especialistas** (Kanban)
 
-Versao especifica para registrar bugs e melhorias apos homologacoes e testes. Nao misturar com novas US.
+Versão específica para registrar bugs e melhorias após homologações e testes. Não misturar com novas US.

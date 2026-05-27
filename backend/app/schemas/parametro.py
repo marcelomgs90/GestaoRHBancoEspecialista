@@ -29,8 +29,8 @@ class ValidarChGlobalRequest(BaseModel):
 
 class ValidarChGlobalResponse(BaseModel):
     """
-    Resposta da validacao de CH global.
-    valido=True quando o vinculo proposto cabe no limite semanal.
+    Resposta da validação de CH global.
+    valido=True quando o vínculo proposto cabe no limite semanal.
     """
     valido: bool
     ch_alocada_em_outros_projetos: int

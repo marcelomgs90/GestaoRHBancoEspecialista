@@ -20,7 +20,7 @@ import { cn } from '@/lib/cn';
 import { MembroEditor, type MembroLocalProps } from './MembroEditor';
 import type { Projeto } from '@/types/projeto';
 
-// Tipo de membro em edicao na tela (antes de enviar ao backend)
+// Tipo de membro em edição na tela (antes de enviar ao backend)
 // backendId presente = já persistido; ausente = novo (ainda não enviado)
 type MembroLocal = MembroLocalProps & { backendId?: number };
 
@@ -31,16 +31,16 @@ interface HistoryLog {
   detail: string;
 }
 
-// Candidatos mockados ate existir endpoint do Banco de Especialistas
+// Candidatos mockados até existir endpoint do Banco de Especialistas
 const CANDIDATOS_MOCK = [
   { ref: 'CAND-001', nome: 'Lucas Amado', categoria: CategoriaBolsa.PESQUISADOR_MASTER },
   { ref: 'CAND-002', nome: 'Carla Dias', categoria: CategoriaBolsa.PESQUISADOR_PLENO },
   { ref: 'CAND-003', nome: 'Bernardo Silva', categoria: CategoriaBolsa.PESQUISADOR_JUNIOR },
 ];
 
-// Especialistas mockados ate existir endpoint do Banco de Especialistas
+// Especialistas mockados até existir endpoint do Banco de Especialistas
 const ESPECIALISTAS_MOCK = [
-  { ref: 'ESP-001', nome: 'Joao Silva', email: 'joao.silva@if.edu.br', ch_atual: 40 },
+  { ref: 'ESP-001', nome: 'João Silva', email: 'joao.silva@if.edu.br', ch_atual: 40 },
   { ref: 'ESP-002', nome: 'Maria Souza', email: 'maria.souza@if.edu.br', ch_atual: 20 },
   { ref: 'ESP-003', nome: 'Pedro Oliver', email: 'pedro.oliver@ext.com', ch_atual: 0 },
 ];
@@ -73,7 +73,7 @@ export default function ImplantacaoPage() {
         ]);
         setProjeto(p);
 
-        // Apenas resume um rascunho existente. A solicitacao SO e criada ao clicar em Finalizar.
+        // Apenas resume um rascunho existente. A solicitação SÓ é criada ao clicar em Finalizar.
         const existente = ss.find(
           (s) => s.tipo === TipoSolicitacao.IMPLANTACAO && s.status === 'EM_EDICAO',
         );
@@ -95,7 +95,7 @@ export default function ImplantacaoPage() {
           );
         }
       } catch {
-        setErro('Nao foi possivel inicializar a implantacao.');
+        setErro('Não foi possível inicializar a implantação.');
       }
     }
     void init();
@@ -106,7 +106,7 @@ export default function ImplantacaoPage() {
 
   const addMembro = (ref: string, nome: string, categoria: CategoriaBolsa) => {
     if (membros.some((m) => m.ref_pesquisador === ref)) {
-      setModalErro(`O pesquisador ${nome} ja esta na lista de designacao`);
+      setModalErro(`O pesquisador ${nome} já está na lista de designação`);
       return;
     }
     const novoMembro: MembroLocal = {
@@ -120,7 +120,7 @@ export default function ImplantacaoPage() {
       data_fim: projeto?.data_fim,
     };
     setMembros((prev) => [...prev, novoMembro]);
-    log('ADD', nome, 'Adicionado a lista de designacao');
+    log('ADD', nome, 'Adicionado à lista de designação');
     setShowSearch(null);
     setSearchTerm('');
   };
@@ -142,7 +142,7 @@ export default function ImplantacaoPage() {
     setFinalizando(true);
     setErro(null);
     try {
-      // Cria a solicitacao apenas agora (no submit), se ainda nao existir rascunho.
+      // Cria a solicitação apenas agora (no submit), se ainda não existir rascunho.
       let id = solicitacaoId;
       if (!id) {
         const nova = await solicitacaoService.criar({
@@ -165,7 +165,7 @@ export default function ImplantacaoPage() {
       await solicitacaoService.submeter(id);
       setShowSuccessModal(true);
     } catch {
-      setErro('Erro ao finalizar solicitacao. Tente novamente.');
+      setErro('Erro ao finalizar solicitação. Tente novamente.');
     } finally {
       setFinalizando(false);
     }
@@ -189,7 +189,7 @@ export default function ImplantacaoPage() {
           Voltar ao Projeto
         </button>
         <div className="text-right">
-          <h2 className="text-2xl font-bold text-slate-900">Implantacao / Alteracao de RH</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Implantação / Alteração de RH</h2>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
             Projeto: <span className="text-slate-900">{projeto?.codigo ?? '...'}</span>
           </p>
@@ -216,7 +216,7 @@ export default function ImplantacaoPage() {
               Processo Seletivo
             </p>
             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-              Candidatos Aprovados — mock ate endpoint AIE
+              Candidatos Aprovados — mock até endpoint AIE
             </p>
           </div>
         </button>
@@ -233,7 +233,7 @@ export default function ImplantacaoPage() {
               Banco de Especialistas
             </p>
             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-              Servidores e Remanejados — mock ate endpoint AIE
+              Servidores e Remanejados — mock até endpoint AIE
             </p>
           </div>
         </button>
@@ -243,10 +243,10 @@ export default function ImplantacaoPage() {
         <div className="p-6 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h3 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
-              Designacoes Pendentes
+              Designações Pendentes
             </h3>
             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
-              Aguardando finalizacao
+              Aguardando finalização
             </p>
           </div>
           <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
@@ -270,7 +270,7 @@ export default function ImplantacaoPage() {
             <div className="p-24 text-center">
               <Users size={64} className="mx-auto mb-6 text-slate-100" />
               <p className="font-black text-slate-300 uppercase tracking-widest text-xs italic">
-                Lista de designacao vazia
+                Lista de designação vazia
               </p>
             </div>
           )}
@@ -280,7 +280,7 @@ export default function ImplantacaoPage() {
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50/30">
           <h3 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
-            Historico de Alteracoes
+            Histórico de Alterações
           </h3>
           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
             <History size={14} />
@@ -310,7 +310,7 @@ export default function ImplantacaoPage() {
           ))}
           {history.length === 0 && (
             <div className="p-8 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">
-              Nenhum evento nesta sessao
+              Nenhum evento nesta sessão
             </div>
           )}
         </div>
@@ -336,7 +336,7 @@ export default function ImplantacaoPage() {
           ) : (
             <>
               <FileCheck size={18} className="mr-3" />
-              Finalizar Solicitacao
+              Finalizar Solicitação
             </>
           )}
         </button>
@@ -432,9 +432,9 @@ export default function ImplantacaoPage() {
               <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle2 size={40} />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2">Solicitacao Salva!</h3>
+              <h3 className="text-2xl font-black text-slate-900 mb-2">Solicitação Salva!</h3>
               <p className="text-slate-500 font-medium mb-8">
-                Os membros foram incluidos na solicitacao com sucesso.
+                Os membros foram incluídos na solicitação com sucesso.
               </p>
               <button
                 onClick={() => navigate(`/projetos/${projetoId}`)}

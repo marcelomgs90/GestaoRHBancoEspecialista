@@ -18,6 +18,6 @@ class UsuarioService:
         if not usuario:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuario nao encontrado",
+                detail="Usuário não encontrado",
             )
         return usuario

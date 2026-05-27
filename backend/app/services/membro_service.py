@@ -36,7 +36,7 @@ class MembroService:
         if existente:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"O pesquisador {dados.nome_pesquisador} ja esta incluido nesta versao",
+                detail=f"O pesquisador {dados.nome_pesquisador} já está incluído nesta versão",
             )
 
         self.parametros.validar_carga_horaria_global(
@@ -138,13 +138,13 @@ class MembroService:
         if not solicitacao:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Solicitacao nao encontrada",
+                detail="Solicitação não encontrada",
             )
             
         if solicitacao.status != StatusSolicitacao.EM_EDICAO:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Solicitacao nao esta em edicao",
+                detail="Solicitação não está em edição",
             )
 
         # 🛡️ VALIDAÇÃO CRÍTICA DE SEGURANÇA: O solicitante deve ser o coordenador do projeto
@@ -152,7 +152,7 @@ class MembroService:
         if not projeto or projeto.coordenador_id != usuario_logado_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Usuario nao tem permissao para alterar esta solicitacao",
+                detail="Usuário não tem permissão para alterar esta solicitação",
             )
 
         return solicitacao
@@ -166,7 +166,7 @@ class MembroService:
         if not versao:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Solicitacao nao possui versao de RH associada",
+                detail="Solicitação não possui versão de RH associada",
             )
         return versao
 
@@ -181,7 +181,7 @@ class MembroService:
         if not versao:
             raise HTTPException(
                 status_code=status.HTTP_442_UNPROCESSABLE_ENTITY,
-                detail="Solicitacao nao possui versao de RH associada",
+                detail="Solicitação não possui versão de RH associada",
             )
 
         membro = (
@@ -195,6 +195,6 @@ class MembroService:
         if not membro:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Membro nao encontrado nesta solicitacao",
+                detail="Membro não encontrado nesta solicitação",
             )
         return membro

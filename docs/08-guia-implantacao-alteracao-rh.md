@@ -1,19 +1,19 @@
-# Guia de Implementacao - Modulo de Implantacao e Alteracao de RH
+# Guia de Implementação - Módulo de Implantação e Alteração de RH
 
-Este documento foi construido a partir da analise de 5 PDFs reais do projeto IntegradorOS (PIFP-2412.0041), servindo como referencia exata para a implementacao do sistema.
+Este documento foi construído a partir da análise de 5 PDFs reais do projeto IntegradorOS (PIFP-2412.0041), servindo como referência exata para a implementação do sistema.
 
 ---
 
 ## 1. Estrutura dos Documentos PDF
 
-### 1.1 PDF de Implantacao de RH
+### 1.1 PDF de Implantação de RH
 
 Estrutura sequencial do documento:
 
 ```
 CABECALHO
-  Projeto: [Nome do Projeto] - [Codigo]
-  Solicitacao No.: [XX/AAAA]
+  Projeto: [Nome do Projeto] - [Código]
+  Solicitação No.: [XX/AAAA]
   [Cidade], [data por extenso]
 
 TITULO
@@ -47,17 +47,17 @@ BLOCO DE ASSINATURA
   Coordenador do Projeto
 ```
 
-### 1.2 PDF de Alteracao de RH
+### 1.2 PDF de Alteração de RH
 
 Estrutura sequencial do documento:
 
 ```
-CABECALHO (identico ao de Implantacao)
+CABECALHO (idêntico ao de Implantação)
 
 TITULO
   SOLICITACAO DE RH: ALTERACAO DE RH
 
-DESTINATARIO E TEXTO DE ABERTURA (identicos)
+DESTINATARIO E TEXTO DE ABERTURA (idênticos)
 
 SECAO 1: Recursos Humanos do Projeto - Atual (ANTES)
   1.1 RH EMPRESA
@@ -71,9 +71,9 @@ SECAO 1: Recursos Humanos do Projeto - Atual (ANTES)
     Total: [valor]
 
 SECAO 2: ALTERACOES SOLICITADAS
-  [Tabela resumo das alteracoes]
+  [Tabela resumo das alterações]
 
-SECAO 3: Recursos Humanos do Projeto a partir de [mes/ano]
+SECAO 3: Recursos Humanos do Projeto a partir de [mês/ano]
   3.1 RH EMPRESA
     [Tabela com equipe NOVA - DEPOIS]
     Total: [valor]
@@ -92,32 +92,32 @@ BLOCO DE ASSINATURA
 
 ---
 
-## 2. Tabelas de Pesquisadores (Implantacao e Antes/Depois)
+## 2. Tabelas de Pesquisadores (Implantação e Antes/Depois)
 
 ### 2.1 Colunas da Tabela
 
-| Coluna | Descricao | Observacao |
+| Coluna | Descrição | Observação |
 |--------|-----------|------------|
 | Nome | Nome completo do pesquisador | |
-| CPF | CPF do pesquisador | Visivel apenas em fontes EMBRAPII e SEBRAE. Na fonte EMPRESA, o CPF e omitido |
-| Funcao/Categoria | Categoria de bolsa do pesquisador | Ex: Coordenador, Pesquisador Master, Profissional Junior |
-| CH Mensal | Carga horaria mensal em horas | Valores observados: 16, 20, 80, 160 |
-| Bolsa mensal | Valor monetario da bolsa mensal | Formato R$ X.XXX,XX |
-| Qtd. de Meses | Quantidade de meses de atuacao | Inteiro |
-| Inicio | Periodo de atuacao | Formato "De DD/MM/AAAA a DD/MM/AAAA" |
+| CPF | CPF do pesquisador | Visível apenas em fontes EMBRAPII e SEBRAE. Na fonte EMPRESA, o CPF é omitido |
+| Função/Categoria | Categoria de bolsa do pesquisador | Ex: Coordenador, Pesquisador Master, Profissional Júnior |
+| CH Mensal | Carga horária mensal em horas | Valores observados: 16, 20, 80, 160 |
+| Bolsa mensal | Valor monetário da bolsa mensal | Formato R$ X.XXX,XX |
+| Qtd. de Meses | Quantidade de meses de atuação | Inteiro |
+| Início | Período de atuação | Formato "De DD/MM/AAAA a DD/MM/AAAA" |
 | Total | Valor total (bolsa x meses) | Formato R$ X.XXX,XX |
 
-### 2.2 Regra de Exibicao do CPF por Fonte
+### 2.2 Regra de Exibição do CPF por Fonte
 
-| Fonte | CPF Visivel |
+| Fonte | CPF Visível |
 |-------|-------------|
-| EMPRESA | NAO |
+| EMPRESA | NÃO |
 | EMBRAPII | SIM |
 | SEBRAE | SIM |
 
-### 2.3 Multiplas Linhas por Pesquisador
+### 2.3 Múltiplas Linhas por Pesquisador
 
-Um mesmo pesquisador pode aparecer **multiplas vezes** na mesma tabela de uma fonte, representando periodos de atuacao distintos. Exemplo real observado:
+Um mesmo pesquisador pode aparecer **múltiplas vezes** na mesma tabela de uma fonte, representando períodos de atuação distintos. Exemplo real observado:
 
 ```
 Andre Fellipe Cavalcante Silva | Coordenador | 20  | 1 mes | 01/01/2025 a 31/01/2025
@@ -127,7 +127,7 @@ Andre Fellipe Cavalcante Silva | Coordenador | 16  | 2 meses | 01/07/2025 a 30/0
 
 Isso indica que a CH mudou de 20 para 16 horas a partir de fevereiro, e houve uma pausa entre marco e junho.
 
-### 2.4 Mesmo Pesquisador em Multiplas Fontes
+### 2.4 Mesmo Pesquisador em Múltiplas Fontes
 
 O mesmo pesquisador pode aparecer em **fontes diferentes simultaneamente** no mesmo projeto. Exemplo:
 
@@ -141,57 +141,57 @@ A fonte de financiamento muda ao longo do tempo (balanceamento financeiro).
 
 ---
 
-## 3. Tabela de Alteracoes Solicitadas (Secao 2 do PDF de Alteracao)
+## 3. Tabela de Alterações Solicitadas (Seção 2 do PDF de Alteração)
 
 ### 3.1 Colunas
 
-| Coluna | Descricao |
+| Coluna | Descrição |
 |--------|-----------|
 | Bolsista | Nome do pesquisador afetado |
 | Perfil | Categoria atual ou nova |
-| CH | Carga horaria mensal |
+| CH | Carga horária mensal |
 | Valor da Hora | Valor por hora |
 | Valor da Bolsa | Valor mensal da bolsa |
-| Alteracao | Descricao textual da mudanca |
+| Alteração | Descrição textual da mudança |
 
-### 3.2 Tipos de Alteracao Observados nos Exemplos
+### 3.2 Tipos de Alteração Observados nos Exemplos
 
-| Tipo | Exemplo de Descricao | Impacto |
+| Tipo | Exemplo de Descrição | Impacto |
 |------|----------------------|---------|
-| **Balanceamento financeiro** | "Ajuste nas fontes de pagamentos para balanceamento financeiro" | Redistribuicao de periodos entre fontes EMPRESA/EMBRAPII/SEBRAE |
-| **Reducao de CH** | "Reducao da CH para adequacao entre os projetos" | Mudanca no campo CH Mensal (ex: 20 -> 16) |
-| **Inclusao de membro** | "Inclusao no projeto apos publicacao de resultado realizado por meio de entrevista" | Novo pesquisador aparece no DEPOIS |
-| **Saida do projeto** | "Saida da coordenacao e do projeto a pedido" | Pesquisador desaparece ou tem periodos zerados no DEPOIS |
-| **Troca de funcao/perfil** | "Alteracao de pesquisador para coordenadora do projeto" | Mudanca na coluna Funcao/Categoria |
-| **Migracao de categoria** | "Alteracao de perfil de Estudante para Profissional de acordo com NOTA TECNICA POLO-IFPB No 01/2022" | Mudanca de categoria com possivel mudanca de CH (80 -> 160) |
-| **Transferencia** | "Migracao para o projeto R6P (Enersys)" | Pesquisador sai deste projeto para outro |
+| **Balanceamento financeiro** | "Ajuste nas fontes de pagamentos para balanceamento financeiro" | Redistribuição de períodos entre fontes EMPRESA/EMBRAPII/SEBRAE |
+| **Redução de CH** | "Redução da CH para adequação entre os projetos" | Mudança no campo CH Mensal (ex: 20 -> 16) |
+| **Inclusão de membro** | "Inclusão no projeto após publicação de resultado realizado por meio de entrevista" | Novo pesquisador aparece no DEPOIS |
+| **Saída do projeto** | "Saída da coordenação e do projeto a pedido" | Pesquisador desaparece ou tem períodos zerados no DEPOIS |
+| **Troca de função/perfil** | "Alteração de pesquisador para coordenadora do projeto" | Mudança na coluna Função/Categoria |
+| **Migração de categoria** | "Alteração de perfil de Estudante para Profissional de acordo com NOTA TECNICA POLO-IFPB No 01/2022" | Mudança de categoria com possível mudança de CH (80 -> 160) |
+| **Transferência** | "Migração para o projeto R6P (Enersys)" | Pesquisador sai deste projeto para outro |
 
 ---
 
 ## 4. Categorias de Bolsa Observadas
 
-| Categoria | CH Mensal Tipica | Observacao |
+| Categoria | CH Mensal Típica | Observação |
 |-----------|-----------------|------------|
-| Coordenador | 16 ou 20 | Responsavel pelo projeto |
-| Pesquisador Master | 20 | Pesquisador senior |
-| Profissional Junior | 160 | Colaborador externo junior |
+| Coordenador | 16 ou 20 | Responsável pelo projeto |
+| Pesquisador Master | 20 | Pesquisador sênior |
+| Profissional Júnior | 160 | Colaborador externo júnior |
 | Profissional Iniciante | 80 ou 160 | Colaborador externo iniciante |
-| Estudante Nivel Superior Avancado | 80 | Estudante com perfil avancado |
-| Estudante Nivel Superior Iniciante | 80 | Estudante com perfil iniciante |
+| Estudante Nível Superior Avançado | 80 | Estudante com perfil avançado |
+| Estudante Nível Superior Iniciante | 80 | Estudante com perfil iniciante |
 
-**Nota:** A CH de 160 horas e usada para profissionais com dedicacao integral. A CH pode mudar ao longo do tempo conforme alteracoes de RH.
+**Nota:** A CH de 160 horas é usada para profissionais com dedicação integral. A CH pode mudar ao longo do tempo conforme alterações de RH.
 
 ---
 
 ## 5. Fontes de Financiamento
 
-As secoes do PDF sao sempre agrupadas por fonte, na ordem fixa:
+As seções do PDF são sempre agrupadas por fonte, na ordem fixa:
 
 1. **RH EMPRESA**
 2. **RH EMBRAPII**
 3. **RH SEBRAE**
 
-**Nota:** A fonte **IFPB** nao apareceu nos exemplos analisados, mas esta prevista na especificacao do sistema.
+**Nota:** A fonte **IFPB** não apareceu nos exemplos analisados, mas está prevista na especificação do sistema.
 
 ---
 
@@ -199,69 +199,69 @@ As secoes do PDF sao sempre agrupadas por fonte, na ordem fixa:
 
 ### 6.1 Versionamento Acumulativo
 
-O PDF de alteracao mostra o historico **completo** do projeto, nao apenas as mudancas. A secao "Depois" contem TODOS os registros desde o inicio do projeto, incluindo periodos passados que ja foram pagos. Isso significa que:
+O PDF de alteração mostra o histórico **completo** do projeto, não apenas as mudanças. A seção "Depois" contém TODOS os registros desde o início do projeto, incluindo períodos passados que já foram pagos. Isso significa que:
 
-- O sistema deve manter todo o historico de alocacao
-- Ao gerar o PDF "Depois", deve incluir registros desde a data de inicio do projeto
-- Registros passados nao sao removidos, apenas periodos futuros sao ajustados
+- O sistema deve manter todo o histórico de alocação
+- Ao gerar o PDF "Depois", deve incluir registros desde a data de início do projeto
+- Registros passados não são removidos, apenas períodos futuros são ajustados
 
-### 6.2 Periodos com Lacunas
+### 6.2 Períodos com Lacunas
 
-Pesquisadores podem ter **lacunas** entre periodos de atuacao. Exemplo:
-- Periodo 1: 01/02/2025 a 28/02/2025
-- (lacuna marco a junho)
-- Periodo 2: 01/07/2025 a 30/08/2025
+Pesquisadores podem ter **lacunas** entre períodos de atuação. Exemplo:
+- Período 1: 01/02/2025 a 28/02/2025
+- (lacuna março a junho)
+- Período 2: 01/07/2025 a 30/08/2025
 
-Isso e comum quando ha balanceamento entre fontes ou pausa temporaria.
+Isso é comum quando há balanceamento entre fontes ou pausa temporária.
 
-### 6.3 Migracao de Categoria (Nota Tecnica 01/2022)
+### 6.3 Migração de Categoria (Nota Técnica 01/2022)
 
-Quando um estudante conclui o curso, ele pode ser reclassificado como Profissional (colaborador externo) sem necessidade de novo cadastramento no Banco de Especialistas. Regra da NOTA TECNICA POLO-IFPB No 01/2022:
+Quando um estudante conclui o curso, ele pode ser reclassificado como Profissional (colaborador externo) sem necessidade de novo cadastramento no Banco de Especialistas. Regra da NOTA TÉCNICA POLO-IFPB No 01/2022:
 
-> "No caso de um estudante participante de equipe de projeto encerrar seu vinculo academico com a ICT de origem quando da conclusao do curso, antes da data de termino no projeto, este podera ser enquadrado em nova categoria, por exemplo, como colaborador externo."
+> "No caso de um estudante participante de equipe de projeto encerrar seu vínculo acadêmico com a ICT de origem quando da conclusão do curso, antes da data de término no projeto, este poderá ser enquadrado em nova categoria, por exemplo, como colaborador externo."
 
-**Impacto no sistema:** a categoria e a CH do pesquisador podem mudar a partir de uma data especifica (ex: Estudante Nivel Superior Avancado 80h -> Profissional Iniciante 160h).
+**Impacto no sistema:** a categoria e a CH do pesquisador podem mudar a partir de uma data específica (ex: Estudante Nível Superior Avançado 80h -> Profissional Iniciante 160h).
 
-### 6.4 Realocacao sem Nova Entrevista (Nota Tecnica 01/2022)
+### 6.4 Realocação sem Nova Entrevista (Nota Técnica 01/2022)
 
-> "Caso um projeto tenha sido finalizado, um CP podera solicitar a realocacao da equipe total ou parcial para um novo projeto, desde que ocorra ate 60 dias apos termino de vigencia da bolsa em curso."
+> "Caso um projeto tenha sido finalizado, um CP poderá solicitar a realocação da equipe total ou parcial para um novo projeto, desde que ocorra até 60 dias após término de vigência da bolsa em curso."
 
-**Impacto no sistema:** validar se a realocacao ocorre dentro de 60 dias do fim do projeto anterior.
+**Impacto no sistema:** validar se a realocação ocorre dentro de 60 dias do fim do projeto anterior.
 
-### 6.5 Inclusao via Processo Seletivo
+### 6.5 Inclusão via Processo Seletivo
 
-Novos membros podem ser incluidos apos publicacao de resultado de selecao. A justificativa deve conter o link da publicacao do processo seletivo.
+Novos membros podem ser incluídos após publicação de resultado de seleção. A justificativa deve conter o link da publicação do processo seletivo.
 
-### 6.6 Transferencia de Coordenador
+### 6.6 Transferência de Coordenador
 
-A funcao de Coordenador pode ser transferida para outro pesquisador do projeto:
+A função de Coordenador pode ser transferida para outro pesquisador do projeto:
 - O coordenador anterior pode sair completamente ou permanecer como pesquisador
-- O novo coordenador muda de "Pesquisador Master" para "Coordenadora" (exemplo: Juliana assumiu no lugar de Andre)
-- A mudanca se reflete em TODAS as fontes simultaneamente
+- O novo coordenador muda de "Pesquisador Master" para "Coordenadora" (exemplo: Juliana assumiu no lugar de André)
+- A mudança se reflete em TODAS as fontes simultaneamente
 
-### 6.7 Transferencia entre Projetos
+### 6.7 Transferência entre Projetos
 
 Quando um pesquisador migra para outro projeto:
-- Na secao "Depois", seus periodos futuros aparecem com Qtd. de Meses = 0
+- Na seção "Depois", seus períodos futuros aparecem com Qtd. de Meses = 0
 - A justificativa indica o projeto destino
-- O projeto destino deve criar sua propria solicitacao de alteracao para incluir o pesquisador
+- O projeto destino deve criar sua própria solicitação de alteração para incluir o pesquisador
 
 ---
 
-## 7. Calculos Financeiros
+## 7. Cálculos Financeiros
 
 ### 7.1 Valores de Bolsa Observados
 
 | Categoria | Valor Mensal Observado |
 |-----------|----------------------|
 | Pesquisador Master (20h) | R$ 4.585,00 |
-| Profissional Junior (160h) | R$ 5.484,80 |
+| Profissional Júnior (160h) | R$ 5.484,80 |
 | Profissional Iniciante (80h) | R$ 2.056,80 |
 | Profissional Iniciante (160h) | R$ 4.113,60 |
-| Estudante Nivel Superior Avancado (80h) | R$ 1.250,40 |
-| Estudante Nivel Superior Iniciante (80h) | R$ 1.000,00 |
+| Estudante Nível Superior Avançado (80h) | R$ 1.250,40 |
+| Estudante Nível Superior Iniciante (80h) | R$ 1.000,00 |
 
-### 7.2 Formula de Calculo
+### 7.2 Fórmula de Cálculo
 
 ```
 Total por linha = Bolsa mensal x Qtd. de Meses
@@ -270,7 +270,7 @@ Total por fonte = Somatorio de todos os Totais das linhas daquela fonte
 
 ### 7.3 Proporcionalidade
 
-O valor da bolsa e proporcional a CH. Exemplo com Profissional Iniciante:
+O valor da bolsa é proporcional à CH. Exemplo com Profissional Iniciante:
 - 80h/mes = R$ 2.056,80
 - 160h/mes = R$ 4.113,60 (exatamente o dobro)
 
@@ -288,49 +288,49 @@ Siape No. [Numero]
 Coordenador(a) do Projeto
 ```
 
-**Nota:** Quando ha troca de coordenador, o documento pode ser assinado pelo novo ou pelo antigo coordenador, dependendo de quem submete a solicitacao. No exemplo da solicitacao 08_2025, Andre (coordenador que esta saindo) assina a solicitacao de sua propria saida.
+**Nota:** Quando há troca de coordenador, o documento pode ser assinado pelo novo ou pelo antigo coordenador, dependendo de quem submete a solicitação. No exemplo da solicitação 08_2025, André (coordenador que está saindo) assina a solicitação de sua própria saída.
 
 ---
 
-## 9. Sequencia de Solicitacoes (Fluxo Evolutivo)
+## 9. Sequência de Solicitações (Fluxo Evolutivo)
 
-Os exemplos analisados mostram a evolucao real de um unico projeto:
+Os exemplos analisados mostram a evolução real de um único projeto:
 
-| Solicitacao | Tipo | Descricao |
+| Solicitação | Tipo | Descrição |
 |-------------|------|-----------|
-| 03/2025 | Implantacao | Equipe inicial com 8 pesquisadores distribuidos em EMPRESA, EMBRAPII e SEBRAE |
-| 05/2025 | Alteracao | Balanceamento financeiro entre fontes, reducao de CH do coordenador (20->16), inclusao de Danillo via processo seletivo |
-| 08/2025 (=13/2025) | Alteracao | Saida do coordenador Andre, Juliana assume como coordenadora, migracao de Matheus de Estudante para Profissional, inclusao de Bruno, Haniel e Laila |
-| 14/2025 | Alteracao | Transferencia de Alic para o projeto R6P (Enersys). Juliana agora assina como coordenadora |
+| 03/2025 | Implantação | Equipe inicial com 8 pesquisadores distribuídos em EMPRESA, EMBRAPII e SEBRAE |
+| 05/2025 | Alteração | Balanceamento financeiro entre fontes, redução de CH do coordenador (20->16), inclusão de Danillo via processo seletivo |
+| 08/2025 (=13/2025) | Alteração | Saída do coordenador André, Juliana assume como coordenadora, migração de Matheus de Estudante para Profissional, inclusão de Bruno, Haniel e Laila |
+| 14/2025 | Alteração | Transferência de Alic para o projeto R6P (Enersys). Juliana agora assina como coordenadora |
 
-**Observacao:** cada alteracao toma como "Atual" o resultado da alteracao anterior. O sistema deve manter esse encadeamento de versoes.
+**Observação:** cada alteração toma como "Atual" o resultado da alteração anterior. O sistema deve manter esse encadeamento de versões.
 
 ---
 
-## 10. Requisitos para Geracao de PDF
+## 10. Requisitos para Geração de PDF
 
 ### 10.1 Layout
 
 - Tabelas com bordas
-- Cabecalho institucional
-- Formatacao de moeda brasileira (R$ X.XXX,XX)
+- Cabeçalho institucional
+- Formatação de moeda brasileira (R$ X.XXX,XX)
 - Datas no formato DD/MM/AAAA
-- Quebra de pagina quando a tabela excede a pagina
+- Quebra de página quando a tabela excede a página
 - Ordem fixa das fontes: EMPRESA, EMBRAPII, SEBRAE (, IFPB)
 
-### 10.2 Dados Necessarios para Gerar o PDF
+### 10.2 Dados Necessários para Gerar o PDF
 
-**Implantacao:**
-- Dados do projeto (nome, codigo)
-- Numero da solicitacao
-- Data de emissao
-- Lista completa de pesquisadores com: nome, CPF, categoria, CH, valor da bolsa, qtd meses, periodo, total - agrupados por fonte
+**Implantação:**
+- Dados do projeto (nome, código)
+- Número da solicitação
+- Data de emissão
+- Lista completa de pesquisadores com: nome, CPF, categoria, CH, valor da bolsa, qtd meses, período, total - agrupados por fonte
 - Texto de justificativa
-- Dados do coordenador para assinatura (nome, matricula, Siape)
+- Dados do coordenador para assinatura (nome, matrícula, Siape)
 
-**Alteracao:**
+**Alteração:**
 - Tudo acima, MAIS:
-- Versao ATUAL (antes) da equipe completa, agrupada por fonte
-- Tabela resumo de alteracoes (bolsista, perfil, CH, valor hora, valor bolsa, descricao da alteracao)
-- Versao NOVA (depois) da equipe completa, agrupada por fonte
-- Mes/ano a partir do qual as alteracoes entram em vigor
+- Versão ATUAL (antes) da equipe completa, agrupada por fonte
+- Tabela resumo de alterações (bolsista, perfil, CH, valor hora, valor bolsa, descrição da alteração)
+- Versão NOVA (depois) da equipe completa, agrupada por fonte
+- Mês/ano a partir do qual as alterações entram em vigor

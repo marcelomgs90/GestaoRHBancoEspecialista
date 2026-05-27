@@ -52,7 +52,7 @@ export default function SolicitacoesListPage() {
         setSolicitacoes(ss);
         setProjetos(ps);
       } catch {
-        setErro('Nao foi possivel carregar as solicitacoes.');
+        setErro('Não foi possível carregar as solicitações.');
       } finally {
         setIsLoading(false);
       }
@@ -78,7 +78,7 @@ export default function SolicitacoesListPage() {
         prev.map((s) => (s.id === sol.id ? atualizada : s)),
       );
     } catch {
-      setErroSubmeter(`Erro ao submeter solicitacao #${sol.id}.`);
+      setErroSubmeter(`Erro ao submeter solicitação #${sol.id}.`);
     } finally {
       setSubmetendoId(null);
     }
@@ -88,9 +88,9 @@ export default function SolicitacoesListPage() {
     <div className="space-y-8 animate-in slide-in-up">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-950">Solicitacoes de RH</h2>
+          <h2 className="text-2xl font-bold text-slate-950">Solicitações de RH</h2>
           <p className="text-slate-700 text-sm mt-1">
-            Historico de implantacoes e alteracoes de quadro.
+            Histórico de implantações e alterações de quadro.
           </p>
         </div>
         {podeCriarProjeto && (
@@ -142,7 +142,7 @@ export default function SolicitacoesListPage() {
 
       {isLoading && (
         <div className="text-center py-16">
-          <p className="text-sm text-slate-400">Carregando solicitacoes...</p>
+          <p className="text-sm text-slate-400">Carregando solicitações...</p>
         </div>
       )}
 
@@ -165,7 +165,7 @@ export default function SolicitacoesListPage() {
           {filtradas.length === 0 ? (
             <div className="text-center py-16">
               <ClipboardList size={40} className="mx-auto mb-4 text-slate-200" />
-              <p className="text-sm text-slate-400 font-medium">Nenhuma solicitacao encontrada.</p>
+              <p className="text-sm text-slate-400 font-medium">Nenhuma solicitação encontrada.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -215,7 +215,7 @@ export default function SolicitacoesListPage() {
                           e.stopPropagation();
                           navigate(`/solicitacoes/${sol.id}/comparacao`);
                         }}
-                        title="Comparar versoes (antes/depois)"
+                        title="Comparar versões (antes/depois)"
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-900 hover:text-white border border-slate-200 hover:border-slate-900 rounded text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
                       >
                         <GitCompare size={12} />
@@ -229,7 +229,7 @@ export default function SolicitacoesListPage() {
                             handleSubmeter(sol);
                           }}
                           disabled={submetendoId === sol.id}
-                          title="Submeter solicitacao"
+                          title="Submeter solicitação"
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 rounded text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Send size={12} className={submetendoId === sol.id ? 'animate-pulse' : ''} />

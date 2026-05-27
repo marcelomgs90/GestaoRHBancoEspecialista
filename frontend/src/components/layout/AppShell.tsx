@@ -66,7 +66,7 @@ export function AppShell() {
   const menuItems: MenuItem[] = [
     { type: 'link', name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { type: 'group', name: 'Projetos', icon: Briefcase, subItems: projetoSubItems },
-    { type: 'link', name: 'Solicitacoes', icon: ClipboardList, path: '/solicitacoes' },
+    { type: 'link', name: 'Solicitações', icon: ClipboardList, path: '/solicitacoes' },
     ...(FEATURE_BOLSAS && podeGerenciarParametros
       ? [{ type: 'link' as const, name: 'Tabelas de Bolsas', icon: Settings, path: '/parametros/bolsas' }]
       : []),
@@ -99,7 +99,7 @@ export function AppShell() {
             {isSidebarOpen && (
               <div className="animate-in fade-in slide-in-from-left-2 duration-500">
                 <span className="text-sm font-bold tracking-tight text-slate-900 block leading-none dark:text-slate-100">
-                  GESTAO RH
+                  GESTÃO RH
                 </span>
                 <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mt-1 block">
                   Banco de Especialistas
@@ -199,7 +199,7 @@ export function AppShell() {
             )}
           >
             <LogOut size={18} className="text-red-500 group-hover:text-red-600 transition-colors" />
-            {isSidebarOpen && <span>Encerrar sessao</span>}
+            {isSidebarOpen && <span>Encerrar sessão</span>}
           </button>
         </div>
       </aside>
@@ -218,7 +218,7 @@ export function AppShell() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-slate-600 transition-colors dark:group-focus-within:text-slate-300" />
               <input
                 type="text"
-                placeholder="Pesquisar projetos, pesquisadores ou solicitacoes..."
+                placeholder="Pesquisar projetos, pesquisadores ou solicitações..."
                 className="block w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs font-normal focus:bg-white focus:ring-0 focus:border-slate-400 outline-none transition-all placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800 dark:focus:border-slate-500"
               />
             </div>

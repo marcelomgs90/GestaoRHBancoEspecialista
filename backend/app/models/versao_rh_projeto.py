@@ -8,8 +8,8 @@ from app.utils.enums import StatusVersaoRH
 
 class VersaoRHProjeto(Base):
     """
-    Versao de RH do projeto - snapshot da composicao da equipe.
-    Registros de Pesquisador_Projeto vinculam-se a uma versao especifica via versao_rh_id.
+    Versão de RH do projeto - snapshot da composição da equipe.
+    Registros de Pesquisador_Projeto vinculam-se a uma versão específica via versao_rh_id.
     """
     __tablename__ = "versao_rh_projeto"
 
@@ -19,7 +19,7 @@ class VersaoRHProjeto(Base):
     numero_versao = Column(Integer, nullable=False)
     status = Column(SQLEnum(StatusVersaoRH), default=StatusVersaoRH.PROPOSTA, nullable=False)
 
-    # Referencia a solicitacao que gerou esta versao
+    # Referência à solicitação que gerou esta versão
     solicitacao_id = Column(Integer, ForeignKey("solicitacao_rh.id"), nullable=True)
 
     # Auditoria

@@ -1,236 +1,236 @@
 # Sprint 3 - Monitoramento e Documentos
 
-**Objetivo:** Emitir documentos PDF padronizados, solicitacao de pagamento e consultas/relatorios consolidados.
+**Objetivo:** Emitir documentos PDF padronizados, solicitação de pagamento e consultas/relatórios consolidados.
 
-**Metricas:** 7 US | 31 Story Points | 56 horas estimadas
+**Métricas:** 7 US | 31 Story Points | 56 horas estimadas
 
 ---
 
-## Visao Geral das Fases
+## Visão Geral das Fases
 
 ```
-Fase 1: Pagamento por Competencia  [US-SD-06]                    ── base para PDF de pagamento
+Fase 1: Pagamento por Competência  [US-SD-06]                    ── base para PDF de pagamento
     |
-Fase 2: Geracao de PDFs           [US-SD-07, US-SD-08, US-SD-09] ── depende dos dados das Sprints 1-2
+Fase 2: Geração de PDFs           [US-SD-07, US-SD-08, US-SD-09] ── depende dos dados das Sprints 1-2
     |
-Fase 3: Monitoramento/Relatorios  [US-MO-01, US-MO-02]           ── depende dos vinculos cadastrados
+Fase 3: Monitoramento/Relatórios  [US-MO-01, US-MO-02]           ── depende dos vínculos cadastrados
     |
-Fase 4: Evidencias                [US-AQ-04]                      ── pos-implementacao
+Fase 4: Evidências                [US-AQ-04]                      ── pós-implementação
 ```
 
 ---
 
 ## Fase 1 — Pagamento por Competencia
 
-### US-SD-06 | Criar solicitacao de pagamento por competencia (5 pts)
+### US-SD-06 | Criar solicitação de pagamento por competência (5 pts)
 
-**Epic:** EP-02 Modulo Solicitacoes e Documentos
-**Feature:** F-SD-05 - Solicitacao de pagamento de RH por mes/ano
+**Epic:** EP-02 Módulo Solicitações e Documentos
+**Feature:** F-SD-05 - Solicitação de pagamento de RH por mês/ano
 **Prioridade:** Alta
 
-**Descricao:** Como coordenador, quero solicitar pagamento de RH por mes e ano para gerar a documentacao da competencia.
+**Descrição:** Como coordenador, quero solicitar pagamento de RH por mês e ano para gerar a documentação da competência.
 
-**BDD:** DADO que exista equipe vigente, QUANDO o coordenador informar mes e ano, ENTAO o sistema deve listar membros ativos e valores da competencia.
+**BDD:** DADO que exista equipe vigente, QUANDO o coordenador informar mês e ano, ENTAO o sistema deve listar membros ativos e valores da competência.
 
-**Criterios de Aceitacao:**
-- CA-01: A solicitacao de pagamento deve exigir mes e ano de referencia
-- CA-02: O sistema deve listar somente membros ativos na competencia
-- CA-03: O pagamento deve considerar fonte e carga horaria vigente
+**Critérios de Aceitação:**
+- CA-01: A solicitação de pagamento deve exigir mês e ano de referência
+- CA-02: O sistema deve listar somente membros ativos na competência
+- CA-03: O pagamento deve considerar fonte e carga horária vigente
 
 #### Tasks
 
-| # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
+| # | Task ID | Tipo | Descrição | Responsável | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 1 | TK-US-SD-06-01 | back | Endpoint `POST /solicitacoes/` (tipo=Pagamento) com mes_ano, listar membros ativos no periodo, calcular valores por fonte | Vinicius | 3 | [ ] |
-| 2 | TK-US-SD-06-02 | front | Tela de solicitacao de pagamento: selecao de mes/ano, listagem de membros ativos com valores | Lindomar | 3 | [ ] |
-| 3 | TK-US-SD-06-03 | qa | Testar filtragem por competencia, membros fora do periodo, calculo de valores | Carolina | 2 | [ ] |
+| 1 | TK-US-SD-06-01 | back | Endpoint `POST /solicitacoes/` (tipo=Pagamento) com mes_ano, listar membros ativos no período, calcular valores por fonte | Vinicius | 3 | [ ] |
+| 2 | TK-US-SD-06-02 | front | Tela de solicitação de pagamento: seleção de mês/ano, listagem de membros ativos com valores | Lindomar | 3 | [ ] |
+| 3 | TK-US-SD-06-03 | qa | Testar filtragem por competência, membros fora do período, cálculo de valores | Carolina | 2 | [ ] |
 
-**Detalhamento tecnico da Task #1:**
+**Detalhamento técnico da Task #1:**
 - Filtrar `Pesquisador_Projeto` onde `data_inicio <= ultimo_dia_mes` e `data_fim >= primeiro_dia_mes`
 - Agrupar por fonte_financiamento
 - Calcular valor mensal com base na CH e Parametro_Regra vigente
 
 ---
 
-## Fase 2 — Geracao de PDFs
+## Fase 2 — Geração de PDFs
 
-> **Referencia:** docs/08-guia-implantacao-alteracao-rh.md (estrutura exata dos PDFs)
+> **Referência:** docs/08-guia-implantacao-alteracao-rh.md (estrutura exata dos PDFs)
 
-### US-SD-07 | Gerar PDF de implantacao inicial (5 pts)
+### US-SD-07 | Gerar PDF de implantação inicial (5 pts)
 
-**Epic:** EP-02 Modulo Solicitacoes e Documentos
-**Feature:** F-SD-06 - Geracao automatizada de PDFs padronizados
+**Epic:** EP-02 Módulo Solicitações e Documentos
+**Feature:** F-SD-06 - Geração automatizada de PDFs padronizados
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador, quero gerar PDF de implantacao inicial para anexar ao processo administrativo.
+**Descrição:** Como coordenador, quero gerar PDF de implantação inicial para anexar ao processo administrativo.
 
-**BDD:** DADO que a implantacao inicial esteja valida, QUANDO o usuario acionar a emissao, ENTAO o PDF deve ser gerado no padrao definido.
+**BDD:** DADO que a implantação inicial esteja válida, QUANDO o usuário acionar a emissão, ENTAO o PDF deve ser gerado no padrão definido.
 
-**Criterios de Aceitacao:**
-- CA-01: O sistema deve gerar PDF de implantacao inicial conforme layout padrao
+**Critérios de Aceitação:**
+- CA-01: O sistema deve gerar PDF de implantação inicial conforme layout padrão
 
 #### Tasks
 
-| # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
+| # | Task ID | Tipo | Descrição | Responsável | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 4 | TK-US-SD-07-01 | back | Modulo de geracao de PDF de implantacao: cabecalho, tabelas por fonte (EMPRESA/EMBRAPII/SEBRAE), totais, justificativa, assinatura | Marcelo | 3 | [ ] |
-| 5 | TK-US-SD-07-02 | front | Botao "Gerar PDF" na tela de solicitacao, download do arquivo | Lucas | 3 | [ ] |
-| 6 | TK-US-SD-07-03 | qa | Validar PDF gerado contra layout de referencia (docs/08), conferir valores e formatacao | Carolina | 2 | [ ] |
+| 4 | TK-US-SD-07-01 | back | Módulo de geração de PDF de implantação: cabeçalho, tabelas por fonte (EMPRESA/EMBRAPII/SEBRAE), totais, justificativa, assinatura | Marcelo | 3 | [ ] |
+| 5 | TK-US-SD-07-02 | front | Botão "Gerar PDF" na tela de solicitação, download do arquivo | Lucas | 3 | [ ] |
+| 6 | TK-US-SD-07-03 | qa | Validar PDF gerado contra layout de referência (docs/08), conferir valores e formatação | Carolina | 2 | [ ] |
 
-**Detalhamento tecnico da Task #4:**
-- Estrutura do PDF conforme docs/08-guia-implantacao-alteracao-rh.md Secao 1:
-  - Cabecalho: Projeto, Codigo, Solicitacao No., Data
-  - Titulo: "SOLICITACAO DE RH: IMPLANTACAO DE RH"
-  - Secao 1: tabelas por fonte (1.1 EMPRESA, 1.2 EMBRAPII, 1.3 SEBRAE)
-  - Colunas: Nome, CPF (oculto em EMPRESA), Funcao/Categoria, CH Mensal, Bolsa mensal, Qtd. Meses, Inicio, Total
-  - Secao 2: Justificativa
+**Detalhamento técnico da Task #4:**
+- Estrutura do PDF conforme docs/08-guia-implantacao-alteracao-rh.md Seção 1:
+  - Cabeçalho: Projeto, Código, Solicitação No., Data
+  - Título: "SOLICITAÇÃO DE RH: IMPLANTAÇÃO DE RH"
+  - Seção 1: tabelas por fonte (1.1 EMPRESA, 1.2 EMBRAPII, 1.3 SEBRAE)
+  - Colunas: Nome, CPF (oculto em EMPRESA), Função/Categoria, CH Mensal, Bolsa mensal, Qtd. Meses, Início, Total
+  - Seção 2: Justificativa
   - Bloco de assinatura do coordenador
-- Formato monetario: R$ X.XXX,XX
+- Formato monetário: R$ X.XXX,XX
 - Datas: DD/MM/AAAA
-- Modulo isolado da logica de negocio (conforme CLAUDE.md)
+- Módulo isolado da lógica de negócio (conforme CLAUDE.md)
 
 ---
 
-### US-SD-08 | Gerar PDF de alteracao de RH (5 pts)
+### US-SD-08 | Gerar PDF de alteração de RH (5 pts)
 
-**Epic:** EP-02 Modulo Solicitacoes e Documentos
-**Feature:** F-SD-06 - Geracao automatizada de PDFs padronizados
+**Epic:** EP-02 Módulo Solicitações e Documentos
+**Feature:** F-SD-06 - Geração automatizada de PDFs padronizados
 **Prioridade:** Imediata
 
-**Descricao:** Como coordenador, quero gerar PDF de alteracao de RH com estado atual e proposto para formalizar mudancas.
+**Descrição:** Como coordenador, quero gerar PDF de alteração de RH com estado atual e proposto para formalizar mudanças.
 
-**BDD:** DADO que exista alteracao de RH validada, QUANDO o usuario emitir o documento, ENTAO o PDF deve apresentar as informacoes antes e depois.
+**BDD:** DADO que exista alteração de RH validada, QUANDO o usuário emitir o documento, ENTAO o PDF deve apresentar as informações antes e depois.
 
-**Criterios de Aceitacao:**
-- CA-01: O sistema deve gerar PDF de alteracao de RH
+**Critérios de Aceitação:**
+- CA-01: O sistema deve gerar PDF de alteração de RH
 - CA-02: O sistema deve comparar equipe atual e equipe proposta
-- CA-03: As diferencas devem ser exibidas de forma clara
+- CA-03: As diferenças devem ser exibidas de forma clara
 
 #### Tasks
 
-| # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
+| # | Task ID | Tipo | Descrição | Responsável | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 7 | TK-US-SD-08-01 | back | Modulo de geracao de PDF de alteracao: Secao Atual (Antes), Secao Alteracoes Solicitadas, Secao Nova (Depois), justificativa | Vinicius | 3 | [ ] |
-| 8 | TK-US-SD-08-02 | front | Botao "Gerar PDF de Alteracao" com preview e download | Lindomar | 3 | [ ] |
-| 9 | TK-US-SD-08-03 | qa | Validar PDF com cenarios: balanceamento financeiro, inclusao, saida, troca de funcao | Carolina | 2 | [ ] |
+| 7 | TK-US-SD-08-01 | back | Módulo de geração de PDF de alteração: Seção Atual (Antes), Seção Alterações Solicitadas, Seção Nova (Depois), justificativa | Vinicius | 3 | [ ] |
+| 8 | TK-US-SD-08-02 | front | Botão "Gerar PDF de Alteração" com preview e download | Lindomar | 3 | [ ] |
+| 9 | TK-US-SD-08-03 | qa | Validar PDF com cenários: balanceamento financeiro, inclusão, saída, troca de função | Carolina | 2 | [ ] |
 
-**Detalhamento tecnico da Task #7:**
-- Estrutura conforme docs/08, Secao 1.2:
-  - Secao 1: RH Atual (Antes) — tabelas por fonte com historico completo
-  - Secao 2: Alteracoes Solicitadas — tabela resumo (Bolsista, Perfil, CH, Valor Hora, Valor Bolsa, Alteracao)
-  - Secao 3: RH a partir de [mes/ano] (Depois) — tabelas por fonte com nova composicao
-  - Secao 4: Justificativa
-- Reutilizar componentes do modulo de PDF de implantacao para tabelas por fonte
-- Tipos de alteracao: balanceamento financeiro, reducao CH, inclusao, saida, troca funcao, migracao categoria, transferencia
+**Detalhamento técnico da Task #7:**
+- Estrutura conforme docs/08, Seção 1.2:
+  - Seção 1: RH Atual (Antes) — tabelas por fonte com histórico completo
+  - Seção 2: Alterações Solicitadas — tabela resumo (Bolsista, Perfil, CH, Valor Hora, Valor Bolsa, Alteração)
+  - Seção 3: RH a partir de [mês/ano] (Depois) — tabelas por fonte com nova composição
+  - Seção 4: Justificativa
+- Reutilizar componentes do módulo de PDF de implantação para tabelas por fonte
+- Tipos de alteração: balanceamento financeiro, redução CH, inclusão, saída, troca função, migração categoria, transferência
 
 ---
 
-### US-SD-09 | Gerar PDF de folha/solicitacao de pagamento (5 pts)
+### US-SD-09 | Gerar PDF de folha/solicitação de pagamento (5 pts)
 
-**Epic:** EP-02 Modulo Solicitacoes e Documentos
-**Feature:** F-SD-06 - Geracao automatizada de PDFs padronizados
+**Epic:** EP-02 Módulo Solicitações e Documentos
+**Feature:** F-SD-06 - Geração automatizada de PDFs padronizados
 **Prioridade:** Alta
 
-**Descricao:** Como coordenador, quero gerar PDF de folha de pagamento para a competencia selecionada.
+**Descrição:** Como coordenador, quero gerar PDF de folha de pagamento para a competência selecionada.
 
-**BDD:** DADO que a solicitacao de pagamento foi calculada, QUANDO o usuario emitir o documento, ENTAO o PDF deve listar membros, fonte, horas e valores.
+**BDD:** DADO que a solicitação de pagamento foi calculada, QUANDO o usuário emitir o documento, ENTAO o PDF deve listar membros, fonte, horas e valores.
 
-**Criterios de Aceitacao:**
-- CA-01: O sistema deve gerar PDF de folha/solicitacao de pagamento
-- CA-02: A solicitacao de pagamento deve exigir mes e ano de referencia
-- CA-03: O sistema deve listar somente membros ativos na competencia
-
-#### Tasks
-
-| # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
-|---|---------|------|-----------|-------------|-------|--------|
-| 10 | TK-US-SD-09-01 | back | Modulo de geracao de PDF de pagamento: membros ativos no mes/ano, valores por fonte, totais | Marcelo | 3 | [ ] |
-| 11 | TK-US-SD-09-02 | front | Botao "Gerar PDF de Pagamento" na tela de solicitacao | Lucas | 3 | [ ] |
-| 12 | TK-US-SD-09-03 | qa | Validar PDF de pagamento, conferir membros e valores da competencia | Carolina | 2 | [ ] |
-
----
-
-## Fase 3 — Monitoramento e Relatorios
-
-### US-MO-01 | Consultar alocacao por projeto, fonte e perfil (5 pts)
-
-**Epic:** EP-05 Modulo Monitoramento
-**Feature:** F-MO-01 - Consulta e relatorio de alocacao por projeto, fonte e perfil
-**Prioridade:** Normal
-
-**Descricao:** Como gestor do Polo, quero consultar alocacao por projeto, fonte e perfil para acompanhar a composicao das equipes.
-
-**BDD:** DADO que existam vinculos cadastrados, QUANDO aplicar filtros de projeto, fonte ou perfil, ENTAO o relatorio deve exibir os dados vigentes.
-
-**Criterios de Aceitacao:**
-- CA-01: O relatorio deve permitir filtrar por projeto, fonte e perfil
-- CA-02: O relatorio deve permitir exportar/visualizar dados consolidados
-- CA-03: Os dados devem refletir a versao vigente de RH
+**Critérios de Aceitação:**
+- CA-01: O sistema deve gerar PDF de folha/solicitação de pagamento
+- CA-02: A solicitação de pagamento deve exigir mês e ano de referência
+- CA-03: O sistema deve listar somente membros ativos na competência
 
 #### Tasks
 
-| # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
+| # | Task ID | Tipo | Descrição | Responsável | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 13 | TK-US-MO-01-01 | back | Endpoint `GET /monitoramento/alocacoes?projeto_id=&fonte=&perfil=` com filtros combinados e dados da versao vigente | Vinicius | 3 | [ ] |
-| 14 | TK-US-MO-01-02 | front | Tela de relatorio com filtros de projeto/fonte/perfil, tabela de resultados | Lindomar | 3 | [ ] |
-| 15 | TK-US-MO-01-03 | qa | Testar combinacoes de filtros, dados retornados vs versao vigente | Carolina | 2 | [ ] |
+| 10 | TK-US-SD-09-01 | back | Módulo de geração de PDF de pagamento: membros ativos no mês/ano, valores por fonte, totais | Marcelo | 3 | [ ] |
+| 11 | TK-US-SD-09-02 | front | Botão "Gerar PDF de Pagamento" na tela de solicitação | Lucas | 3 | [ ] |
+| 12 | TK-US-SD-09-03 | qa | Validar PDF de pagamento, conferir membros e valores da competência | Carolina | 2 | [ ] |
 
 ---
 
-### US-MO-02 | Visualizar consolidacao por fonte (3 pts)
+## Fase 3 — Monitoramento e Relatórios
 
-**Epic:** EP-05 Modulo Monitoramento
-**Feature:** F-MO-02 - Visao consolidada por fonte de financiamento
+### US-MO-01 | Consultar alocação por projeto, fonte e perfil (5 pts)
+
+**Epic:** EP-05 Módulo Monitoramento
+**Feature:** F-MO-01 - Consulta e relatório de alocação por projeto, fonte e perfil
 **Prioridade:** Normal
 
-**Descricao:** Como gestor do Polo, quero visualizar a distribuicao por fonte de financiamento para acompanhar EMBRAPII, EMPRESA, SEBRAE e IFPB.
+**Descrição:** Como gestor do Polo, quero consultar alocação por projeto, fonte e perfil para acompanhar a composição das equipes.
 
-**BDD:** DADO que existam vinculos com fontes cadastradas, QUANDO abrir a visao consolidada, ENTAO o sistema deve apresentar totais separados por fonte.
+**BDD:** DADO que existam vínculos cadastrados, QUANDO aplicar filtros de projeto, fonte ou perfil, ENTAO o relatório deve exibir os dados vigentes.
 
-**Criterios de Aceitacao:**
-- CA-01: A visao deve separar fontes EMBRAPII, EMPRESA, SEBRAE e IFPB
+**Critérios de Aceitação:**
+- CA-01: O relatório deve permitir filtrar por projeto, fonte e perfil
+- CA-02: O relatório deve permitir exportar/visualizar dados consolidados
+- CA-03: Os dados devem refletir a versão vigente de RH
+
+#### Tasks
+
+| # | Task ID | Tipo | Descrição | Responsável | Horas | Status |
+|---|---------|------|-----------|-------------|-------|--------|
+| 13 | TK-US-MO-01-01 | back | Endpoint `GET /monitoramento/alocacoes?projeto_id=&fonte=&perfil=` com filtros combinados e dados da versão vigente | Vinicius | 3 | [ ] |
+| 14 | TK-US-MO-01-02 | front | Tela de relatório com filtros de projeto/fonte/perfil, tabela de resultados | Lindomar | 3 | [ ] |
+| 15 | TK-US-MO-01-03 | qa | Testar combinações de filtros, dados retornados vs versão vigente | Carolina | 2 | [ ] |
+
+---
+
+### US-MO-02 | Visualizar consolidação por fonte (3 pts)
+
+**Epic:** EP-05 Módulo Monitoramento
+**Feature:** F-MO-02 - Visão consolidada por fonte de financiamento
+**Prioridade:** Normal
+
+**Descrição:** Como gestor do Polo, quero visualizar a distribuição por fonte de financiamento para acompanhar EMBRAPII, EMPRESA, SEBRAE e IFPB.
+
+**BDD:** DADO que existam vínculos com fontes cadastradas, QUANDO abrir a visão consolidada, ENTAO o sistema deve apresentar totais separados por fonte.
+
+**Critérios de Aceitação:**
+- CA-01: A visão deve separar fontes EMBRAPII, EMPRESA, SEBRAE e IFPB
 - CA-02: O sistema deve apresentar totais por fonte (CH total, valor total, qtd pesquisadores)
-- CA-03: A consulta deve considerar apenas vinculos ativos ou vigentes no filtro
+- CA-03: A consulta deve considerar apenas vínculos ativos ou vigentes no filtro
 
 #### Tasks
 
-| # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
+| # | Task ID | Tipo | Descrição | Responsável | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 16 | TK-US-MO-02-01 | back | Endpoint `GET /monitoramento/consolidado-fonte?projeto_id=` com somatorios por fonte | Marcelo | 3 | [ ] |
-| 17 | TK-US-MO-02-02 | front | Dashboard consolidado por fonte com cards/graficos de totais | Lucas | 3 | [ ] |
-| 18 | TK-US-MO-02-03 | qa | Testar totais por fonte, verificar vinculos inativos excluidos | Carolina | 2 | [ ] |
+| 16 | TK-US-MO-02-01 | back | Endpoint `GET /monitoramento/consolidado-fonte?projeto_id=` com somatórios por fonte | Marcelo | 3 | [ ] |
+| 17 | TK-US-MO-02-02 | front | Dashboard consolidado por fonte com cards/gráficos de totais | Lucas | 3 | [ ] |
+| 18 | TK-US-MO-02-03 | qa | Testar totais por fonte, verificar vínculos inativos excluídos | Carolina | 2 | [ ] |
 
 ---
 
 ## Fase 4 — Evidencias
 
-### US-AQ-04 | Registrar evidencias de testes da Sprint 3 (3 pts)
+### US-AQ-04 | Registrar evidências de testes da Sprint 3 (3 pts)
 
 **Epic:** EP-08 Atividades Auxiliares e Qualidade
-**Feature:** F-AQ-03 - Qualidade, evidencias e apoio ao OpenProject
+**Feature:** F-AQ-03 - Qualidade, evidências e apoio ao OpenProject
 **Prioridade:** Baixa
 
-**Descricao:** Como QA, quero registrar evidencias de testes para comprovar a execucao das US da sprint.
+**Descrição:** Como QA, quero registrar evidências de testes para comprovar a execução das US da sprint.
 
-**BDD:** DADO que as US estejam implementadas, QUANDO os testes forem realizados, ENTAO as evidencias devem ser organizadas para entrega.
+**BDD:** DADO que as US estejam implementadas, QUANDO os testes forem realizados, ENTAO as evidências devem ser organizadas para entrega.
 
-**Criterios de Aceitacao:**
-- CA-01: Cada US deve possuir evidencia de teste ou validacao
-- CA-02: O PDF de evidencias deve comprovar criterios, BDD, tasks, horas e responsaveis
+**Critérios de Aceitação:**
+- CA-01: Cada US deve possuir evidência de teste ou validação
+- CA-02: O PDF de evidências deve comprovar critérios, BDD, tasks, horas e responsáveis
 
 #### Tasks
 
-| # | Task ID | Tipo | Descricao | Responsavel | Horas | Status |
+| # | Task ID | Tipo | Descrição | Responsável | Horas | Status |
 |---|---------|------|-----------|-------------|-------|--------|
-| 19 | TK-US-AQ-04-01 | devops/doc | Preparar artefatos tecnicos e evidencias | Vinicius | 3 | [ ] |
-| 20 | TK-US-AQ-04-02 | doc | Documentar evidencias e configuracao | Erick | 3 | [ ] |
-| 21 | TK-US-AQ-04-03 | qa | Validar evidencias e rastreabilidade | Carolina | 2 | [ ] |
+| 19 | TK-US-AQ-04-01 | devops/doc | Preparar artefatos técnicos e evidências | Vinicius | 3 | [ ] |
+| 20 | TK-US-AQ-04-02 | doc | Documentar evidências e configuração | Erick | 3 | [ ] |
+| 21 | TK-US-AQ-04-03 | qa | Validar evidências e rastreabilidade | Carolina | 2 | [ ] |
 
 ---
 
-## Resumo de Carga por Responsavel
+## Resumo de Carga por Responsável
 
-| Responsavel | Funcao | Tasks | Horas |
+| Responsável | Função | Tasks | Horas |
 |-------------|--------|-------|-------|
 | Vinicius | back | #1, #7, #13, #19 | 12h |
 | Marcelo | back | #4, #10, #16 | 9h |
@@ -244,11 +244,11 @@ Fase 4: Evidencias                [US-AQ-04]                      ── pos-imp
 
 ## Checklist de Entrega da Sprint
 
-- [ ] Solicitacao de pagamento por competencia (mes/ano)
-- [ ] PDF de implantacao gerado conforme layout padrao
-- [ ] PDF de alteracao com Antes/Alteracoes/Depois
-- [ ] PDF de folha de pagamento por competencia
-- [ ] Modulo de PDF isolado e desacoplado da logica de negocio
-- [ ] Relatorio de alocacao com filtros por projeto/fonte/perfil
+- [ ] Solicitação de pagamento por competência (mês/ano)
+- [ ] PDF de implantação gerado conforme layout padrão
+- [ ] PDF de alteração com Antes/Alterações/Depois
+- [ ] PDF de folha de pagamento por competência
+- [ ] Módulo de PDF isolado e desacoplado da lógica de negócio
+- [ ] Relatório de alocação com filtros por projeto/fonte/perfil
 - [ ] Dashboard consolidado por fonte de financiamento
-- [ ] Evidencias de testes documentadas
+- [ ] Evidências de testes documentadas

@@ -1,63 +1,63 @@
 # Cronograma de Sprints
 
-O desenvolvimento e dividido em 4 Sprints, priorizando nas primeiras iteracoes as funcionalidades centrais do negocio, com dados mockados quando necessario. A parametrizacao completa e transferencias ficam na ultima Sprint.
+O desenvolvimento é dividido em 4 Sprints, priorizando nas primeiras iterações as funcionalidades centrais do negócio, com dados mockados quando necessário. A parametrização completa e transferências ficam na última Sprint.
 
 ---
 
-## Sprint 1 - Nucleo de Solicitacoes de RH
+## Sprint 1 - Núcleo de Solicitações de RH
 
-Foco: fluxo central de solicitacoes de RH com regras e dados mockados quando necessario.
+Foco: fluxo central de solicitações de RH com regras e dados mockados quando necessário.
 
-| Funcionalidade | Modulo |
+| Funcionalidade | Módulo |
 |----------------|--------|
-| Login / Logout e gestao de perfis (Administrador, Coordenador, Gestor do Polo, Apoio Coordenador) | Controle de Acesso |
-| Solicitacao de Implantacao inicial de RH | Solicitacoes e Documentos |
-| Solicitacao de Alteracao de RH | Solicitacoes e Documentos |
-| Inclusao, alteracao e encerramento de membros com calculo e validacao de bolsas e carga horaria | Solicitacoes e Documentos |
-| Visualizacao de versoes de RH e comparacao da equipe Atual vs. Proposta | Solicitacoes e Documentos |
+| Login / Logout e gestão de perfis (Administrador, Coordenador, Gestor do Polo, Apoio Coordenador) | Controle de Acesso |
+| Solicitação de Implantação inicial de RH | Solicitações e Documentos |
+| Solicitação de Alteração de RH | Solicitações e Documentos |
+| Inclusão, alteração e encerramento de membros com cálculo e validação de bolsas e carga horária | Solicitações e Documentos |
+| Visualização de versões de RH e comparação da equipe Atual vs. Proposta | Solicitações e Documentos |
 
 ---
 
-## Sprint 2 - Gestao de Projetos e Integracao
+## Sprint 2 - Gestão de Projetos e Integração
 
-Foco: gestao de projetos, documentos anexos e integracao com Banco de Especialistas.
+Foco: gestão de projetos, documentos anexos e integração com Banco de Especialistas.
 
-| Funcionalidade | Modulo |
+| Funcionalidade | Módulo |
 |----------------|--------|
-| Gestao de Projetos (consulta, inclusao e alteracao de dados basicos) | Projetos |
-| Anexos multiplos do projeto (Plano de Trabalho, Acordo de Parceria, extrato no Diario Oficial, aditivos e outros documentos) | Projetos |
-| Busca e vinculacao de Especialista via Banco de Especialistas | Projetos |
+| Gestão de Projetos (consulta, inclusão e alteração de dados básicos) | Projetos |
+| Anexos múltiplos do projeto (Plano de Trabalho, Acordo de Parceria, extrato no Diário Oficial, aditivos e outros documentos) | Projetos |
+| Busca e vinculação de Especialista via Banco de Especialistas | Projetos |
 
 ---
 
 ## Sprint 3 - Monitoramento, Pagamento e PDFs
 
-Foco: relatorios de monitoramento, solicitacao de pagamento e geracao automatizada de PDFs.
+Foco: relatórios de monitoramento, solicitação de pagamento e geração automatizada de PDFs.
 
-| Funcionalidade | Modulo |
+| Funcionalidade | Módulo |
 |----------------|--------|
-| Consultas e relatorios de alocacao por projeto, fonte de financiamento e perfil de acesso | Monitoramento |
-| Solicitacao de Pagamento de RH por mes/ano especifico | Solicitacoes e Documentos |
-| Emissao automatizada dos PDFs de implantacao, alteracao de RH e folha de pagamento | Solicitacoes e Documentos |
+| Consultas e relatórios de alocação por projeto, fonte de financiamento e perfil de acesso | Monitoramento |
+| Solicitação de Pagamento de RH por mês/ano específico | Solicitações e Documentos |
+| Emissão automatizada dos PDFs de implantação, alteração de RH e folha de pagamento | Solicitações e Documentos |
 
 ---
 
-## Sprint 4 - Parametrizacao e Transferencias
+## Sprint 4 - Parametrização e Transferências
 
-Foco: parametrizacao completa das regras de negocio e modulo de transferencias com homologacao.
+Foco: parametrização completa das regras de negócio e módulo de transferências com homologação.
 
-| Funcionalidade | Modulo |
+| Funcionalidade | Módulo |
 |----------------|--------|
-| Gestao do limite de carga horaria global e regras de validacao | Parametrizacao |
-| Gestao da tabela de categorias e valores da Resolucao 11/2022 com vigencia historica | Parametrizacao |
-| Gestao dos tipos de solicitacao/origem de RH (pesquisador prospector, processo seletivo e transferencia entre projetos) | Parametrizacao |
-| Cadastro, consulta de pendencias, historico, aceite pelo coordenador cedente e homologacao integrada | Transferencia de RH |
+| Gestão do limite de carga horária global e regras de validação | Parametrização |
+| Gestão da tabela de categorias e valores da Resolução 11/2022 com vigência histórica | Parametrização |
+| Gestão dos tipos de solicitação/origem de RH (pesquisador prospector, processo seletivo e transferência entre projetos) | Parametrização |
+| Cadastro, consulta de pendências, histórico, aceite pelo coordenador cedente e homologação integrada | Transferência de RH |
 
 ---
 
-## Observacoes
+## Observações
 
 - **Metodologia**: Scrum com entregas incrementais
-- **Eventos**: Planejamento de Sprint, Revisoes para validacao com o PO, Retrospectivas
-- **Ferramenta de gestao**: OpenProject (backlog, apontamento de horas, rastreamento de bugs)
+- **Eventos**: Planejamento de Sprint, Revisões para validação com o PO, Retrospectivas
+- **Ferramenta de gestão**: OpenProject (backlog, apontamento de horas, rastreamento de bugs)
 - **Entrega final prevista**: julho de 2026

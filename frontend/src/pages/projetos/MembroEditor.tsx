@@ -8,9 +8,9 @@ import { cn } from '@/lib/cn';
 
 export interface MembroLocalProps extends MembroCreate {
   _tempId: string;
-  /** id real no backend (presente em alteracoes, ausente em inclusoes pendentes) */
+  /** id real no backend (presente em alterações, ausente em inclusões pendentes) */
   id?: number;
-  /** valor calculado da bolsa (preenchido apos calculo ou ao carregar membros existentes) */
+  /** valor calculado da bolsa (preenchido após cálculo ou ao carregar membros existentes) */
   valor_bolsa?: number;
 }
 
@@ -43,7 +43,7 @@ export function MembroEditor({ membro, onChange, onRemove, projetoId }: Props) {
     loading: false,
   });
 
-  // Debounce para nao bombardear a API a cada tecla
+  // Debounce para não bombardear a API a cada tecla
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export function MembroEditor({ membro, onChange, onRemove, projetoId }: Props) {
             .catch((err) => {
               const msg =
                 err?.response?.data?.detail ??
-                'Nao foi possivel calcular a bolsa para esta categoria/data.';
+                'Não foi possível calcular a bolsa para esta categoria/data.';
               setPreview((p) => ({ ...p, erroBolsa: msg }));
               return null;
             }),
@@ -206,7 +206,7 @@ export function MembroEditor({ membro, onChange, onRemove, projetoId }: Props) {
 
           <div className="space-y-1">
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Inicio
+              Início
             </label>
             <input
               type="date"
@@ -217,7 +217,7 @@ export function MembroEditor({ membro, onChange, onRemove, projetoId }: Props) {
           </div>
         </div>
 
-        {/* Feedback de validacao em tempo real */}
+        {/* Feedback de validação em tempo real */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
           {/* Card: Valor da bolsa calculado */}
           <div
@@ -244,14 +244,14 @@ export function MembroEditor({ membro, onChange, onRemove, projetoId }: Props) {
               {preview.loading
                 ? '...'
                 : preview.erroBolsa
-                  ? 'Indisponivel'
+                  ? 'Indisponível'
                   : preview.valorBolsa !== null
                     ? `R$ ${preview.valorBolsa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                     : '—'}
             </span>
           </div>
 
-          {/* Card: Validacao de CH global */}
+          {/* Card: Validação de CH global */}
           {validacao && (
             <div
               className={cn(

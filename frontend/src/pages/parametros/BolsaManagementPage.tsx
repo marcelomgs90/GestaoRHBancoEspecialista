@@ -44,17 +44,17 @@ export default function BolsaManagementPage() {
         <div>
           <p className="text-sm font-bold text-amber-800">Tela em desenvolvimento</p>
           <p className="text-xs text-amber-700 mt-0.5">
-            Os dados exibidos sao locais e <strong>nao sao persistidos</strong>. O endpoint{' '}
-            <code className="font-mono">/parametros</code> ainda nao foi implementado no backend.
+            Os dados exibidos são locais e <strong>não são persistidos</strong>. O endpoint{' '}
+            <code className="font-mono">/parametros</code> ainda não foi implementado no backend.
           </p>
         </div>
       </div>
 
       <div className="flex items-center justify-between border-b border-slate-200 pb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Parametros Normativos</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Parâmetros Normativos</h2>
           <p className="text-slate-500 text-sm mt-1">
-            Gestao de categorias e valores de bolsas institucionais.
+            Gestão de categorias e valores de bolsas institucionais.
           </p>
         </div>
         <button className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm cursor-pointer">
@@ -73,7 +73,7 @@ export default function BolsaManagementPage() {
           >
             {tabela.ativa && (
               <div className="absolute top-0 right-0 px-4 py-1.5 bg-slate-900 text-white text-[9px] font-bold uppercase tracking-widest rounded-bl">
-                VERSAO VIGENTE
+                VERSÃO VIGENTE
               </div>
             )}
 
@@ -92,7 +92,7 @@ export default function BolsaManagementPage() {
                   <h3 className="text-xl font-bold text-slate-900 leading-none">{tabela.nome}</h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center">
                     <Calendar size={12} className="mr-2" />
-                    Vigencia desde {tabela.vigencia_inicio}
+                    Vigência desde {tabela.vigencia_inicio}
                   </p>
                 </div>
               </div>
@@ -140,7 +140,7 @@ export default function BolsaManagementPage() {
             <div className="mt-8 p-4 bg-slate-50 border border-slate-200 rounded flex items-center gap-4">
               <AlertCircle size={18} className="text-slate-400" />
               <p className="text-[10px] font-medium text-slate-500 leading-tight">
-                Retificacoes nesta estrutura impactarao exclusivamente novos termos aditivos e futuras designacoes.
+                Retificações nesta estrutura impactarão exclusivamente novos termos aditivos e futuras designações.
               </p>
             </div>
           </div>

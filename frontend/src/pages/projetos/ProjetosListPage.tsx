@@ -20,7 +20,7 @@ export default function ProjetosListPage() {
     projetoService
       .listar()
       .then(setProjetos)
-      .catch(() => setErro('Nao foi possivel carregar os projetos.'))
+      .catch(() => setErro('Não foi possível carregar os projetos.'))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -35,9 +35,9 @@ export default function ProjetosListPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
         <div className="space-y-4 flex-1">
           <div>
-            <h2 className="text-2xl font-bold text-slate-950">Catalogo de Projetos</h2>
+            <h2 className="text-2xl font-bold text-slate-950">Catálogo de Projetos</h2>
             <p className="text-slate-700 text-sm mt-1">
-              Lista completa de ativos institucionais sob gestao do Polo.
+              Lista completa de ativos institucionais sob gestão do Polo.
             </p>
           </div>
           <div className="relative group max-w-lg">
@@ -47,7 +47,7 @@ export default function ProjetosListPage() {
             />
             <input
               type="text"
-              placeholder="Pesquisar por codigo ou titulo..."
+              placeholder="Pesquisar por código ou título..."
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded text-sm focus:bg-white focus:border-slate-400 outline-none transition-all placeholder:text-slate-400"
@@ -120,7 +120,7 @@ export default function ProjetosListPage() {
                     <div className="flex flex-wrap lg:flex-nowrap items-center gap-8 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">
-                          Vigencia
+                          Vigência
                         </p>
                         <div className="flex items-center text-slate-700 font-semibold text-sm">
                           <Calendar size={14} className="mr-2 text-slate-400" />

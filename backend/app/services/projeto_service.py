@@ -47,7 +47,7 @@ class ProjetoService:
         if not projeto:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Projeto nao encontrado",
+                detail="Projeto não encontrado",
             )
 
         if (

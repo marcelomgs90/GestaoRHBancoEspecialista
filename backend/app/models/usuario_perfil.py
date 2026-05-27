@@ -6,7 +6,7 @@ from app.utils.enums import PerfilUsuario
 
 
 class Usuario(Base, TimestampMixin):
-    """Modelo de usuario do sistema."""
+    """Modelo de usuário do sistema."""
     __tablename__ = "usuario"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -23,7 +23,7 @@ class Usuario(Base, TimestampMixin):
 
 
 class Perfil(Base):
-    """Modelo de perfil (para referencia/lookup)."""
+    """Modelo de perfil (para referência/lookup)."""
     __tablename__ = "perfil"
 
     id = Column(Integer, primary_key=True, index=True)

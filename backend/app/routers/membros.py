@@ -18,10 +18,10 @@ def incluir_membro(
     current_user: Usuario = Depends(get_current_user),
 ):
     """
-    Incluir membro na solicitacao de RH.
+    Incluir membro na solicitação de RH.
 
     - Calcula valor_bolsa automaticamente via Parametro_Regra vigente
-    - Valida carga horaria global do pesquisador
+    - Valida carga horária global do pesquisador
     - Exclusivo para o Coordenador do Projeto
     """
     return service.incluir(solicitacao_id, dados, usuario_logado_id=current_user.id)

@@ -29,7 +29,7 @@ def override_get_db():
 
 @pytest.fixture(scope="function")
 def db_session():
-    """Criar sessao de banco para testes."""
+    """Criar sessão de banco para testes."""
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     try:

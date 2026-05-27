@@ -1,101 +1,101 @@
-# Modulos do Sistema
+# Módulos do Sistema
 
-## Modulo 1: Controle de Acesso
+## Módulo 1: Controle de Acesso
 
 ### Funcionalidades
 
 - **Login / Logout**
-  - Autenticacao de usuario com e-mail e senha
-  - Gerenciamento de sessao (token)
-  - Validacao institucional quando necessario (via Banco de Especialistas)
+  - Autenticação de usuário com e-mail e senha
+  - Gerenciamento de sessão (token)
+  - Validação institucional quando necessário (via Banco de Especialistas)
 
-- **Gestao de Perfis de Usuario**
-  - Atribuicao de perfil: Administrador, Coordenador, Gestor do Polo, Apoio Coordenador
+- **Gestão de Perfis de Usuário**
+  - Atribuição de perfil: Administrador, Coordenador, Gestor do Polo, Apoio Coordenador
   - Controle de status (Ativo/Inativo)
 
 ---
 
-## Modulo 2: Parametrizacao
+## Módulo 2: Parametrização
 
 ### Funcionalidades
 
-- **Gestao do Limite de Carga Horaria Global**
-  - Consulta e alteracao do limite global
-  - Registro de justificativa e data de vigencia para cada alteracao
+- **Gestão do Limite de Carga Horária Global**
+  - Consulta e alteração do limite global
+  - Registro de justificativa e data de vigência para cada alteração
 
-- **Gestao da Tabela de Categorias e Valores (Resolucao 11/2022)**
-  - Consulta e inclusao de categorias de bolsa
-  - Controle de vigencia historica (inicio/fim) - alteracoes nao corrompem historico
-  - Campos: nome da categoria, valor da bolsa, unidade de referencia, limites semanal/mensal, percentual aplicavel, fonte de financiamento permitida
+- **Gestão da Tabela de Categorias e Valores (Resolução 11/2022)**
+  - Consulta e inclusão de categorias de bolsa
+  - Controle de vigência histórica (início/fim) - alterações não corrompem histórico
+  - Campos: nome da categoria, valor da bolsa, unidade de referência, limites semanal/mensal, percentual aplicável, fonte de financiamento permitida
 
-- **Gestao dos Tipos de Solicitacao/Origem de RH**
-  - Tipos: Pesquisador Prospector, Processo Seletivo, Transferencia entre Projetos
-  - Cada tipo possui descricao e status
+- **Gestão dos Tipos de Solicitação/Origem de RH**
+  - Tipos: Pesquisador Prospector, Processo Seletivo, Transferência entre Projetos
+  - Cada tipo possui descrição e status
 
 ---
 
-## Modulo 3: Projetos
+## Módulo 3: Projetos
 
 ### Funcionalidades
 
-- **Gestao de Projetos**
-  - Consulta, inclusao e alteracao de dados basicos
-  - Campos: titulo, resumo, coordenador, status, datas (inicio/fim), fonte principal, observacao
+- **Gestão de Projetos**
+  - Consulta, inclusão e alteração de dados básicos
+  - Campos: título, resumo, coordenador, status, datas (início/fim), fonte principal, observação
 
 - **Upload/Anexo de Documentos do Projeto**
-  - Multiplos arquivos por projeto
-  - Tipos: Plano de Trabalho, Acordo de Parceria, publicacao do extrato no Diario Oficial, aditivos e demais anexos
-  - Campos: tipo de documento, numero/identificador, nome do arquivo, versao, indicador de ativo
+  - Múltiplos arquivos por projeto
+  - Tipos: Plano de Trabalho, Acordo de Parceria, publicação do extrato no Diário Oficial, aditivos e demais anexos
+  - Campos: tipo de documento, número/identificador, nome do arquivo, versão, indicador de ativo
 
-- **Busca e Vinculacao de Especialista**
+- **Busca e Vinculação de Especialista**
   - Consulta ao Banco de Especialistas (sistema externo)
-  - Filtros: nome, identificador, tipo de vinculo, area, instituicao, situacao
-  - Vinculacao do especialista ao projeto
+  - Filtros: nome, identificador, tipo de vínculo, área, instituição, situação
+  - Vinculação do especialista ao projeto
 
 ---
 
-## Modulo 4: Monitoramento
+## Módulo 4: Monitoramento
 
 ### Funcionalidades
 
-- **Consulta/Relatorio da Equipe Alocada por Projeto**
-  - Visualizacao por fonte de financiamento (EMBRAPII, EMPRESA, SEBRAE, IFPB)
-  - Dados: pesquisador, fonte, carga horaria, valor da bolsa, periodo de atuacao, situacao
+- **Consulta/Relatório da Equipe Alocada por Projeto**
+  - Visualização por fonte de financiamento (EMBRAPII, EMPRESA, SEBRAE, IFPB)
+  - Dados: pesquisador, fonte, carga horária, valor da bolsa, período de atuação, situação
 
-- **Visao Consolidada da Alocacao por Fonte**
-  - Coordenador: visao do seu projeto especifico
-  - Gestor do Polo: visao de multiplos projetos autorizados
-  - Dados: fonte, projeto, quantidade de pesquisadores, somatorio CH, somatorio financeiro, percentual por fonte
+- **Visão Consolidada da Alocação por Fonte**
+  - Coordenador: visão do seu projeto específico
+  - Gestor do Polo: visão de múltiplos projetos autorizados
+  - Dados: fonte, projeto, quantidade de pesquisadores, somatório CH, somatório financeiro, percentual por fonte
 
 ---
 
-## Modulo 5: Transferencia de RH
+## Módulo 5: Transferência de RH
 
 ### Funcionalidades
 
-- **Cadastro de Nova Solicitacao de Transferencia**
+- **Cadastro de Nova Solicitação de Transferência**
   - Pesquisador, projeto de origem, projeto de destino
-  - Justificativa, carga horaria a transferir, fonte de financiamento
+  - Justificativa, carga horária a transferir, fonte de financiamento
 
-- **Consulta de Transferencias Pendentes de Aprovacao**
+- **Consulta de Transferências Pendentes de Aprovação**
 
-- **Consulta do Historico de Transferencias Realizadas**
+- **Consulta do Histórico de Transferências Realizadas**
 
-- **Aprovacao/Aceite Sistemico pelo Coordenador Cedente**
-  - Acoes: aceitar ou recusar
+- **Aprovação/Aceite Sistêmico pelo Coordenador Cedente**
+  - Ações: aceitar ou recusar
   - Campos: parecer, justificativa, motivo da recusa
 
-### Regra de Negocio
+### Regra de Negócio
 
-Quando um pesquisador e transferido entre projetos, o coordenador do projeto de origem (cedente) deve dar aceite digital. A transferencia so e efetivada apos esse aceite.
+Quando um pesquisador é transferido entre projetos, o coordenador do projeto de origem (cedente) deve dar aceite digital. A transferência só é efetivada após esse aceite.
 
 ---
 
-## Modulo 6: Solicitacoes e Documentos
+## Módulo 6: Solicitações e Documentos
 
-### Ciclo de Vida da Solicitacao
+### Ciclo de Vida da Solicitação
 
-Toda solicitacao de RH segue o ciclo:
+Toda solicitação de RH segue o ciclo:
 
 ```
 EM_EDICAO  --(submeter)-->  SUBMETIDA  --(aprovar/rejeitar)-->  APROVADA | REJEITADA
@@ -109,66 +109,66 @@ PROPOSTA  --(submeter)-->  VIGENTE  --(nova alteracao submetida)-->  HISTORICO
 
 Regras:
 
-- Cada projeto pode ter **no maximo uma** solicitacao `EM_EDICAO` por tipo (Implantacao ou Alteracao) ativa ao mesmo tempo
-- Ao submeter uma `IMPLANTACAO`: a versao `PROPOSTA` (n=1) passa a `VIGENTE`
-- Ao submeter uma `ALTERACAO`: a versao `VIGENTE` anterior passa a `HISTORICO` e a nova `PROPOSTA` passa a `VIGENTE`
-- A solicitacao so e efetivamente persistida quando o usuario aciona Salvar/Submeter. Abrir a tela e sair sem acionar nao cria registro
-- Quando uma `ALTERACAO` e criada, o backend clona a equipe da versao `VIGENTE` para a nova `PROPOSTA` (base editavel)
+- Cada projeto pode ter **no máximo uma** solicitação `EM_EDICAO` por tipo (Implantação ou Alteração) ativa ao mesmo tempo
+- Ao submeter uma `IMPLANTACAO`: a versão `PROPOSTA` (n=1) passa a `VIGENTE`
+- Ao submeter uma `ALTERACAO`: a versão `VIGENTE` anterior passa a `HISTORICO` e a nova `PROPOSTA` passa a `VIGENTE`
+- A solicitação só é efetivamente persistida quando o usuário aciona Salvar/Submeter. Abrir a tela e sair sem acionar não cria registro
+- Quando uma `ALTERACAO` é criada, o backend clona a equipe da versão `VIGENTE` para a nova `PROPOSTA` (base editável)
 
 ### Funcionalidades
 
-- **Solicitacao de Implantacao Inicial de RH**
-  - Composicao inicial da equipe do projeto (primeira versao do RH)
-  - Lista de pesquisadores com fonte, carga horaria, valor de bolsa, categoria
-  - Disponivel apenas se o projeto **nao** possui versao `VIGENTE`
+- **Solicitação de Implantação Inicial de RH**
+  - Composição inicial da equipe do projeto (primeira versão do RH)
+  - Lista de pesquisadores com fonte, carga horária, valor de bolsa, categoria
+  - Disponível apenas se o projeto **não** possui versão `VIGENTE`
 
-- **Solicitacao de Alteracao de RH**
-  - Modificacao da composicao da equipe a partir da versao `VIGENTE`
-  - Inclusoes, alteracoes e encerramentos de participacao
-  - Justificativa e mes/ano de referencia
-  - Disponivel apenas se o projeto possui versao `VIGENTE`
+- **Solicitação de Alteração de RH**
+  - Modificação da composição da equipe a partir da versão `VIGENTE`
+  - Inclusões, alterações e encerramentos de participação
+  - Justificativa e mês/ano de referência
+  - Disponível apenas se o projeto possui versão `VIGENTE`
 
-- **Solicitacao de Pagamento de RH**
-  - Referente a um mes/ano especifico
+- **Solicitação de Pagamento de RH**
+  - Referente a um mês/ano específico
   - Lista de pesquisadores com valores calculados
 
-- **Inclusao de Participacao de Pesquisador**
-  - Vinculacao de pesquisador a um projeto via solicitacao
-  - Campos: fonte, carga horaria, categoria da bolsa, data de inicio
-  - Um mesmo `ref_pesquisador` nao pode ser incluido mais de uma vez na mesma versao
+- **Inclusão de Participação de Pesquisador**
+  - Vinculação de pesquisador a um projeto via solicitação
+  - Campos: fonte, carga horária, categoria da bolsa, data de início
+  - Um mesmo `ref_pesquisador` não pode ser incluído mais de uma vez na mesma versão
 
-- **Alteracao de Participacao de Pesquisador**
-  - Mudanca de carga horaria, valor, fonte, data de vigencia
+- **Alteração de Participação de Pesquisador**
+  - Mudança de carga horária, valor, fonte, data de vigência
 
-- **Encerramento de Participacao de Pesquisador**
-  - Aplicado quando um membro presente na versao `VIGENTE` e removido da `PROPOSTA`
+- **Encerramento de Participação de Pesquisador**
+  - Aplicado quando um membro presente na versão `VIGENTE` é removido da `PROPOSTA`
   - Registra data e motivo
 
-- **Calculo Automatico e Validacao**
-  - Valores de bolsas calculados via `ParametroService` (Resolucao 11/2022)
-  - Validacao de carga horaria global considera apenas alocacoes em versoes `VIGENTE`
-  - Alocacoes em versoes `PROPOSTA` (rascunhos) sao ignoradas na soma do CH global
-  - Ao validar uma alteracao no projeto X, as alocacoes do proprio projeto X em `VIGENTE` sao excluidas da contagem (sao substituidas pela nova proposta)
+- **Cálculo Automático e Validação**
+  - Valores de bolsas calculados via `ParametroService` (Resolução 11/2022)
+  - Validação de carga horária global considera apenas alocações em versões `VIGENTE`
+  - Alocações em versões `PROPOSTA` (rascunhos) são ignoradas na soma do CH global
+  - Ao validar uma alteração no projeto X, as alocações do próprio projeto X em `VIGENTE` são excluídas da contagem (são substituídas pela nova proposta)
 
-- **Submeter Solicitacao**
+- **Submeter Solicitação**
   - Endpoint: `POST /solicitacoes/{id}/submeter`
-  - Promove status `EM_EDICAO -> SUBMETIDA` e versao `PROPOSTA -> VIGENTE`
-  - Em alteracao, demove a `VIGENTE` anterior para `HISTORICO`
+  - Promove status `EM_EDICAO -> SUBMETIDA` e versão `PROPOSTA -> VIGENTE`
+  - Em alteração, demove a `VIGENTE` anterior para `HISTORICO`
 
-- **Visualizacao de Mudancas entre Versoes de RH**
+- **Visualização de Mudanças entre Versões de RH**
   - Endpoint: `GET /solicitacoes/{id}/comparacao`
-  - Retorna `antes` (versao anterior, vazia em implantacao) e `depois` (versao desta solicitacao) agrupados por fonte
-  - Retorna `diferencas`: lista de inclusoes, alteracoes (campo a campo) e encerramentos
-  - UI exibe comparacao lado a lado por fonte de financiamento
+  - Retorna `antes` (versão anterior, vazia em implantação) e `depois` (versão desta solicitação) agrupados por fonte
+  - Retorna `diferencas`: lista de inclusões, alterações (campo a campo) e encerramentos
+  - UI exibe comparação lado a lado por fonte de financiamento
 
-- **Registro Manual do Numero da Solicitacao**
-  - Numero/identificador (`identificador`) para inclusao nos PDFs
+- **Registro Manual do Número da Solicitação**
+  - Número/identificador (`identificador`) para inclusão nos PDFs
   - Apoio ao controle interno do Coordenador e do Polo
 
-### Geracao de PDFs
+### Geração de PDFs
 
-| Documento | Conteudo |
+| Documento | Conteúdo |
 |-----------|----------|
-| **PDF de Implantacao/Alocacao Inicial** | Cabecalho institucional, numero da solicitacao, titulo do projeto, coordenador, grid de pesquisadores, somatorio de CH, somatorio financeiro, data de emissao |
-| **PDF de Solicitacao de Alteracao de RH** | Cabecalho, numero da solicitacao, situacao ANTES, alteracoes solicitadas, situacao DEPOIS, justificativa, diferenca de CH/Valor, historico, data de emissao |
-| **PDF de Solicitacao de Folha de Pagamento** | Projeto, mes/ano, numero da solicitacao, pesquisadores, fonte, carga horaria, valor por pesquisador, total da folha |
+| **PDF de Implantação/Alocação Inicial** | Cabeçalho institucional, número da solicitação, título do projeto, coordenador, grid de pesquisadores, somatório de CH, somatório financeiro, data de emissão |
+| **PDF de Solicitação de Alteração de RH** | Cabeçalho, número da solicitação, situação ANTES, alterações solicitadas, situação DEPOIS, justificativa, diferença de CH/Valor, histórico, data de emissão |
+| **PDF de Solicitação de Folha de Pagamento** | Projeto, mês/ano, número da solicitação, pesquisadores, fonte, carga horária, valor por pesquisador, total da folha |

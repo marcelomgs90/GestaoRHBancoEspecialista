@@ -33,7 +33,7 @@ class ParametroService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
-                    f"Nao existe parametro de valor de bolsa vigente para a categoria "
+                    f"Não existe parâmetro de valor de bolsa vigente para a categoria "
                     f"{categoria.value} em {data_referencia.isoformat()}."
                 ),
             )
@@ -41,7 +41,7 @@ class ParametroService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
-                    f"Parametro vigente para {categoria.value} esta sem valor de "
+                    f"Parâmetro vigente para {categoria.value} está sem valor de "
                     "referencia ou carga horaria de referencia."
                 ),
             )
@@ -97,7 +97,7 @@ class ParametroService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
-                    f"Carga horaria global excede o limite. O pesquisador ja possui "
+                    f"Carga horária global excede o limite. O pesquisador já possui "
                     f"{ch_concorrente}h alocadas em vinculos concorrentes; somando "
                     f"{ch_nova}h o total seria {ch_total}h (limite: {limite}h)."
                 ),
@@ -113,7 +113,7 @@ class ParametroService:
         projeto_id_excluir: Optional[int] = None,
     ) -> dict:
         """
-        Versao nao-throwing de validar_carga_horaria_global.
+        Versão não-throwing de validar_carga_horaria_global.
         Retorna estrutura adequada para preview no frontend.
         """
         param = self._buscar_parametro_vigente(

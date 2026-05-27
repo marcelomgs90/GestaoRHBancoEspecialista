@@ -18,7 +18,7 @@ class PesquisadorProjeto(Base, TimestampMixin):
     ref_pesquisador = Column(String(100), nullable=False, index=True)
     nome_pesquisador = Column(String(255), nullable=False)
 
-    # Vinculo a versao de RH
+    # Vínculo a versão de RH
     versao_rh_id = Column(Integer, ForeignKey("versao_rh_projeto.id"), nullable=False)
 
     # Dados do vinculo

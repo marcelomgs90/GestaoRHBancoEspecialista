@@ -30,14 +30,14 @@ interface HistoryLog {
   detail: string;
 }
 
-// Mocks mantidos ate existir endpoint do Banco de Especialistas
+// Mocks mantidos até existir endpoint do Banco de Especialistas
 const CANDIDATOS_MOCK = [
   { ref: 'CAND-001', nome: 'Lucas Amado', categoria: CategoriaBolsa.PESQUISADOR_MASTER },
   { ref: 'CAND-002', nome: 'Carla Dias', categoria: CategoriaBolsa.PESQUISADOR_PLENO },
   { ref: 'CAND-003', nome: 'Bernardo Silva', categoria: CategoriaBolsa.PESQUISADOR_JUNIOR },
 ];
 const ESPECIALISTAS_MOCK = [
-  { ref: 'ESP-001', nome: 'Joao Silva', email: 'joao.silva@if.edu.br' },
+  { ref: 'ESP-001', nome: 'João Silva', email: 'joao.silva@if.edu.br' },
   { ref: 'ESP-002', nome: 'Maria Souza', email: 'maria.souza@if.edu.br' },
   { ref: 'ESP-003', nome: 'Pedro Oliver', email: 'pedro.oliver@ext.com' },
 ];
@@ -95,20 +95,20 @@ export default function AlteracaoPage() {
 
         const vigente = versoes.find((v) => v.status === 'VIGENTE');
         if (!vigente) {
-          setErro('Este projeto ainda nao possui versao vigente. Use Implantacao Inicial.');
+          setErro('Este projeto ainda não possui versão vigente. Use Implantação Inicial.');
           setCarregando(false);
           return;
         }
         setVersaoVigente(vigente);
 
-        // Equipe atual (somente leitura) — membros da versao vigente.
-        // Buscar via solicitacao_id que originou essa versao.
+        // Equipe atual (somente leitura) — membros da versão vigente.
+        // Buscar via solicitacao_id que originou essa versão.
         if (vigente.solicitacao_id) {
           const membrosVigentes = await solicitacaoService.listarMembros(vigente.solicitacao_id);
           setEquipeAtual(membrosVigentes);
         }
 
-        // Apenas resume um rascunho existente. A solicitacao SO e criada ao Salvar/Submeter.
+        // Apenas resume um rascunho existente. A solicitação só é criada ao Salvar/Submeter.
         const existente = ss.find(
           (s) => s.tipo === TipoSolicitacao.ALTERACAO && s.status === 'EM_EDICAO',
         );
@@ -120,7 +120,7 @@ export default function AlteracaoPage() {
           setIdsExistentesOriginais(new Set(propostos.map((m) => m.id)));
         } else {
           // Inicializa a equipe proposta como copia da vigente (apenas em memoria,
-          // sem persistir). O backend clona oficialmente quando a solicitacao for criada.
+          // sem persistir). O backend clona oficialmente quando a solicitação for criada.
           if (vigente.solicitacao_id) {
             const membrosVigentes = await solicitacaoService.listarMembros(vigente.solicitacao_id);
             const locais = membrosVigentes.map((m) => ({
@@ -138,7 +138,7 @@ export default function AlteracaoPage() {
         }
       } catch (err: unknown) {
         const e = err as { response?: { data?: { detail?: string } } };
-        setErro(e?.response?.data?.detail ?? 'Nao foi possivel inicializar a alteracao.');
+        setErro(e?.response?.data?.detail ?? 'Não foi possível inicializar a alteração.');
       } finally {
         setCarregando(false);
       }
@@ -151,7 +151,7 @@ export default function AlteracaoPage() {
 
   const addMembro = (ref: string, nome: string, categoria: CategoriaBolsa) => {
     if (equipeProposta.some((m) => m.ref_pesquisador === ref)) {
-      setModalErro(`O pesquisador ${nome} ja esta na equipe proposta`);
+      setModalErro(`O pesquisador ${nome} já está na equipe proposta`);
       return;
     }
     setEquipeProposta((prev) => [
@@ -167,7 +167,7 @@ export default function AlteracaoPage() {
         data_fim: projeto?.data_fim,
       },
     ]);
-    log('ADD', nome, 'Adicionado a equipe proposta');
+    log('ADD', nome, 'Adicionado à equipe proposta');
     setShowSearch(null);
     setSearchTerm('');
   };
@@ -201,7 +201,7 @@ export default function AlteracaoPage() {
     setSolicitacaoId(nova.id);
 
     // Backend acabou de clonar a vigente. Sincroniza ids para diferenciar
-    // existentes (clonados) das adicoes feitas na sessao.
+    // existentes (clonados) das adições feitas na sessão.
     const clonados = await solicitacaoService.listarMembros(nova.id);
     const mapaPorRef = new Map(clonados.map((c) => [c.ref_pesquisador, c]));
     const idsOriginais = new Set(clonados.map((c) => c.id));
@@ -221,7 +221,7 @@ export default function AlteracaoPage() {
     idsARemover: Set<number>,
     idsOriginais: Set<number>,
   ) => {
-    // 1) Inclusoes (membros novos)
+    // 1) Inclusões (membros novos)
     for (const m of membros.filter((x) => !x.id)) {
       const { _tempId, id, ...dados } = m;
       void _tempId;
@@ -229,7 +229,7 @@ export default function AlteracaoPage() {
       await solicitacaoService.incluirMembro(id_solicitacao, dados);
     }
 
-    // 2) Alteracoes (membros existentes que estao na lista)
+    // 2) Alterações (membros existentes que estão na lista)
     for (const m of membros.filter((x) => !!x.id)) {
       const { _tempId, id, ...dados } = m;
       void _tempId;
@@ -239,7 +239,7 @@ export default function AlteracaoPage() {
     // 3) Encerramentos (existentes que foram removidos da lista)
     for (const id of idsARemover) {
       if (idsOriginais.has(id)) {
-        await solicitacaoService.encerrarMembro(id_solicitacao, id, 'Encerrado na alteracao');
+        await solicitacaoService.encerrarMembro(id_solicitacao, id, 'Encerrado na alteração');
       }
     }
   };
@@ -254,7 +254,7 @@ export default function AlteracaoPage() {
       setShowSuccessModal(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      setErro(e?.response?.data?.detail ?? 'Erro ao salvar alteracoes. Tente novamente.');
+      setErro(e?.response?.data?.detail ?? 'Erro ao salvar alterações. Tente novamente.');
     } finally {
       setSalvando(false);
     }
@@ -271,7 +271,7 @@ export default function AlteracaoPage() {
       setShowSubmetidaModal(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      setErro(e?.response?.data?.detail ?? 'Erro ao submeter alteracao. Tente novamente.');
+      setErro(e?.response?.data?.detail ?? 'Erro ao submeter alteração. Tente novamente.');
     } finally {
       setSubmetendo(false);
     }
@@ -287,7 +287,7 @@ export default function AlteracaoPage() {
   if (carregando) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-slate-400 text-sm">Carregando dados da alteracao...</p>
+        <p className="text-slate-400 text-sm">Carregando dados da alteração...</p>
       </div>
     );
   }
@@ -320,12 +320,12 @@ export default function AlteracaoPage() {
           Voltar ao Projeto
         </button>
         <div className="text-right">
-          <h2 className="text-2xl font-bold text-slate-900">Alteracao de RH</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Alteração de RH</h2>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
             Projeto: <span className="text-slate-900">{projeto?.codigo}</span>
             {versaoVigente && (
               <span className="ml-3">
-                Versao vigente: v{versaoVigente.numero_versao}
+                Versão vigente: v{versaoVigente.numero_versao}
               </span>
             )}
           </p>
@@ -347,7 +347,7 @@ export default function AlteracaoPage() {
               Equipe Atual (Antes)
             </h3>
             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
-              Versao vigente — somente leitura
+              Versão vigente — somente leitura
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -364,7 +364,7 @@ export default function AlteracaoPage() {
         </div>
         {equipeAtual.length === 0 ? (
           <p className="p-8 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">
-            Sem membros na versao vigente
+            Sem membros na versão vigente
           </p>
         ) : (
           <table className="w-full text-left">
@@ -485,7 +485,7 @@ export default function AlteracaoPage() {
         <div className="p-4 border-b border-slate-200 flex items-center gap-2">
           <History size={14} className="text-slate-600" />
           <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
-            Historico desta sessao
+            Histórico desta sessão
           </h4>
           <span className="ml-auto text-[10px] text-slate-400 font-bold uppercase tracking-widest">
             {history.length} eventos
@@ -520,7 +520,7 @@ export default function AlteracaoPage() {
         </div>
       </section>
 
-      {/* Acoes */}
+      {/* Ações */}
       <div className="flex items-center justify-between p-6 bg-slate-100 border border-slate-200 rounded-lg">
         {solicitacaoId ? (
           <Link
@@ -528,11 +528,11 @@ export default function AlteracaoPage() {
             className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-50 transition-all cursor-pointer"
           >
             <GitCompare size={14} className="mr-2" />
-            Ver Comparacao
+            Ver Comparação
           </Link>
         ) : (
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            Salve o rascunho para ver a comparacao
+            Salve o rascunho para ver a comparação
           </span>
         )}
         <div className="flex items-center gap-3">
@@ -566,7 +566,7 @@ export default function AlteracaoPage() {
             ) : (
               <>
                 <FileCheck size={16} className="mr-2" />
-                Submeter Solicitacao
+                Submeter Solicitação
               </>
             )}
           </button>
@@ -665,7 +665,7 @@ export default function AlteracaoPage() {
             </div>
             <h3 className="text-2xl font-black text-slate-900 mb-2">Rascunho Salvo!</h3>
             <p className="text-slate-500 font-medium mb-6">
-              Suas mudancas foram salvas. A alteracao continua em edicao ate ser submetida.
+              Suas mudanças foram salvas. A alteração continua em edição até ser submetida.
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Link
@@ -686,7 +686,7 @@ export default function AlteracaoPage() {
         </div>
       )}
 
-      {/* Modal de submissao final */}
+      {/* Modal de submissão final */}
       {showSubmetidaModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
@@ -698,9 +698,9 @@ export default function AlteracaoPage() {
             <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <FileCheck size={40} />
             </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Alteracao Submetida!</h3>
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Alteração Submetida!</h3>
             <p className="text-slate-500 font-medium mb-6">
-              A nova versao agora e a vigente do projeto. A versao anterior foi para o historico.
+              A nova versão agora é a vigente do projeto. A versão anterior foi para o histórico.
             </p>
             <button
               onClick={() => navigate(`/projetos/${projetoId}`)}

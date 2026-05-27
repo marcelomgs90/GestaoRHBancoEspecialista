@@ -17,7 +17,7 @@ def listar_usuarios(
     service: UsuarioService = Depends(get_usuario_service),
     _: Usuario = Depends(require_role(PerfilUsuario.ADMINISTRADOR)),
 ):
-    """Listar todos os usuarios (apenas admin)."""
+    """Listar todos os usuários (apenas admin)."""
     return service.listar()
 
 
@@ -27,5 +27,5 @@ def obter_usuario(
     service: UsuarioService = Depends(get_usuario_service),
     _: Usuario = Depends(require_role(PerfilUsuario.ADMINISTRADOR)),
 ):
-    """Obter usuario por ID (apenas admin)."""
+    """Obter usuário por ID (apenas admin)."""
     return service.obter_por_id(usuario_id)

@@ -32,7 +32,7 @@ import { STATUS_SOLICITACAO_LABELS, StatusSolicitacao } from '@/types/enums';
 import type { Projeto } from '@/types/projeto';
 import type { Solicitacao } from '@/types/solicitacao';
 
-// TODO: substituir por endpoint de relatorios quando disponivel
+// TODO: substituir por endpoint de relatórios quando disponível
 const budgetData = [
   { period: '2024.1', projecao: 4000000, saldo: 4000000 },
   { period: '2024.2', projecao: 3333333, saldo: 3250000 },
@@ -43,7 +43,7 @@ const budgetData = [
   { period: 'Final', projecao: 0, saldo: 0 },
 ];
 
-// TODO: substituir por endpoint de relatorios
+// TODO: substituir por endpoint de relatórios
 const chartData = [
   { month: 'Jan', Empresa: 45000, Embrapii: 60000, IFPB: 30000, Sebrae: 15000 },
   { month: 'Fev', Empresa: 52000, Embrapii: 55000, IFPB: 25000, Sebrae: 18000 },
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       bg: 'bg-blue-50',
     },
     {
-      name: 'Solicitacoes Pendentes',
+      name: 'Solicitações Pendentes',
       value: isLoading ? '—' : pendentes,
       icon: Clock,
       color: 'text-amber-600',
@@ -122,7 +122,7 @@ export default function DashboardPage() {
         <div>
           <h2 className="text-2xl font-bold text-slate-950">Dashboard Operacional</h2>
           <p className="text-slate-700 text-sm mt-1">
-            Bem-vindo, {user?.nome}. Visao geral dos ativos e recursos do Polo.
+            Bem-vindo, {user?.nome}. Visão geral dos ativos e recursos do Polo.
           </p>
         </div>
         {podeCriarProjeto && (
@@ -226,7 +226,7 @@ export default function DashboardPage() {
               <AlertCircle size={14} />
             </div>
             <h3 className="text-[10px] font-bold text-slate-950 uppercase tracking-wider">
-              Status de Solicitacoes
+              Status de Solicitações
             </h3>
           </div>
           <div className="flex-1 space-y-3">
@@ -251,7 +251,7 @@ export default function DashboardPage() {
             onClick={() => navigate('/solicitacoes')}
             className="mt-4 w-full py-2 bg-slate-50 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded text-[9px] font-bold uppercase tracking-widest transition-all cursor-pointer"
           >
-            Ver todas as solicitacoes
+            Ver todas as solicitações
           </button>
         </motion.div>
       </div>
@@ -283,8 +283,8 @@ export default function DashboardPage() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="text-[10px] font-bold text-slate-600 uppercase tracking-widest border-b border-slate-100">
-                      <th className="pb-4">Codigo</th>
-                      <th className="pb-4">Vigencia</th>
+                      <th className="pb-4">Código</th>
+                      <th className="pb-4">Vigência</th>
                       <th className="pb-4 text-right">Status</th>
                     </tr>
                   </thead>
@@ -329,13 +329,13 @@ export default function DashboardPage() {
             <button
               onClick={() => setIsChartMaximized(true)}
               className="absolute top-4 right-4 p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-slate-300 hover:text-white z-10 cursor-pointer"
-              title="Expandir grafico"
+              title="Expandir gráfico"
             >
               <TrendingUp size={16} />
             </button>
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-6 flex items-center gap-2">
               <TrendingUp size={14} />
-              Execucao Orcamentaria Global
+              Execução Orçamentária Global
               <span className="ml-1 text-slate-500">— TODO</span>
             </p>
             <div className="h-[200px] w-full mb-6">
@@ -359,7 +359,7 @@ export default function DashboardPage() {
                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '4px', fontSize: '10px' }}
                     formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`}
                   />
-                  <Line type="monotone" dataKey="projecao" stroke="#475569" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Projecao" />
+                  <Line type="monotone" dataKey="projecao" stroke="#475569" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Projeção" />
                   <Line type="monotone" dataKey="saldo" stroke="#3b82f6" strokeWidth={3} dot={{ fill: '#3b82f6', r: 4 }} activeDot={{ r: 6 }} name="Saldo" />
                 </LineChart>
               </ResponsiveContainer>
@@ -396,8 +396,8 @@ export default function DashboardPage() {
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-600 text-white rounded-lg"><TrendingUp size={24} /></div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">Execucao Orcamentaria Global</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Dados mockados — aguarda endpoint de relatorios</p>
+                  <h3 className="text-xl font-bold text-slate-900">               Execução Orçamentária Global</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Dados mockados — aguarda endpoint de relatórios</p>
                 </div>
               </div>
               <button onClick={() => setIsChartMaximized(false)} className="p-3 bg-slate-100 hover:bg-slate-200 rounded-full transition-all cursor-pointer">
@@ -411,7 +411,7 @@ export default function DashboardPage() {
                   <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 700, fill: '#64748b' }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 700, fill: '#64748b' }} tickFormatter={(v) => `R$ ${(v / 1000000).toFixed(1)}M`} domain={[0, 4000000]} />
                   <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }} formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`} />
-                  <Line type="monotone" dataKey="projecao" stroke="#cbd5e1" strokeWidth={3} strokeDasharray="8 8" dot={false} name="Projecao" />
+                  <Line type="monotone" dataKey="projecao" stroke="#cbd5e1" strokeWidth={3} strokeDasharray="8 8" dot={false} name="Projeção" />
                   <Line type="monotone" dataKey="saldo" stroke="#3b82f6" strokeWidth={5} dot={{ fill: '#3b82f6', r: 6 }} activeDot={{ r: 8 }} name="Saldo" />
                 </LineChart>
               </ResponsiveContainer>

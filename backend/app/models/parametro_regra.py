@@ -5,8 +5,8 @@ from app.utils.enums import TipoParametroRegra, CategoriaBolsa
 
 class ParametroRegra(Base, TimestampMixin):
     """
-    Parametros e regras com vigencia temporal.
-    Conforme Resolucao 11/2022 - nunca sobrescrever valores historicos.
+    Parâmetros e regras com vigência temporal.
+    Conforme Resolução 11/2022 - nunca sobrescrever valores históricos.
     """
     __tablename__ = "parametro_regra"
 
@@ -20,7 +20,7 @@ class ParametroRegra(Base, TimestampMixin):
     carga_horaria_referencia = Column(Integer, nullable=True)
     limite_carga_horaria_semanal = Column(Integer, nullable=True)
 
-    # Vigencia temporal
+    # Vigência temporal
     vigencia_inicio = Column(Date, nullable=False, index=True)
     vigencia_fim = Column(Date, nullable=True, index=True)
 

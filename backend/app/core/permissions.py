@@ -9,7 +9,7 @@ from app.core.dependencies import get_current_user
 
 def require_role(*roles: PerfilUsuario):
     """
-    Decorator/dependency para verificar se usuario tem um dos perfis permitidos.
+    Decorator/dependency para verificar se usuário tem um dos perfis permitidos.
 
     Uso:
         @router.get("/admin")
@@ -29,7 +29,7 @@ def require_role(*roles: PerfilUsuario):
 
 def require_coordenador_projeto(projeto_id: int):
     """
-    Verifica se o usuario atual e coordenador do projeto especificado.
+    Verifica se o usuário atual é coordenador do projeto especificado.
     """
     def dependency(
         current_user: Usuario = Depends(get_current_user)

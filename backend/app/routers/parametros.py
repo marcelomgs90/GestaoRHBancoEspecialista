@@ -21,7 +21,7 @@ def calcular_bolsa(
 ):
     """
     Calcula o valor proporcional da bolsa para preview no frontend.
-    Usado para feedback em tempo real durante a edicao de membros (US-SD-03).
+    Usado para feedback em tempo real durante a edição de membros (US-SD-03).
     """
     valor = service.calcular_valor_bolsa(
         categoria=dados.categoria,
@@ -42,8 +42,8 @@ def validar_ch_global(
     _: Usuario = Depends(get_current_user),
 ):
     """
-    Valida se um vinculo proposto cabe no limite semanal global do pesquisador
-    sem lancar excecao. Retorna estado detalhado para feedback no frontend.
+    Valida se um vínculo proposto cabe no limite semanal global do pesquisador
+    sem lançar exceção. Retorna estado detalhado para feedback no frontend.
     """
     resultado = service.obter_validacao_ch_global(
         ref_pesquisador=dados.ref_pesquisador,

@@ -59,18 +59,18 @@ export default function ProjetoDetailPage() {
         setVersoes(v);
         setSolicitacoes(s);
 
-        // busca membros da versao VIGENTE ou da ultima solicitacao aprovada
+        // busca membros da versão VIGENTE ou da última solicitação aprovada
         const versaoVigente = v.find((ver) => ver.status === 'VIGENTE');
         if (versaoVigente?.solicitacao_id) {
           const m = await solicitacaoService.listarMembros(versaoVigente.solicitacao_id);
           setMembros(m);
         } else if (s.length > 0) {
-          // fallback: membros da solicitacao mais recente
+          // fallback: membros da solicitação mais recente
           const mFallback = await solicitacaoService.listarMembros(s[s.length - 1].id);
           setMembros(mFallback);
         }
       } catch {
-        setErro('Nao foi possivel carregar os dados do projeto.');
+        setErro('Não foi possível carregar os dados do projeto.');
       } finally {
         setIsLoading(false);
       }
@@ -103,7 +103,7 @@ export default function ProjetoDetailPage() {
         <button onClick={() => navigate('/projetos')} className="flex items-center text-slate-500 hover:text-slate-900 text-xs font-bold uppercase tracking-widest gap-1 cursor-pointer">
           <ArrowLeft size={14} /> Voltar
         </button>
-        <p className="text-red-600 text-sm">{erro ?? 'Projeto nao encontrado.'}</p>
+        <p className="text-red-600 text-sm">{erro ?? 'Projeto não encontrado.'}</p>
       </div>
     );
   }
@@ -122,7 +122,7 @@ export default function ProjetoDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {/* Informacoes gerais */}
+          {/* Informações gerais */}
           <section className="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
             <div className="flex flex-col gap-4 mb-8">
               <div className="flex items-center justify-between">
@@ -144,11 +144,11 @@ export default function ProjetoDetailPage() {
 
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 py-6 border-y border-slate-100">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Codigo</p>
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Código</p>
                 <p className="font-bold text-slate-900 text-sm">{projeto.codigo}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Inicio</p>
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Início</p>
                 <div className="flex items-center gap-1 font-bold text-slate-900 text-sm">
                   <Calendar size={12} className="text-slate-400" />
                   {formatDate(projeto.data_inicio)}
@@ -189,7 +189,7 @@ export default function ProjetoDetailPage() {
                       className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm"
                     >
                       <Plus size={14} className="mr-2" />
-                      Solicitar Alteracao
+                      Solicitar Alteração
                     </Link>
                   ) : (
                     <Link
@@ -197,7 +197,7 @@ export default function ProjetoDetailPage() {
                       className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm"
                     >
                       <Plus size={14} className="mr-2" />
-                      Implantacao Inicial
+                      Implantação Inicial
                     </Link>
                   )}
                 </div>
@@ -275,12 +275,12 @@ export default function ProjetoDetailPage() {
             <div className="flex items-center gap-2 mb-4">
               <ClipboardList size={14} className="text-slate-600" />
               <h4 className="font-bold text-slate-950 uppercase tracking-wider text-[11px]">
-                Versoes de Quadro RH
+                Versões de Quadro RH
               </h4>
             </div>
             {versoesLimitadas.length === 0 ? (
               <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold text-center py-4">
-                Nenhuma versao registrada
+                Nenhuma versão registrada
               </p>
             ) : (
               <div className="space-y-3">
@@ -290,7 +290,7 @@ export default function ProjetoDetailPage() {
                     className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100"
                   >
                     <div>
-                      <p className="text-xs font-bold text-slate-900">Versao {v.numero_versao}</p>
+                      <p className="text-xs font-bold text-slate-900">Versão {v.numero_versao}</p>
                       <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
                         {formatDate(v.criado_em)}
                       </p>
@@ -317,7 +317,7 @@ export default function ProjetoDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Activity size={14} className="text-slate-600" />
-                <h4 className="font-bold text-slate-950 uppercase tracking-wider text-[11px]">Solicitacoes</h4>
+                <h4 className="font-bold text-slate-950 uppercase tracking-wider text-[11px]">Solicitações</h4>
               </div>
               <Link
                 to="/solicitacoes"
@@ -328,7 +328,7 @@ export default function ProjetoDetailPage() {
             </div>
             {solicitacoesOrdenadas.length === 0 ? (
               <p className="text-[10px] text-slate-400 text-center py-4 uppercase tracking-widest font-bold">
-                Nenhuma solicitacao para este projeto
+                Nenhuma solicitação para este projeto
               </p>
             ) : (
               <div className="space-y-2">

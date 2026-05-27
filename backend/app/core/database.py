@@ -17,7 +17,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_db() -> Generator[Session, None, None]:
-    """Dependency para obter sessao do banco de dados."""
+    """Dependency para obter sessão do banco de dados."""
     db = SessionLocal()
     try:
         yield db

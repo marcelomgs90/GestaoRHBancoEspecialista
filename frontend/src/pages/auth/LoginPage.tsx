@@ -7,7 +7,7 @@ import { ShieldCheck, LogIn, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const schema = z.object({
-  email: z.string().email('Informe um e-mail valido'),
+  email: z.string().email('Informe um e-mail válido'),
   senha: z.string().min(1, 'Informe a senha'),
 });
 
@@ -44,7 +44,7 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
             <ShieldCheck size={32} />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Gestao RH</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Gestão RH</h1>
           <p className="text-blue-100 mt-1 text-sm font-medium">Banco de Especialistas — Polo IFPB</p>
         </div>
 
@@ -111,7 +111,7 @@ export default function LoginPage() {
           </button>
 
           <p className="text-center text-[10px] uppercase tracking-widest text-slate-400 pt-4 border-t border-slate-100">
-            Polo de Inovacao do IFPB
+            Polo de Inovação do IFPB
           </p>
         </form>
       </div>
