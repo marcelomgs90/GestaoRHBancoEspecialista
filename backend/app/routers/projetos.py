@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends
 
 from app.core.dependencies import get_current_user, get_projeto_service, get_versao_service
 from app.models.usuario_perfil import Usuario
+from app.schemas.common import PaginatedResponse
+from app.schemas.membro import MembroResponse
 from app.schemas.projeto import ProjetoCreate, ProjetoResponse
 from app.schemas.versao import VersaoRHProjetoResponse
 from app.services.projeto_service import ProjetoService
@@ -51,6 +53,36 @@ def listar_versoes_projeto(
     """
     projeto_service.obter_por_id(projeto_id, current_user)
     return versao_service.listar_por_projeto(projeto_id)
+
+
+@router.get(
+    "/{projeto_id}/pesquisadores",
+    response_model=PaginatedResponse[MembroResponse],
+)
+def listar_pesquisadores_projeto(
+    projeto_id: int,
+    page: int = 1,
+    per_page: int = 20,
+    projeto_service: ProjetoService = Depends(get_projeto_service),
+    versao_service: VersaoService = Depends(get_versao_service),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    Listagem paginada de pesquisadores do projeto (versão VIGENTE).
+    Retorna os campos de pesquisador_projeto no formato MembroResponse.
+    """
+    projeto_service.obter_por_id(projeto_id, current_user)
+    itens, total = versao_service.listar_pesquisadores_vigentes(
+        projeto_id, page=page, per_page=per_page
+    )
+    pages = (total + per_page - 1) // per_page if per_page else 0
+    return PaginatedResponse[MembroResponse](
+        items=itens,
+        total=total,
+        page=page,
+        per_page=per_page,
+        pages=pages,
+    )
 
 
 @router.get("/{projeto_id}")

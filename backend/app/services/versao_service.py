@@ -29,6 +29,39 @@ class VersaoService:
             .all()
         )
 
+    def listar_pesquisadores_vigentes(
+        self, projeto_id: int, page: int = 1, per_page: int = 20
+    ) -> tuple[List[PesquisadorProjeto], int]:
+        """
+        Lista paginada dos pesquisadores da versão VIGENTE do projeto.
+        Retorna (itens, total). Se não houver versão vigente, retorna ([], 0).
+        """
+        page = max(page, 1)
+        per_page = max(min(per_page, 100), 1)
+
+        versao_vigente = (
+            self.db.query(VersaoRHProjeto)
+            .filter(
+                VersaoRHProjeto.projeto_id == projeto_id,
+                VersaoRHProjeto.status == StatusVersaoRH.VIGENTE,
+            )
+            .first()
+        )
+        if not versao_vigente:
+            return [], 0
+
+        base_query = self.db.query(PesquisadorProjeto).filter(
+            PesquisadorProjeto.versao_rh_id == versao_vigente.id
+        )
+        total = base_query.count()
+        itens = (
+            base_query.order_by(PesquisadorProjeto.nome_pesquisador.asc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .all()
+        )
+        return itens, total
+
     def listar(self, solicitacao_id: int) -> List[VersaoRHProjeto]:
         solicitacao = self._buscar_solicitacao(solicitacao_id)
         return (
