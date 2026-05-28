@@ -8,14 +8,16 @@ import {
   Calendar,
   ClipboardList,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { usePerfil } from '@/hooks/usePerfil';
 import { useAuth } from '@/contexts/AuthContext';
 import { projetoService } from '@/services/projetoService';
+import type { Paginated } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
 import { formatDate, CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import {
-  FONTE_LABELS,
   STATUS_SOLICITACAO_LABELS,
   TIPO_SOLICITACAO_LABELS,
   StatusSolicitacao,
@@ -38,12 +40,21 @@ export default function ProjetoDetailPage() {
 
   const [projeto, setProjeto] = useState<Projeto | null>(null);
   const [versoes, setVersoes] = useState<VersaoRHProjeto[]>([]);
-  const [membros, setMembros] = useState<Membro[]>([]);
+  const [membrosPag, setMembrosPag] = useState<Paginated<Membro>>({
+    items: [],
+    total: 0,
+    page: 1,
+    per_page: 5,
+    pages: 0,
+  });
+  const [page, setPage] = useState(1);
+  const [isLoadingMembros, setIsLoadingMembros] = useState(false);
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
   const projetoId = Number(id_projeto);
+  const PER_PAGE = 5;
 
   useEffect(() => {
     if (!projetoId) return;
@@ -58,17 +69,6 @@ export default function ProjetoDetailPage() {
         setProjeto(p);
         setVersoes(v);
         setSolicitacoes(s);
-
-        // busca membros da versão VIGENTE ou da última solicitação aprovada
-        const versaoVigente = v.find((ver) => ver.status === 'VIGENTE');
-        if (versaoVigente?.solicitacao_id) {
-          const m = await solicitacaoService.listarMembros(versaoVigente.solicitacao_id);
-          setMembros(m);
-        } else if (s.length > 0) {
-          // fallback: membros da solicitação mais recente
-          const mFallback = await solicitacaoService.listarMembros(s[s.length - 1].id);
-          setMembros(mFallback);
-        }
       } catch {
         setErro('Não foi possível carregar os dados do projeto.');
       } finally {
@@ -77,6 +77,29 @@ export default function ProjetoDetailPage() {
     }
     void load();
   }, [projetoId]);
+
+  useEffect(() => {
+    if (!projetoId) return;
+    let cancelado = false;
+    setIsLoadingMembros(true);
+    projetoService
+      .listarPesquisadores(projetoId, { page, per_page: PER_PAGE })
+      .then((res) => {
+        if (!cancelado) setMembrosPag(res);
+      })
+      .catch(() => {
+        if (!cancelado)
+          setMembrosPag({ items: [], total: 0, page: 1, per_page: PER_PAGE, pages: 0 });
+      })
+      .finally(() => {
+        if (!cancelado) setIsLoadingMembros(false);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [projetoId, page]);
+
+  const membros = membrosPag.items;
 
   const isCoordenador = user?.id === projeto?.coordenador_id;
   const podeEditar = isCoordenador || podeCriarProjeto;
@@ -176,94 +199,135 @@ export default function ProjetoDetailPage() {
                     Recursos Humanos
                   </h3>
                   <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
-                    {membros.length} pesquisadores alocados
+                    {membrosPag.total} pesquisadores alocados
                   </p>
                 </div>
               </div>
 
               {podeEditar && (
                 <div className="flex items-center gap-2">
-                  {versoes.some((v) => v.status === 'VIGENTE') ? (
-                    <Link
-                      to={`/projetos/${projeto.id}/alteracao`}
-                      className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm"
-                    >
-                      <Plus size={14} className="mr-2" />
-                      Solicitar Alteração
-                    </Link>
-                  ) : (
-                    <Link
-                      to={`/projetos/${projeto.id}/implantacao`}
-                      className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm"
-                    >
-                      <Plus size={14} className="mr-2" />
-                      Implantação Inicial
-                    </Link>
-                  )}
+                  <Link
+                    to={`/projetos/${projeto.id}/implantacao`}
+                    className="flex items-center px-4 py-2 bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-200 transition-all"
+                  >
+                    <Plus size={14} className="mr-2" />
+                    Implantação
+                  </Link>
+                  <Link
+                    to={`/projetos/${projeto.id}/alteracao`}
+                    className={`flex items-center px-4 py-2 rounded font-bold text-[10px] uppercase tracking-wider transition-all shadow-sm ${
+                      versoes.some((v) => v.status === 'VIGENTE')
+                        ? 'bg-slate-900 text-white hover:bg-slate-800'
+                        : 'bg-slate-300 text-slate-500 cursor-not-allowed pointer-events-none'
+                    }`}
+                  >
+                    <Activity size={14} className="mr-2" />
+                    Modificação
+                  </Link>
                 </div>
               )}
             </div>
 
-            {membros.length === 0 ? (
+            {isLoadingMembros ? (
+              <div className="py-12 text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Carregando pesquisadores...
+                </p>
+              </div>
+            ) : membros.length === 0 ? (
               <div className="py-12 text-center">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   Nenhum membro alocado neste projeto
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-[10px] font-bold text-slate-600 uppercase tracking-widest border-b border-slate-200">
-                      <th className="pb-3 px-2">Pesquisador</th>
-                      <th className="pb-3">Categoria</th>
-                      <th className="pb-3 text-center">CH Semanal</th>
-                      <th className="pb-3">Fonte</th>
-                      <th className="pb-3 text-right">Bolsa Mensal</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {membros.map((m) => {
-                      const cat = CATEGORIA_BOLSA_LABELS[m.categoria_bolsa];
-                      return (
-                        <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4 px-2">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0">
-                                {m.nome_pesquisador.charAt(0)}
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-[10px] font-bold text-slate-600 uppercase tracking-widest border-b border-slate-200">
+                        <th className="pb-3 px-2">Pesquisador</th>
+                        <th className="pb-3">Função / Nível</th>
+                        <th className="pb-3 text-center">Carga (H)</th>
+                        <th className="pb-3">Período</th>
+                        <th className="pb-3 text-right pr-2">Bolsa Mensal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {membros.map((m) => {
+                        const cat = CATEGORIA_BOLSA_LABELS[m.categoria_bolsa];
+                        return (
+                          <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="py-4 px-2">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0">
+                                  {m.nome_pesquisador.charAt(0)}
+                                </div>
+                                <span className="font-bold text-slate-950 text-sm whitespace-nowrap">
+                                  {m.nome_pesquisador}
+                                </span>
                               </div>
-                              <span className="font-bold text-slate-950 text-sm whitespace-nowrap">
-                                {m.nome_pesquisador}
+                            </td>
+                            <td className="py-4">
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-slate-700">{cat?.funcao ?? '—'}</span>
+                                <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider">
+                                  {cat?.nivel ?? m.categoria_bolsa}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-4 text-center">
+                              <span className="text-xs font-bold text-slate-600">
+                                {m.carga_horaria_semanal}h
                               </span>
-                            </div>
-                          </td>
-                          <td className="py-4">
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-slate-700">{cat?.funcao ?? '—'}</span>
-                              <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider">
-                                {cat?.nivel ?? m.categoria_bolsa}
+                            </td>
+                            <td className="py-4">
+                              <span className="text-xs font-medium text-slate-700 whitespace-nowrap">
+                                {formatDate(m.data_inicio)}
+                                {' — '}
+                                {m.data_fim ? formatDate(m.data_fim) : 'Em aberto'}
                               </span>
-                            </div>
-                          </td>
-                          <td className="py-4 text-center">
-                            <span className="text-xs font-bold text-slate-600">{m.carga_horaria_semanal}h</span>
-                          </td>
-                          <td className="py-4">
-                            <span className="text-xs font-medium text-slate-700">
-                              {FONTE_LABELS[m.fonte_financiamento] ?? m.fonte_financiamento}
-                            </span>
-                          </td>
-                          <td className="py-4 text-right">
-                            <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
-                              R$ {Number(m.valor_bolsa).toLocaleString('pt-BR')}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            </td>
+                            <td className="py-4 text-right pr-2">
+                              <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
+                                R$ {Math.round(Number(m.valor_bolsa)).toLocaleString('pt-BR')}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {membrosPag.pages > 1 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      Página {membrosPag.page} de {membrosPag.pages} · {membrosPag.total} no total
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={membrosPag.page <= 1}
+                        className="flex items-center justify-center w-8 h-8 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                        aria-label="Página anterior"
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.min(membrosPag.pages, p + 1))}
+                        disabled={membrosPag.page >= membrosPag.pages}
+                        className="flex items-center justify-center w-8 h-8 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                        aria-label="Próxima página"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </section>
         </div>
