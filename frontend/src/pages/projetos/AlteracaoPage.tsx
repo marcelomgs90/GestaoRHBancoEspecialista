@@ -102,11 +102,9 @@ export default function AlteracaoPage() {
         setVersaoVigente(vigente);
 
         // Equipe atual (somente leitura) — membros da versão vigente.
-        // Buscar via solicitacao_id que originou essa versão.
-        if (vigente.solicitacao_id) {
-          const membrosVigentes = await solicitacaoService.listarMembros(vigente.solicitacao_id);
-          setEquipeAtual(membrosVigentes);
-        }
+        // Buscar via endpoint de pesquisadores do projeto (versão vigente).
+        const { items: pesquisadoresVigentes } = await projetoService.listarPesquisadores(projetoId, { per_page: 100 });
+        setEquipeAtual(pesquisadoresVigentes);
 
         // Apenas resume um rascunho existente. A solicitação só é criada ao Salvar/Submeter.
         const existente = ss.find(
@@ -121,22 +119,20 @@ export default function AlteracaoPage() {
         } else {
           // Inicializa a equipe proposta como copia da vigente (apenas em memoria,
           // sem persistir). O backend clona oficialmente quando a solicitação for criada.
-          if (vigente.solicitacao_id) {
-            const membrosVigentes = await solicitacaoService.listarMembros(vigente.solicitacao_id);
-            const locais = membrosVigentes.map((m) => ({
-              _tempId: `vigente-preview-${m.id}`,
-              ref_pesquisador: m.ref_pesquisador,
-              nome_pesquisador: m.nome_pesquisador,
-              categoria_bolsa: m.categoria_bolsa,
-              fonte_financiamento: m.fonte_financiamento,
-              carga_horaria_semanal: m.carga_horaria_semanal,
-              data_inicio: m.data_inicio,
-              data_fim: m.data_fim,
-            }));
-            setEquipeProposta(locais);
-          }
+          const locais = pesquisadoresVigentes.map((m) => ({
+            _tempId: `vigente-preview-${m.id}`,
+            ref_pesquisador: m.ref_pesquisador,
+            nome_pesquisador: m.nome_pesquisador,
+            categoria_bolsa: m.categoria_bolsa,
+            fonte_financiamento: m.fonte_financiamento,
+            carga_horaria_semanal: m.carga_horaria_semanal,
+            data_inicio: m.data_inicio,
+            data_fim: m.data_fim,
+          }));
+          setEquipeProposta(locais);
         }
       } catch (err: unknown) {
+        console.log(err)
         const e = err as { response?: { data?: { detail?: string } } };
         setErro(e?.response?.data?.detail ?? 'Não foi possível inicializar a alteração.');
       } finally {
@@ -469,7 +465,79 @@ export default function AlteracaoPage() {
             </motion.div>
           ))}
 
-          {equipeProposta.length === 0 && (
+          {equipeProposta.length === 0 && equipeAtual.length > 0 && (
+            <div className="p-6">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
+                A equipe proposta está vazia. Abaixo estão os membros atuais da versão vigente que podem ser editados ou excluídos:
+              </p>
+              {equipeAtual.map((m) => {
+                const tempId = `vigente-${m.id}`;
+                const membrosProp = equipeProposta.find(p => p._tempId === tempId);
+                if (membrosProp) return null;
+                return (
+                  <motion.div layout key={m.id} className="mb-4">
+                    <p className="px-2 py-1 text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-slate-50 rounded">
+                      Membro atual (versão vigente)
+                    </p>
+                    <MembroEditor
+                      membro={{
+                        _tempId: tempId,
+                        ref_pesquisador: m.ref_pesquisador,
+                        nome_pesquisador: m.nome_pesquisador,
+                        categoria_bolsa: m.categoria_bolsa,
+                        fonte_financiamento: m.fonte_financiamento,
+                        carga_horaria_semanal: m.carga_horaria_semanal,
+                        data_inicio: m.data_inicio,
+                        data_fim: m.data_fim,
+                        valor_bolsa: m.valor_bolsa,
+                        id: m.id,
+                      }}
+                      onChange={(changes) => {
+                        const membroAtualizado: MembroLocalProps = {
+                          _tempId: tempId,
+                          ref_pesquisador: m.ref_pesquisador,
+                          nome_pesquisador: m.nome_pesquisador,
+                          categoria_bolsa: m.categoria_bolsa,
+                          fonte_financiamento: m.fonte_financiamento,
+                          carga_horaria_semanal: m.carga_horaria_semanal,
+                          data_inicio: m.data_inicio,
+                          data_fim: m.data_fim,
+                          valor_bolsa: m.valor_bolsa,
+                          id: m.id,
+                          ...changes,
+                        };
+                        const existente = equipeProposta.find(p => p._tempId === tempId);
+                        if (existente) {
+                          setEquipeProposta(prev => prev.map(p => p._tempId === tempId ? membroAtualizado : p));
+                        } else {
+                          setEquipeProposta(prev => [...prev, membroAtualizado]);
+                        }
+                      }}
+                      onRemove={() => {
+                        const membroParaRemocao: MembroLocalProps = {
+                          _tempId: tempId,
+                          ref_pesquisador: m.ref_pesquisador,
+                          nome_pesquisador: m.nome_pesquisador,
+                          categoria_bolsa: m.categoria_bolsa,
+                          fonte_financiamento: m.fonte_financiamento,
+                          carga_horaria_semanal: m.carga_horaria_semanal,
+                          data_inicio: m.data_inicio,
+                          data_fim: m.data_fim,
+                          valor_bolsa: m.valor_bolsa,
+                          id: m.id,
+                        };
+                        setEquipeProposta(prev => [...prev, membroParaRemocao]);
+                        setTimeout(() => removeMembro(tempId), 0);
+                      }}
+                      projetoId={projetoId}
+                    />
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+
+          {equipeProposta.length === 0 && equipeAtual.length === 0 && (
             <div className="p-16 text-center">
               <Users size={48} className="mx-auto mb-4 text-slate-100" />
               <p className="font-bold text-slate-300 uppercase tracking-widest text-xs">

@@ -208,7 +208,11 @@ export default function ProjetoDetailPage() {
                 <div className="flex items-center gap-2">
                   <Link
                     to={`/projetos/${projeto.id}/implantacao`}
-                    className="flex items-center px-4 py-2 bg-slate-100 text-slate-700 border border-slate-200 rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-200 transition-all"
+                    className={`flex items-center px-4 py-2 border rounded font-bold text-[10px] uppercase tracking-wider transition-all ${
+                      membrosPag.total > 0
+                        ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none'
+                        : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                    }`}
                   >
                     <Plus size={14} className="mr-2" />
                     Implantação
