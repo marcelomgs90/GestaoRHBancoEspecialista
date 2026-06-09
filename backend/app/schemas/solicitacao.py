@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 from app.utils.enums import StatusSolicitacao, TipoSolicitacao
@@ -8,6 +9,10 @@ class SolicitacaoCreate(BaseModel):
     tipo: TipoSolicitacao
     justificativa: Optional[str] = None
     mes_ano_referencia: Optional[str] = None
+
+
+class SolicitacaoRejeitarRequest(BaseModel):
+    justificativa: Optional[str] = None
 
 # --- NOVO SCHEMA ADICIONADO PARA A TASK 26761 ---
 class SolicitacaoImplantacaoCreate(BaseModel):
@@ -25,6 +30,7 @@ class SolicitacaoResponse(BaseModel):
     justificativa: Optional[str]
     mes_ano_referencia: Optional[str]
     criado_por: int
+    criado_em: datetime
 
     class Config:
         from_attributes = True

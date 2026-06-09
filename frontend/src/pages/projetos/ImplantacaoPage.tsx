@@ -427,22 +427,34 @@ export default function ImplantacaoPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+              className="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative z-10 text-center"
             >
-              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 size={40} />
+              <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <FileCheck size={40} />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2">Solicitação Salva!</h3>
-              <p className="text-slate-500 font-medium mb-8">
-                Os membros foram incluídos na solicitação com sucesso.
+              <h3 className="text-2xl font-black text-slate-900 mb-2">Implantação Submetida!</h3>
+              <p className="text-slate-500 font-medium mb-2">
+                Solicitação #{solicitacaoId}
               </p>
-              <button
-                onClick={() => navigate(`/projetos/${projetoId}`)}
-                className="w-full py-4 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs cursor-pointer"
-              >
-                Voltar ao Projeto
-                <ArrowLeft size={18} className="rotate-180" />
-              </button>
+              <p className="text-slate-500 font-medium mb-6">
+                Aguardando aprovação do Gestor do Polo. A equipe oficial do projeto
+                permanece <strong>intacta</strong> até a aprovação.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => navigate(`/solicitacoes/${solicitacaoId}/comparacao`)}
+                  className="py-3 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+                >
+                  <FileCheck size={14} />
+                  Ver Solicitação
+                </button>
+                <button
+                  onClick={() => navigate(`/projetos/${projetoId}`)}
+                  className="py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+                >
+                  Voltar ao Projeto
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

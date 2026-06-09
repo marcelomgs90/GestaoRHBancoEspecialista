@@ -82,14 +82,21 @@ export default function ProjetoDetailPage() {
     if (!projetoId) return;
     let cancelado = false;
     setIsLoadingMembros(true);
+    // Sempre usar a VIGENTE oficial para a tabela de RH do projeto.
+    // A lista "corrente" (PROPOSTA em rascunho/SUBMETIDA) só faz sentido nas
+    // telas de alteração/aprovação — não no detalhe do projeto, que deve
+    // refletir a equipe oficial aprovada.
     projetoService
-      .listarPesquisadores(projetoId, { page, per_page: PER_PAGE })
+      .listarPesquisadoresVigentes(projetoId, { page, per_page: PER_PAGE })
       .then((res) => {
-        if (!cancelado) setMembrosPag(res);
+        if (!cancelado) {
+          setMembrosPag(res);
+        }
       })
       .catch(() => {
-        if (!cancelado)
+        if (!cancelado) {
           setMembrosPag({ items: [], total: 0, page: 1, per_page: PER_PAGE, pages: 0 });
+        }
       })
       .finally(() => {
         if (!cancelado) setIsLoadingMembros(false);

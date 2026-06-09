@@ -55,8 +55,11 @@ Disponível apenas se o projeto **não** possui versão `VIGENTE`.
 2. Ao clicar em **Finalizar**, o sistema:
    - Cria a `Solicitacao_RH` (tipo `IMPLANTACAO`, status `EM_EDICAO`) e a `Versao_RH_Projeto` (n=1, status `PROPOSTA`)
    - Persiste os membros: calcula valor de bolsa via `Parametro_Regra` vigente e valida CH global
-   - Chama o submeter: solicitação passa a `SUBMETIDA` e versão passa a `VIGENTE`
-3. Sistema emite PDF de implantação a partir da versão `VIGENTE`
+   - Chama o submeter: solicitação passa a `SUBMETIDA` (a versão permanece `PROPOSTA` até a aprovação)
+3. Quando o Gestor do Polo **aprova**:
+   - Solicitação passa a `APROVADA` e a versão `PROPOSTA` passa a `VIGENTE`
+   - Equipe oficial do projeto passa a refletir os membros implantados
+4. Sistema emite PDF de implantação a partir da versão `VIGENTE`
 
 > **Idempotência:** se já existe uma `IMPLANTACAO` em `EM_EDICAO` para o projeto, o sistema reutiliza essa solicitação em vez de criar duplicata.
 
@@ -70,9 +73,15 @@ Disponível apenas se o projeto **possui** versão `VIGENTE`. No máximo uma `AL
    - Cria a `Solicitacao_RH` (tipo `ALTERACAO`, status `EM_EDICAO`) e a nova `Versao_RH_Projeto` (n=anterior+1, status `PROPOSTA`)
    - Clona automaticamente a equipe da versão `VIGENTE` para a `PROPOSTA` como base editável
    - Aplica inclusões, alterações e encerramentos sobre a `PROPOSTA`
-4. **Salvar Rascunho** mantém `EM_EDICAO`/`PROPOSTA`. **Submeter Solicitação** promove para `SUBMETIDA`/`VIGENTE` e demove a `VIGENTE` anterior para `HISTORICO`
-5. Sistema disponibiliza endpoint `GET /solicitacoes/{id}/comparacao` para comparativo Antes vs. Depois com diferenças (inclusões, alterações campo a campo, encerramentos)
-6. Sistema emite PDF com comparativo Antes / Alterações Solicitadas / Depois
+4. **Salvar Rascunho** mantém `EM_EDICAO`/`PROPOSTA`. **Submeter Solicitação** move apenas a solicitação para `SUBMETIDA` — a equipe oficial (VIGENTE) permanece **intacta** até a aprovação.
+5. Quando o Gestor do Polo **aprova**:
+   - Solicitação passa a `APROVADA`
+   - A versão `VIGENTE` anterior passa a `HISTORICO` e a nova `PROPOSTA` passa a `VIGENTE`
+   - Mudanças passam a valer para a equipe oficial do projeto
+6. Sistema disponibiliza endpoint `GET /solicitacoes/{id}/comparacao` para comparativo Antes vs. Depois com diferenças (inclusões, alterações campo a campo, encerramentos)
+7. Sistema emite PDF com comparativo Antes / Alterações Solicitadas / Depois
+
+> **Rejeição:** ao rejeitar uma `SUBMETIDA`, a `VIGENTE` original permanece inalterada (a PROPOSTA submetida nunca a substituiu), portanto a equipe do projeto continua exatamente como estava antes da submissão.
 
 > **Idempotência:** se já existe uma `ALTERACAO` em `EM_EDICAO` para o projeto, o sistema reutiliza essa solicitação em vez de criar duplicata.
 
@@ -105,13 +114,17 @@ Disponível apenas se o projeto **possui** versão `VIGENTE`. No máximo uma `AL
 Cada solicitação de implantação ou alteração gera exatamente uma `Versao_RH_Projeto`. As versões seguem o ciclo:
 
 ```
-PROPOSTA  --(submeter)-->  VIGENTE  --(nova alteracao submetida)-->  HISTORICO
+PROPOSTA  --(aprovar)-->  VIGENTE  --(nova alteracao aprovada)-->  HISTORICO
 ```
+
+A `submeter()` apenas move a solicitação de `EM_EDICAO` para `SUBMETIDA`; a transição
+de versão (`PROPOSTA → VIGENTE`) só ocorre na **aprovação**, garantindo que inclusões
+ou remoções nunca apareçam no projeto sem o consentimento do Gestor do Polo.
 
 Invariantes:
 
 - Cada projeto tem no máximo **uma** versão `VIGENTE` a qualquer momento
-- Cada projeto tem no máximo **uma** versão `PROPOSTA` ativa a qualquer momento (associada à solicitação `EM_EDICAO` em aberto)
+- Cada projeto tem no máximo **uma** versão `PROPOSTA` ativa a qualquer momento (associada à solicitação `EM_EDICAO` ou `SUBMETIDA` em aberto)
 - Versões `HISTORICO` são imutáveis e usadas para auditoria
 
 ### 5.2 Comparação Antes vs. Depois

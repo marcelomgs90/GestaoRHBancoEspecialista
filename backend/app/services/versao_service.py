@@ -7,7 +7,7 @@ from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.versao_rh_projeto import VersaoRHProjeto
 from app.schemas.versao import ComparacaoResponse
-from app.utils.enums import FonteFinanciamento, StatusVersaoRH
+from app.utils.enums import FonteFinanciamento, StatusSolicitacao, StatusVersaoRH
 
 _FONTES_VAZIAS = {
     FonteFinanciamento.EMPRESA.value: [],
@@ -61,6 +61,78 @@ class VersaoService:
             .all()
         )
         return itens, total
+
+    def listar_pesquisadores_da_versao_corrente(
+        self, projeto_id: int, page: int = 1, per_page: int = 20
+    ) -> tuple[List[PesquisadorProjeto], int, bool]:
+        """
+        Lista paginada dos pesquisadores da versão corrente do projeto.
+        Retorna (itens, total, is_rascunho).
+
+        Comportamento (membros só passam a valer após aprovação):
+        - Se houver solicitação EM_EDICAO, retorna a versão PROPOSTA (is_rascunho=True).
+          O coordenador está editando o rascunho.
+        - Se houver solicitação SUBMETIDA, retorna a versão PROPOSTA (is_rascunho=False).
+          As mudanças estão pendentes de aprovação e ainda não afetam a equipe oficial.
+        - Se houver solicitação APROVADA, retorna a versão VIGENTE (is_rascunho=False).
+          Equipe oficial vigente.
+        - Se houver solicitação REJEITADA, retorna a VIGENTE atual (is_rascunho=False).
+          A VIGENTE nunca foi alterada durante a submissão, então as mudanças foram
+          descartadas e a equipe oficial permanece como antes.
+        - Caso contrário, retorna a VIGENTE atual (is_rascunho=False).
+        """
+        page = max(page, 1)
+        per_page = max(min(per_page, 100), 1)
+
+        solicitacao_em_edicao_ou_submetida = (
+            self.db.query(SolicitacaoRH)
+            .filter(
+                SolicitacaoRH.projeto_id == projeto_id,
+                SolicitacaoRH.status.in_(
+                    [StatusSolicitacao.EM_EDICAO, StatusSolicitacao.SUBMETIDA]
+                ),
+            )
+            .order_by(SolicitacaoRH.criado_em.desc())
+            .first()
+        )
+
+        if solicitacao_em_edicao_ou_submetida:
+            versao = (
+                self.db.query(VersaoRHProjeto)
+                .filter(
+                    VersaoRHProjeto.solicitacao_id == solicitacao_em_edicao_ou_submetida.id,
+                    VersaoRHProjeto.status == StatusVersaoRH.PROPOSTA,
+                )
+                .first()
+            )
+            is_rascunho = (
+                solicitacao_em_edicao_ou_submetida.status == StatusSolicitacao.EM_EDICAO
+            )
+        else:
+            versao = (
+                self.db.query(VersaoRHProjeto)
+                .filter(
+                    VersaoRHProjeto.projeto_id == projeto_id,
+                    VersaoRHProjeto.status == StatusVersaoRH.VIGENTE,
+                )
+                .first()
+            )
+            is_rascunho = False
+
+        if not versao:
+            return [], 0, is_rascunho
+
+        base_query = self.db.query(PesquisadorProjeto).filter(
+            PesquisadorProjeto.versao_rh_id == versao.id
+        )
+        total = base_query.count()
+        itens = (
+            base_query.order_by(PesquisadorProjeto.nome_pesquisador.asc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .all()
+        )
+        return itens, total, is_rascunho
 
     def listar(self, solicitacao_id: int) -> List[VersaoRHProjeto]:
         solicitacao = self._buscar_solicitacao(solicitacao_id)

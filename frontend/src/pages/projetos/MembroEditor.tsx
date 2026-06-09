@@ -114,9 +114,24 @@ export function MembroEditor({ membro, onChange, onRemove, projetoId }: Props) {
   ]);
 
   useEffect(() => {
-    if (preview.valorBolsa !== null && preview.valorBolsa !== membro.valor_bolsa) {
-      onChange({ valor_bolsa: preview.valorBolsa });
-    }
+    // IMPORTANTE: NÃO propagar `valor_bolsa` para o estado do pai a cada
+    // recálculo. O cálculo é executado sempre que `categoria_bolsa`,
+    // `carga_horaria_semanal`, `data_inicio`, `data_fim` ou `ref_pesquisador`
+    // mudam — e também na montagem inicial. Se propagarmos o resultado, o
+    // estado local do pai sempre divergirá do clone persistido no backend, o
+    // que faz o `persistirMudancas` disparar um PUT parasita em TODOS os
+    // membros com `id` (mesmo quando o usuário não mexeu em nada).
+    //
+    // O `valor_bolsa` é um campo derivado (calculado pelo `ParametroService`
+    // do backend no momento de `incluirMembro`/`atualizarMembro`). Não há
+    // razão para a UI replicar esse estado — o backend é a fonte da verdade.
+    //
+    // Quando o usuário realmente EDITA a categoria, carga horária ou data de
+    // início, o `onChange` dos inputs (`MembroEditor.tsx` abaixo) já propaga
+    // essas mudanças para o pai via `onChange({ categoria_bolsa, ... })`, e
+    // o `membroMudou()` no `AlteracaoPage` detecta a divergência e dispara
+    // o PUT. O backend recalcula o `valor_bolsa` automaticamente.
+    return;
   }, [preview.valorBolsa]);
 
   const validacao = preview.validacaoCh;

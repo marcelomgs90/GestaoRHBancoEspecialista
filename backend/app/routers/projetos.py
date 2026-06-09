@@ -68,8 +68,42 @@ def listar_pesquisadores_projeto(
     current_user: Usuario = Depends(get_current_user),
 ):
     """
-    Listagem paginada de pesquisadores do projeto (versão VIGENTE).
-    Retorna os campos de pesquisador_projeto no formato MembroResponse.
+    Listagem paginada de pesquisadores do projeto (versão corrente).
+    Se houver solicitação EM_EDICAO, retorna versão PROPOSTA.
+    Caso contrário, retorna versão VIGENTE.
+    """
+    projeto_service.obter_por_id(projeto_id, current_user)
+    itens, total, is_rascunho = versao_service.listar_pesquisadores_da_versao_corrente(
+        projeto_id, page=page, per_page=per_page
+    )
+    pages = (total + per_page - 1) // per_page if per_page else 0
+    return PaginatedResponse[MembroResponse](
+        items=itens,
+        total=total,
+        page=page,
+        per_page=per_page,
+        pages=pages,
+        is_rascunho=is_rascunho,
+    )
+
+
+@router.get(
+    "/{projeto_id}/pesquisadores/vigentes",
+    response_model=PaginatedResponse[MembroResponse],
+)
+def listar_pesquisadores_vigentes_projeto(
+    projeto_id: int,
+    page: int = 1,
+    per_page: int = 20,
+    projeto_service: ProjetoService = Depends(get_projeto_service),
+    versao_service: VersaoService = Depends(get_versao_service),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    Listagem paginada de pesquisadores da versão VIGENTE do projeto,
+    ignorando qualquer PROPOSTA em rascunho/pendente.
+
+    Usado por telas que precisam do "antes" real (ex.: AlteracaoPage).
     """
     projeto_service.obter_por_id(projeto_id, current_user)
     itens, total = versao_service.listar_pesquisadores_vigentes(
@@ -82,6 +116,7 @@ def listar_pesquisadores_projeto(
         page=page,
         per_page=per_page,
         pages=pages,
+        is_rascunho=False,
     )
 
 

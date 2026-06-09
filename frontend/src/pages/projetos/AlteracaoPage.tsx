@@ -57,6 +57,23 @@ function membroToLocal(m: Membro): MembroLocalProps {
   };
 }
 
+/**
+ * Compara o estado local de um membro com o clone original no backend.
+ * Só os campos que o usuário pode editar entram na comparação.
+ *
+ * `valor_bolsa` é derivado (calculado pelo `parametroService`); não conta
+ * como mudança do usuário — se o `MembroEditor` recalcular e o valor mudar
+ * mas os inputs forem os mesmos, NÃO devemos disparar PUT.
+ */
+function membroMudou(local: MembroLocalProps, clone: Membro): boolean {
+  if (local.categoria_bolsa !== clone.categoria_bolsa) return true;
+  if (local.fonte_financiamento !== clone.fonte_financiamento) return true;
+  if (local.carga_horaria_semanal !== clone.carga_horaria_semanal) return true;
+  if ((local.data_inicio ?? '') !== clone.data_inicio) return true;
+  if ((local.data_fim ?? null) !== (clone.data_fim ?? null)) return true;
+  return false;
+}
+
 export default function AlteracaoPage() {
   const { id_projeto } = useParams<{ id_projeto: string }>();
   const navigate = useNavigate();
@@ -67,8 +84,10 @@ export default function AlteracaoPage() {
   const [versaoVigente, setVersaoVigente] = useState<VersaoRHProjeto | null>(null);
   const [equipeAtual, setEquipeAtual] = useState<Membro[]>([]);
   const [equipeProposta, setEquipeProposta] = useState<MembroLocalProps[]>([]);
-  const [idsExistentesOriginais, setIdsExistentesOriginais] = useState<Set<number>>(new Set());
-  const [idsRemovidos, setIdsRemovidos] = useState<Set<number>>(new Set());
+  // refs_pesquisador (e não id!) que foram removidos da equipeProposta.
+  // Usamos `ref_pesquisador` porque ele é estável entre VIGENTE e PROPOSTA
+  // (o clone do backend gera novo `id`, mas mantém o mesmo `ref_pesquisador`).
+  const [refsRemovidos, setRefsRemovidos] = useState<Set<string>>(new Set());
 
   const [showSearch, setShowSearch] = useState<'candidatos' | 'especialistas' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,6 +96,7 @@ export default function AlteracaoPage() {
   const [submetendo, setSubmetendo] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showSubmetidaModal, setShowSubmetidaModal] = useState(false);
+  const [submetidaSolicitacaoId, setSubmetidaSolicitacaoId] = useState<number | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [modalErro, setModalErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -86,10 +106,11 @@ export default function AlteracaoPage() {
 
     async function init() {
       try {
-        const [p, versoes, ss] = await Promise.all([
+        const [p, versoes, ss, paginacaoVigentes] = await Promise.all([
           projetoService.obter(projetoId),
           projetoService.listarVersoes(projetoId),
           solicitacaoService.listar(projetoId),
+          projetoService.listarPesquisadoresVigentes(projetoId, { per_page: 100 }),
         ]);
         setProjeto(p);
 
@@ -101,10 +122,8 @@ export default function AlteracaoPage() {
         }
         setVersaoVigente(vigente);
 
-        // Equipe atual (somente leitura) — membros da versão vigente.
-        // Buscar via endpoint de pesquisadores do projeto (versão vigente).
-        const { items: pesquisadoresVigentes } = await projetoService.listarPesquisadores(projetoId, { per_page: 100 });
-        setEquipeAtual(pesquisadoresVigentes);
+        // Equipe Atual (Antes) — sempre a VIGENTE real, nunca a PROPOSTA em rascunho.
+        setEquipeAtual(paginacaoVigentes.items);
 
         // Apenas resume um rascunho existente. A solicitação só é criada ao Salvar/Submeter.
         const existente = ss.find(
@@ -115,12 +134,13 @@ export default function AlteracaoPage() {
           const propostos = await solicitacaoService.listarMembros(existente.id);
           const locais = propostos.map(membroToLocal);
           setEquipeProposta(locais);
-          setIdsExistentesOriginais(new Set(propostos.map((m) => m.id)));
         } else {
-          // Inicializa a equipe proposta como copia da vigente (apenas em memoria,
-          // sem persistir). O backend clona oficialmente quando a solicitação for criada.
-          const locais = pesquisadoresVigentes.map((m) => ({
+          // Preview em memória da VIGENTE (não persistido).
+          // Atribuímos o `id` real do membro na VIGENTE para que `removeMembro`
+          // identifique o que precisa ser encerrado quando o backend clonar.
+          const locais = paginacaoVigentes.items.map((m) => ({
             _tempId: `vigente-preview-${m.id}`,
+            id: m.id,
             ref_pesquisador: m.ref_pesquisador,
             nome_pesquisador: m.nome_pesquisador,
             categoria_bolsa: m.categoria_bolsa,
@@ -128,11 +148,11 @@ export default function AlteracaoPage() {
             carga_horaria_semanal: m.carga_horaria_semanal,
             data_inicio: m.data_inicio,
             data_fim: m.data_fim,
+            valor_bolsa: m.valor_bolsa,
           }));
           setEquipeProposta(locais);
         }
       } catch (err: unknown) {
-        console.log(err)
         const e = err as { response?: { data?: { detail?: string } } };
         setErro(e?.response?.data?.detail ?? 'Não foi possível inicializar a alteração.');
       } finally {
@@ -171,7 +191,13 @@ export default function AlteracaoPage() {
   const removeMembro = (tempId: string) => {
     const m = equipeProposta.find((x) => x._tempId === tempId);
     if (!m) return;
-    if (m.id) setIdsRemovidos((s) => new Set(s).add(m.id!));
+    if (m.ref_pesquisador) {
+      setRefsRemovidos((s) => {
+        const prox = new Set(s);
+        prox.add(m.ref_pesquisador);
+        return prox;
+      });
+    }
     log('REMOVE', m.nome_pesquisador, m.id ? 'Marcado para encerramento' : 'Removido da lista');
     setEquipeProposta((prev) => prev.filter((x) => x._tempId !== tempId));
   };
@@ -182,13 +208,40 @@ export default function AlteracaoPage() {
     );
   };
 
+  /**
+   * Garante que a solicitação existe e retorna o estado consistente dos clones.
+   *
+   * Importante: a closure do React não enxerga o `setState` aplicado em
+   * `equipeProposta` no mesmo tick. Por isso retornamos `mapaRefParaIdClonado`
+   * e `estadoOriginalClones` calculados a partir da resposta do backend.
+   *
+   * Retorna:
+   * - `mapaRefParaIdClonado`: ref_pesquisador → id do clone na PROPOSTA.
+   *   Usado para resolver o `id` correto no DELETE (não o id da VIGENTE).
+   * - `estadoOriginalClones`: id do clone → Membro como estava no clone.
+   *   Usado para detectar mudanças reais e evitar PUTs parasitas.
+   */
   const garantirSolicitacao = async (): Promise<{
     solicitacaoId: number;
     membrosMapeados: MembroLocalProps[];
+    mapaRefParaIdClonado: Map<string, number>;
+    estadoOriginalClones: Map<number, Membro>;
   }> => {
     if (solicitacaoId) {
-      return { solicitacaoId, membrosMapeados: equipeProposta };
+      // Solicitação já existe: revalidar o estado dos clones a cada salvamento.
+      const propostos = await solicitacaoService.listarMembros(solicitacaoId);
+      const mapaRefParaIdClonado = new Map(
+        propostos.map((m) => [m.ref_pesquisador, m.id]),
+      );
+      const estadoOriginalClones = new Map(propostos.map((m) => [m.id, m]));
+      return {
+        solicitacaoId,
+        membrosMapeados: equipeProposta,
+        mapaRefParaIdClonado,
+        estadoOriginalClones,
+      };
     }
+
     const nova = await solicitacaoService.criar({
       identificador: `ALT-${projetoId}-${Date.now()}`,
       projeto_id: projetoId,
@@ -199,44 +252,115 @@ export default function AlteracaoPage() {
     // Backend acabou de clonar a vigente. Sincroniza ids para diferenciar
     // existentes (clonados) das adições feitas na sessão.
     const clonados = await solicitacaoService.listarMembros(nova.id);
-    const mapaPorRef = new Map(clonados.map((c) => [c.ref_pesquisador, c]));
-    const idsOriginais = new Set(clonados.map((c) => c.id));
+    const mapaRefParaIdClonado = new Map(
+      clonados.map((c) => [c.ref_pesquisador, c.id]),
+    );
+    const estadoOriginalClones = new Map(clonados.map((c) => [c.id, c]));
     const membrosMapeados: MembroLocalProps[] = equipeProposta.map((m) => {
-      if (m.id) return m;
-      const clone = mapaPorRef.get(m.ref_pesquisador);
-      return clone ? { ...m, id: clone.id, _tempId: `existente-${clone.id}` } : m;
+      if (m.id) {
+        // Membro do preview da VIGENTE — mantém o _tempId, apenas associa o id clonado.
+        return mapaRefParaIdClonado.has(m.ref_pesquisador)
+          ? { ...m, id: mapaRefParaIdClonado.get(m.ref_pesquisador)! }
+          : m;
+      }
+      const cloneId = mapaRefParaIdClonado.get(m.ref_pesquisador);
+      return cloneId ? { ...m, id: cloneId, _tempId: `existente-${cloneId}` } : m;
     });
     setEquipeProposta(membrosMapeados);
-    setIdsExistentesOriginais(idsOriginais);
-    return { solicitacaoId: nova.id, membrosMapeados };
+    return { solicitacaoId: nova.id, membrosMapeados, mapaRefParaIdClonado, estadoOriginalClones };
   };
 
+  /**
+   * Persiste as mudanças da alteração no backend.
+   *
+   * @param refsARemover refs_pesquisador (não ids!) marcados para encerramento.
+   * @param mapaRefParaIdClonado mapeia ref_pesquisador → id do clone na PROPOSTA.
+   *   Necessário para que o DELETE use o id do clone, não o da VIGENTE.
+   * @param estadoOriginalClones estado original dos clones (id → Membro).
+   *   Usado para detectar mudanças reais antes do PUT, evitando atualizações
+   *   parasitas disparadas pelo recálculo automático de `valor_bolsa` no
+   *   `MembroEditor`.
+   */
   const persistirMudancas = async (
     id_solicitacao: number,
     membros: MembroLocalProps[],
-    idsARemover: Set<number>,
-    idsOriginais: Set<number>,
+    refsARemover: Set<string>,
+    mapaRefParaIdClonado: Map<string, number>,
+    estadoOriginalClones: Map<number, Membro>,
   ) => {
-    // 1) Inclusões (membros novos)
+    // 1) Inclusões (membros novos, sem id do clone).
+    //    Payload alinhado com o schema `MembroCreate` do backend.
     for (const m of membros.filter((x) => !x.id)) {
-      const { _tempId, id, ...dados } = m;
-      void _tempId;
-      void id;
-      await solicitacaoService.incluirMembro(id_solicitacao, dados);
+      const dadosCreate = {
+        ref_pesquisador: m.ref_pesquisador,
+        nome_pesquisador: m.nome_pesquisador,
+        categoria_bolsa: m.categoria_bolsa,
+        fonte_financiamento: m.fonte_financiamento,
+        carga_horaria_semanal: m.carga_horaria_semanal,
+        data_inicio: m.data_inicio,
+        ...(m.data_fim ? { data_fim: m.data_fim } : {}),
+        ...(m.origem_rh ? { origem_rh: m.origem_rh } : {}),
+      };
+      await solicitacaoService.incluirMembro(id_solicitacao, dadosCreate);
     }
 
-    // 2) Alterações (membros existentes que estão na lista)
+    // 2) Alterações (membros com id) — só PUT se houve mudança real vs clone.
+    //    Payload alinhado com o schema `MembroUpdate` do backend (apenas os
+    //    5 campos editáveis). O backend rejeita (extra="forbid") qualquer
+    //    campo extra como `ref_pesquisador`, `nome_pesquisador`, `id` ou
+    //    `valor_bolsa` — o `valor_bolsa` é sempre recalculado a partir de
+    //    `categoria_bolsa`/`carga_horaria_semanal`/`data_inicio`.
     for (const m of membros.filter((x) => !!x.id)) {
-      const { _tempId, id, ...dados } = m;
-      void _tempId;
-      await solicitacaoService.atualizarMembro(id_solicitacao, id!, dados);
+      const clone = estadoOriginalClones.get(m.id!);
+      if (!clone) continue;
+      if (membroMudou(m, clone)) {
+        const dadosUpdate: {
+          categoria_bolsa: CategoriaBolsa;
+          fonte_financiamento: FonteFinanciamento;
+          carga_horaria_semanal: number;
+          data_inicio: string;
+          data_fim?: string;
+        } = {
+          categoria_bolsa: m.categoria_bolsa,
+          fonte_financiamento: m.fonte_financiamento,
+          carga_horaria_semanal: m.carga_horaria_semanal,
+          data_inicio: m.data_inicio,
+        };
+        if (m.data_fim) dadosUpdate.data_fim = m.data_fim;
+        await solicitacaoService.atualizarMembro(id_solicitacao, m.id!, dadosUpdate);
+      }
     }
 
-    // 3) Encerramentos (existentes que foram removidos da lista)
-    for (const id of idsARemover) {
-      if (idsOriginais.has(id)) {
-        await solicitacaoService.encerrarMembro(id_solicitacao, id, 'Encerrado na alteração');
+    // 3) Encerramentos: usar o id do CLONE (não o da VIGENTE).
+    //    Cruza refs_pesquisador (estável) → id do clone na PROPOSTA.
+    const refsNaProposta = new Set(membros.map((m) => m.ref_pesquisador));
+    const encerramentosFalhos: string[] = [];
+    for (const ref of refsARemover) {
+      // Só encerrar se o membro de fato sumiu da proposta E tinha clone
+      if (!refsNaProposta.has(ref)) {
+        const idClonado = mapaRefParaIdClonado.get(ref);
+        if (!idClonado) continue; // nunca chegou a ser clonado
+        try {
+          await solicitacaoService.encerrarMembro(
+            id_solicitacao,
+            idClonado,
+            'Encerrado na alteração',
+          );
+        } catch (err) {
+          const e = err as { response?: { status?: number; data?: { detail?: string } } };
+          if (e?.response?.status === 400 || e?.response?.status === 404) {
+            encerramentosFalhos.push(ref);
+          } else {
+            throw err;
+          }
+        }
       }
+    }
+    if (encerramentosFalhos.length > 0) {
+      throw new Error(
+        `A solicitação não está mais em edição ou os membros já foram removidos. ` +
+          `Reabra como nova alteração para encerrar ${encerramentosFalhos.length} membro(s).`,
+      );
     }
   };
 
@@ -245,12 +369,16 @@ export default function AlteracaoPage() {
     setErro(null);
 
     try {
-      const { solicitacaoId: id, membrosMapeados } = await garantirSolicitacao();
-      await persistirMudancas(id, membrosMapeados, idsRemovidos, idsExistentesOriginais);
+      const { solicitacaoId: id, membrosMapeados, mapaRefParaIdClonado, estadoOriginalClones } =
+        await garantirSolicitacao();
+      await persistirMudancas(id, membrosMapeados, refsRemovidos, mapaRefParaIdClonado, estadoOriginalClones);
       setShowSuccessModal(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      setErro(e?.response?.data?.detail ?? 'Erro ao salvar alterações. Tente novamente.');
+      setErro(
+        e?.response?.data?.detail ??
+          (err instanceof Error ? err.message : 'Erro ao salvar alterações. Tente novamente.'),
+      );
     } finally {
       setSalvando(false);
     }
@@ -261,13 +389,18 @@ export default function AlteracaoPage() {
     setErro(null);
 
     try {
-      const { solicitacaoId: id, membrosMapeados } = await garantirSolicitacao();
-      await persistirMudancas(id, membrosMapeados, idsRemovidos, idsExistentesOriginais);
+      const { solicitacaoId: id, membrosMapeados, mapaRefParaIdClonado, estadoOriginalClones } =
+        await garantirSolicitacao();
+      await persistirMudancas(id, membrosMapeados, refsRemovidos, mapaRefParaIdClonado, estadoOriginalClones);
       await solicitacaoService.submeter(id);
+      setSubmetidaSolicitacaoId(id);
       setShowSubmetidaModal(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      setErro(e?.response?.data?.detail ?? 'Erro ao submeter alteração. Tente novamente.');
+      setErro(
+        e?.response?.data?.detail ??
+          (err instanceof Error ? err.message : 'Erro ao submeter alteração. Tente novamente.'),
+      );
     } finally {
       setSubmetendo(false);
     }
@@ -328,6 +461,21 @@ export default function AlteracaoPage() {
         </div>
       </div>
 
+      {/* Banner: alterações só passam a valer após aprovação do Gestor do Polo */}
+      <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <AlertCircle size={18} className="mt-0.5 shrink-0" />
+        <div>
+          <p className="font-bold uppercase tracking-wider text-[10px]">
+            Mudanças só valem após aprovação
+          </p>
+          <p className="text-xs mt-1">
+            Equipe oficial (VIGENTE) permanece <strong>intacta</strong> até que o
+            Gestor do Polo aprove esta solicitação. Inclusões, alterações e encerramentos
+            só serão aplicados ao projeto após a aprovação.
+          </p>
+        </div>
+      </div>
+
       {erro && (
         <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-700">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -335,7 +483,7 @@ export default function AlteracaoPage() {
         </div>
       )}
 
-      {/* Equipe Atual (somente leitura) */}
+      {/* Equipe Atual (somente leitura) — sempre a VIGENTE real */}
       <section className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-200 bg-slate-50/30 flex items-center justify-between">
           <div>
@@ -352,10 +500,10 @@ export default function AlteracaoPage() {
             </span>
             <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">
               {equipeAtual.reduce((acc, m) => acc + m.carga_horaria_semanal, 0)}h total
-            </span>            
+            </span>
             <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
               Total: R$ {equipeAtual.reduce((acc, m) => acc + Number(m.valor_bolsa), 0).toLocaleString('pt-BR')}
-            </span>            
+            </span>
           </div>
         </div>
         {equipeAtual.length === 0 ? (
@@ -407,12 +555,17 @@ export default function AlteracaoPage() {
             <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
               {equipeProposta.length} membros
             </span>
+            {refsRemovidos.size > 0 && (
+              <span className="text-[10px] font-bold text-red-700 uppercase tracking-widest bg-red-50 px-2 py-1 rounded border border-red-200">
+                {refsRemovidos.size} a encerrar
+              </span>
+            )}
             <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">
               {equipeProposta.reduce((acc, m) => acc + m.carga_horaria_semanal, 0)}h total
-            </span>            
+            </span>
             <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
               Total: R$ {equipeProposta.reduce((acc, m) => acc + (m.valor_bolsa ?? 0), 0).toLocaleString('pt-BR')}
-            </span>            
+            </span>
           </div>
         </div>
 
@@ -465,83 +618,22 @@ export default function AlteracaoPage() {
             </motion.div>
           ))}
 
-          {equipeProposta.length === 0 && equipeAtual.length > 0 && (
-            <div className="p-6">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
-                A equipe proposta está vazia. Abaixo estão os membros atuais da versão vigente que podem ser editados ou excluídos:
-              </p>
-              {equipeAtual.map((m) => {
-                const tempId = `vigente-${m.id}`;
-                const membrosProp = equipeProposta.find(p => p._tempId === tempId);
-                if (membrosProp) return null;
-                return (
-                  <motion.div layout key={m.id} className="mb-4">
-                    <p className="px-2 py-1 text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-slate-50 rounded">
-                      Membro atual (versão vigente)
-                    </p>
-                    <MembroEditor
-                      membro={{
-                        _tempId: tempId,
-                        ref_pesquisador: m.ref_pesquisador,
-                        nome_pesquisador: m.nome_pesquisador,
-                        categoria_bolsa: m.categoria_bolsa,
-                        fonte_financiamento: m.fonte_financiamento,
-                        carga_horaria_semanal: m.carga_horaria_semanal,
-                        data_inicio: m.data_inicio,
-                        data_fim: m.data_fim,
-                        valor_bolsa: m.valor_bolsa,
-                        id: m.id,
-                      }}
-                      onChange={(changes) => {
-                        const membroAtualizado: MembroLocalProps = {
-                          _tempId: tempId,
-                          ref_pesquisador: m.ref_pesquisador,
-                          nome_pesquisador: m.nome_pesquisador,
-                          categoria_bolsa: m.categoria_bolsa,
-                          fonte_financiamento: m.fonte_financiamento,
-                          carga_horaria_semanal: m.carga_horaria_semanal,
-                          data_inicio: m.data_inicio,
-                          data_fim: m.data_fim,
-                          valor_bolsa: m.valor_bolsa,
-                          id: m.id,
-                          ...changes,
-                        };
-                        const existente = equipeProposta.find(p => p._tempId === tempId);
-                        if (existente) {
-                          setEquipeProposta(prev => prev.map(p => p._tempId === tempId ? membroAtualizado : p));
-                        } else {
-                          setEquipeProposta(prev => [...prev, membroAtualizado]);
-                        }
-                      }}
-                      onRemove={() => {
-                        const membroParaRemocao: MembroLocalProps = {
-                          _tempId: tempId,
-                          ref_pesquisador: m.ref_pesquisador,
-                          nome_pesquisador: m.nome_pesquisador,
-                          categoria_bolsa: m.categoria_bolsa,
-                          fonte_financiamento: m.fonte_financiamento,
-                          carga_horaria_semanal: m.carga_horaria_semanal,
-                          data_inicio: m.data_inicio,
-                          data_fim: m.data_fim,
-                          valor_bolsa: m.valor_bolsa,
-                          id: m.id,
-                        };
-                        setEquipeProposta(prev => [...prev, membroParaRemocao]);
-                        setTimeout(() => removeMembro(tempId), 0);
-                      }}
-                      projetoId={projetoId}
-                    />
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-
           {equipeProposta.length === 0 && equipeAtual.length === 0 && (
             <div className="p-16 text-center">
               <Users size={48} className="mx-auto mb-4 text-slate-100" />
               <p className="font-bold text-slate-300 uppercase tracking-widest text-xs">
                 Sem membros na proposta
+              </p>
+            </div>
+          )}
+
+          {equipeProposta.length === 0 && equipeAtual.length > 0 && (
+            <div className="p-8 text-center">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                Todos os {equipeAtual.length} membros da versão vigente serão encerrados nesta alteração.
+              </p>
+              <p className="text-[10px] text-slate-400 mt-2">
+                Adicione novos membros ou submeta para encerrar a equipe vigente.
               </p>
             </div>
           )}
@@ -574,7 +666,7 @@ export default function AlteracaoPage() {
                     ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                     : log.type === 'REMOVE'
                       ? 'bg-red-50 text-red-600 border border-red-100'
-                      : 'bg-blue-50 text-blue-600 border border-blue-100',
+                      : 'bg-blue-50 text-blue-50 border border-blue-100',
                 )}
               >
                 {log.type}
@@ -763,20 +855,32 @@ export default function AlteracaoPage() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
           >
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <FileCheck size={40} />
             </div>
             <h3 className="text-2xl font-black text-slate-900 mb-2">Alteração Submetida!</h3>
-            <p className="text-slate-500 font-medium mb-6">
-              A nova versão agora é a vigente do projeto. A versão anterior foi para o histórico.
+            <p className="text-slate-500 font-medium mb-2">
+              Solicitação #{submetidaSolicitacaoId}
             </p>
-            <button
-              onClick={() => navigate(`/projetos/${projetoId}`)}
-              className="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
-            >
-              <ArrowLeft size={14} />
-              Voltar ao Projeto
-            </button>
+            <p className="text-slate-500 font-medium mb-6">
+              Aguardando aprovação do Gestor do Polo. A equipe oficial do projeto
+              permanece <strong>intacta</strong> até a aprovação.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                to={`/solicitacoes/${submetidaSolicitacaoId}/comparacao`}
+                className="py-3 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+              >
+                <GitCompare size={14} />
+                Ver Comparação
+              </Link>
+              <button
+                onClick={() => navigate(`/projetos/${projetoId}`)}
+                className="py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+              >
+                Voltar ao Projeto
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

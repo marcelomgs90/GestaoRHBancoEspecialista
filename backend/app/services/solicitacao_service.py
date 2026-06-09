@@ -217,25 +217,6 @@ class SolicitacaoService:
 
         solicitacao.status = StatusSolicitacao.SUBMETIDA
 
-        versao = (
-            self.db.query(VersaoRHProjeto)
-            .filter(VersaoRHProjeto.solicitacao_id == solicitacao_id)
-            .first()
-        )
-        if versao and versao.status == StatusVersaoRH.PROPOSTA:
-            if solicitacao.tipo == TipoSolicitacao.ALTERACAO:
-                versao_vigente = (
-                    self.db.query(VersaoRHProjeto)
-                    .filter(
-                        VersaoRHProjeto.projeto_id == solicitacao.projeto_id,
-                        VersaoRHProjeto.status == StatusVersaoRH.VIGENTE,
-                    )
-                    .first()
-                )
-                if versao_vigente:
-                    versao_vigente.status = StatusVersaoRH.HISTORICO
-            versao.status = StatusVersaoRH.VIGENTE
-
         self.db.commit()
         self.db.refresh(solicitacao)
         return solicitacao
@@ -380,3 +361,66 @@ class SolicitacaoService:
                 origem_rh=membro.origem_rh,
             )
             self.db.add(clone)
+        self.db.commit()
+
+    def _verificar_permissao_gestor_polo(self, current_user: Usuario) -> None:
+        if current_user.perfil not in (PerfilUsuario.GESTOR_POLO, PerfilUsuario.ADMINISTRADOR):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas Gestor do Polo ou Administrador pode realizar esta ação",
+            )
+
+    def aprovar(self, solicitacao_id: int, current_user: Usuario) -> SolicitacaoRH:
+        self._verificar_permissao_gestor_polo(current_user)
+
+        solicitacao = self.obter_por_id(solicitacao_id)
+
+        if solicitacao.status != StatusSolicitacao.SUBMETIDA:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Apenas solicitações com status SUBMETIDA podem ser aprovadas",
+            )
+
+        versao = (
+            self.db.query(VersaoRHProjeto)
+            .filter(VersaoRHProjeto.solicitacao_id == solicitacao_id)
+            .first()
+        )
+        if versao and versao.status == StatusVersaoRH.PROPOSTA:
+            if solicitacao.tipo == TipoSolicitacao.ALTERACAO:
+                versao_vigente = (
+                    self.db.query(VersaoRHProjeto)
+                    .filter(
+                        VersaoRHProjeto.projeto_id == solicitacao.projeto_id,
+                        VersaoRHProjeto.status == StatusVersaoRH.VIGENTE,
+                    )
+                    .first()
+                )
+                if versao_vigente:
+                    versao_vigente.status = StatusVersaoRH.HISTORICO
+            versao.status = StatusVersaoRH.VIGENTE
+
+        solicitacao.status = StatusSolicitacao.APROVADA
+        self.db.commit()
+        self.db.refresh(solicitacao)
+        return solicitacao
+
+    def rejeitar(
+        self, solicitacao_id: int, current_user: Usuario, justificativa: Optional[str] = None
+    ) -> SolicitacaoRH:
+        self._verificar_permissao_gestor_polo(current_user)
+
+        solicitacao = self.obter_por_id(solicitacao_id)
+
+        if solicitacao.status != StatusSolicitacao.SUBMETIDA:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Apenas solicitações com status SUBMETIDA podem ser rejeitadas",
+            )
+
+        solicitacao.status = StatusSolicitacao.REJEITADA
+        if justificativa:
+            solicitacao.justificativa = justificativa
+        self.db.commit()
+        self.db.refresh(solicitacao)
+        return solicitacao

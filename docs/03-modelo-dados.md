@@ -157,8 +157,9 @@ Controla as solicitações de implantação, alteração e pagamento de RH.
 
 **Enum `StatusSolicitacao`:**
 - `EM_EDICAO` — rascunho editável; no máximo um por tipo/projeto
-- `SUBMETIDA` — coordenador finalizou; versão associada virou `VIGENTE`
-- `APROVADA` / `REJEITADA` — estados pós-aprovação (fluxo de homologação do Polo)
+- `SUBMETIDA` — coordenador finalizou; aguardando parecer do Gestor do Polo. A versão associada permanece `PROPOSTA` (equipe oficial intacta).
+- `APROVADA` — Gestor do Polo aprovou; a versão `PROPOSTA` passa a `VIGENTE` e a equipe oficial do projeto é atualizada
+- `REJEITADA` — Gestor do Polo rejeitou; a `VIGENTE` original (que nunca foi alterada) permanece como equipe oficial
 
 **Relacionamentos:**
 - `(N:1)` com **Projeto** via `projeto_id`
@@ -185,12 +186,15 @@ Registra as versões de composição de equipe de RH geradas a partir das solici
 - `VIGENTE` — versão oficial atual; uma única por projeto
 - `HISTORICO` — versão anteriormente vigente, mantida para auditoria
 
-**Transições de estado:**
+**Transições de estado (a transição da versão ocorre na aprovação, não no submit):**
 
 ```
-PROPOSTA --(submeter implantacao)--> VIGENTE
-PROPOSTA --(submeter alteracao)----> VIGENTE    (versao VIGENTE anterior vai para HISTORICO)
+PROPOSTA --(aprovar implantacao)--> VIGENTE
+PROPOSTA --(aprovar alteracao)----> VIGENTE    (versao VIGENTE anterior vai para HISTORICO)
 ```
+
+> `submeter()` apenas move a solicitação para `SUBMETIDA` sem alterar o status da versão
+> nem da `VIGENTE` anterior. Assim, a equipe oficial do projeto só muda após aprovação.
 
 **Relacionamentos:**
 - `(1:1)` com **Solicitacao_RH** via `solicitacao_id`
