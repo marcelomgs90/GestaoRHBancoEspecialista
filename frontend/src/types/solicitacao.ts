@@ -9,6 +9,7 @@ export interface Solicitacao {
   justificativa?: string
   mes_ano_referencia?: string
   criado_por: number
+  criado_em: string
 }
 
 export interface SolicitacaoCreate {

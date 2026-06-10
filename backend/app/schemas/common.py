@@ -15,6 +15,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     page: int
     per_page: int
     pages: int
+    is_rascunho: bool = False
 
 
 class MessageResponse(BaseModel):

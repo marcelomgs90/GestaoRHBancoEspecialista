@@ -101,17 +101,19 @@ Toda solicitação de RH segue o ciclo:
 EM_EDICAO  --(submeter)-->  SUBMETIDA  --(aprovar/rejeitar)-->  APROVADA | REJEITADA
 ```
 
-E gera uma `Versao_RH_Projeto` que segue o ciclo paralelo:
+E gera uma `Versao_RH_Projeto` que segue o ciclo paralelo (transição ocorre na **aprovação**):
 
 ```
-PROPOSTA  --(submeter)-->  VIGENTE  --(nova alteracao submetida)-->  HISTORICO
+PROPOSTA  --(aprovar)-->  VIGENTE  --(nova alteracao aprovada)-->  HISTORICO
 ```
 
 Regras:
 
 - Cada projeto pode ter **no máximo uma** solicitação `EM_EDICAO` por tipo (Implantação ou Alteração) ativa ao mesmo tempo
-- Ao submeter uma `IMPLANTACAO`: a versão `PROPOSTA` (n=1) passa a `VIGENTE`
-- Ao submeter uma `ALTERACAO`: a versão `VIGENTE` anterior passa a `HISTORICO` e a nova `PROPOSTA` passa a `VIGENTE`
+- O `submeter()` move apenas a solicitação para `SUBMETIDA` — a versão `PROPOSTA` permanece `PROPOSTA` e a `VIGENTE` (se houver) **permanece inalterada**
+- Ao **aprovar** uma `IMPLANTACAO`: a versão `PROPOSTA` (n=1) passa a `VIGENTE`
+- Ao **aprovar** uma `ALTERACAO`: a versão `VIGENTE` anterior passa a `HISTORICO` e a nova `PROPOSTA` passa a `VIGENTE`
+- Ao **rejeitar**: a `VIGENTE` original se mantém intacta (a submissão nunca a substituiu) e a `PROPOSTA` é descartada
 - A solicitação só é efetivamente persistida quando o usuário aciona Salvar/Submeter. Abrir a tela e sair sem acionar não cria registro
 - Quando uma `ALTERACAO` é criada, o backend clona a equipe da versão `VIGENTE` para a nova `PROPOSTA` (base editável)
 
@@ -152,8 +154,9 @@ Regras:
 
 - **Submeter Solicitação**
   - Endpoint: `POST /solicitacoes/{id}/submeter`
-  - Promove status `EM_EDICAO -> SUBMETIDA` e versão `PROPOSTA -> VIGENTE`
-  - Em alteração, demove a `VIGENTE` anterior para `HISTORICO`
+  - Promove status `EM_EDICAO -> SUBMETIDA` apenas da solicitação
+  - A versão `PROPOSTA` permanece `PROPOSTA` e a equipe oficial (VIGENTE) não é alterada
+  - A transição de versão (`PROPOSTA → VIGENTE` e, em alteração, `VIGENTE → HISTORICO`) só ocorre na **aprovação**
 
 - **Visualização de Mudanças entre Versões de RH**
   - Endpoint: `GET /solicitacoes/{id}/comparacao`

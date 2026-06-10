@@ -8,12 +8,31 @@ import {
   Minus,
   Edit3,
   GitCompare,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { solicitacaoService } from '@/services/solicitacaoService';
-import { FONTE_LABELS, FonteFinanciamento } from '@/types/enums';
+import { projetoService } from '@/services/projetoService';
+import {
+  FONTE_LABELS,
+  FonteFinanciamento,
+  STATUS_SOLICITACAO_LABELS,
+  StatusSolicitacao,
+  TIPO_SOLICITACAO_LABELS,
+  TipoSolicitacao,
+} from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
+import { usePerfil } from '@/hooks/usePerfil';
 import { cn } from '@/lib/cn';
-import type { ComparacaoResponse, MembroComparacao } from '@/types/solicitacao';
+import type { ComparacaoResponse, MembroComparacao, Solicitacao } from '@/types/solicitacao';
+import type { Projeto } from '@/types/projeto';
+
+const STATUS_COLORS: Record<StatusSolicitacao, string> = {
+  [StatusSolicitacao.EM_EDICAO]: 'bg-slate-100 text-slate-700 border-slate-200',
+  [StatusSolicitacao.SUBMETIDA]: 'bg-amber-50 text-amber-700 border-amber-200',
+  [StatusSolicitacao.APROVADA]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  [StatusSolicitacao.REJEITADA]: 'bg-red-50 text-red-700 border-red-200',
+};
 
 const FONTES_ORDENADAS: FonteFinanciamento[] = [
   FonteFinanciamento.EMPRESA,
@@ -25,21 +44,79 @@ const FONTES_ORDENADAS: FonteFinanciamento[] = [
 export default function SolicitacaoComparacaoPage() {
   const { id_solicitacao } = useParams<{ id_solicitacao: string }>();
   const navigate = useNavigate();
+  const { podeAprovarSolicitacao } = usePerfil();
 
   const [comparacao, setComparacao] = useState<ComparacaoResponse | null>(null);
+  const [solicitacao, setSolicitacao] = useState<Solicitacao | null>(null);
+  const [projeto, setProjeto] = useState<Projeto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  const [aproandoId, setAprovandoId] = useState<number | null>(null);
+  const [erroAprovar, setErroAprovar] = useState<string | null>(null);
+
+  const [showRejeitarModal, setShowRejeitarModal] = useState(false);
+  const [rejeitando, setRejeitando] = useState(false);
+  const [justificativaRejeicao, setJustificativaRejeicao] = useState('');
+  const [erroRejeitar, setErroRejeitar] = useState<string | null>(null);
+
+  const [showAprovarModal, setShowAprovarModal] = useState(false);
 
   const solicitacaoId = Number(id_solicitacao);
 
   useEffect(() => {
     if (!solicitacaoId) return;
-    solicitacaoService
-      .comparar(solicitacaoId)
-      .then(setComparacao)
+    Promise.all([
+      solicitacaoService.comparar(solicitacaoId),
+      solicitacaoService.obter(solicitacaoId),
+    ])
+      .then(async ([comp, sol]) => {
+        setComparacao(comp);
+        setSolicitacao(sol);
+        try {
+          const proj = await projetoService.obter(sol.projeto_id);
+          setProjeto(proj);
+        } catch {
+          setProjeto(null);
+        }
+      })
       .catch(() => setErro('Não foi possível carregar a comparação.'))
       .finally(() => setIsLoading(false));
   }, [solicitacaoId]);
+
+const handleAprovar = async () => {
+    if (!solicitacaoId) return;
+    setAprovandoId(solicitacaoId);
+    setErroAprovar(null);
+    try {
+      const atualizada = await solicitacaoService.aprobar(solicitacaoId);
+      setSolicitacao(atualizada);
+      setShowAprovarModal(false);
+    } catch {
+      setErroAprovar(`Erro ao aprobar solicitação #${solicitacaoId}.`);
+    } finally {
+      setAprovandoId(null);
+    }
+  };
+
+  const handleRejeitar = async () => {
+    if (!solicitacaoId) return;
+    setRejeitando(true);
+    setErroRejeitar(null);
+    try {
+      const atualizada = await solicitacaoService.rejeitar(
+        solicitacaoId,
+        justificativaRejeicao || undefined,
+      );
+      setSolicitacao(atualizada);
+      setShowRejeitarModal(false);
+      setJustificativaRejeicao('');
+    } catch {
+      setErroRejeitar(`Erro ao rejeitar solicitação #${solicitacaoId}.`);
+    } finally {
+      setRejeitando(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -86,7 +163,28 @@ export default function SolicitacaoComparacaoPage() {
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center justify-end gap-2">
             <GitCompare size={12} />
             Solicitação #{solicitacaoId}
+            {projeto && (
+              <span className="text-slate-900 normal-case tracking-normal">
+                · {projeto.codigo}
+              </span>
+            )}
           </p>
+          {solicitacao && (
+            <div className="mt-2 flex items-center justify-end gap-2 flex-wrap">
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[9px] font-black rounded uppercase tracking-widest border border-slate-200">
+                {TIPO_SOLICITACAO_LABELS[solicitacao.tipo] ?? solicitacao.tipo}
+              </span>
+              <span
+                className={cn(
+                  'text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border',
+                  STATUS_COLORS[solicitacao.status] ??
+                    'bg-slate-100 text-slate-700 border-slate-200',
+                )}
+              >
+                {STATUS_SOLICITACAO_LABELS[solicitacao.status] ?? solicitacao.status}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -205,6 +303,126 @@ export default function SolicitacaoComparacaoPage() {
           );
         })}
       </div>
+
+      {/* Justificativa da rejeição (caso exista) */}
+      {solicitacao?.justificativa && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-[9px] font-bold text-red-600 uppercase tracking-wider mb-1">
+            Justificativa da Rejeição
+          </p>
+          <p className="text-sm text-slate-700">{solicitacao.justificativa}</p>
+        </div>
+      )}
+
+      {/* Botões de aprovação (apenas para SUBMETIDA e com permissão) */}
+      {podeAprovarSolicitacao && solicitacao?.status === StatusSolicitacao.SUBMETIDA && (
+        <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-200">
+          <button
+            onClick={() => {
+              setShowRejeitarModal(true);
+              setJustificativaRejeicao('');
+              setErroRejeitar(null);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-red-50 hover:bg-red-600 hover:text-white border border-red-200 hover:border-red-600 rounded text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+          >
+            <XCircle size={14} />
+            Rejeitar
+          </button>
+          <button
+            onClick={() => setShowAprovarModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-200 hover:border-emerald-600 rounded text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+          >
+            <CheckCircle2 size={14} />
+            Aprovar
+          </button>
+        </div>
+      )}
+
+      {/* Modal de aprovação */}
+      {showAprovarModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+          >
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">Aprovar Solicitação</h3>
+            <p className="text-slate-500 font-medium mb-6">
+              Você deseja realmente aprobar a solicitação #{solicitacaoId}?
+            </p>
+            {erroAprovar && (
+              <p className="text-red-600 text-xs mb-4">{erroAprovar}</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAprovarModal(false)}
+                className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-all text-xs uppercase tracking-wider cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAprovar}
+                disabled={aproandoId === solicitacaoId}
+                className="flex-1 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-all text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer"
+              >
+                {aproandoId === solicitacaoId ? 'Aprovando...' : 'Aprovar'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal de rejeição */}
+      {showRejeitarModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+          >
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">Rejeitar Solicitação</h3>
+            <p className="text-slate-500 font-medium mb-2">
+              Você deseja realmente rejeitar a solicitação #{solicitacaoId}?
+            </p>
+            <p className="text-slate-400 text-xs mb-4">
+              Deseja adicionar uma justificativa?
+            </p>
+            <textarea
+              value={justificativaRejeicao}
+              onChange={(e) => setJustificativaRejeicao(e.target.value)}
+              placeholder="Justificativa (opcional)"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 resize-none"
+              rows={3}
+            />
+            {erroRejeitar && (
+              <p className="text-red-600 text-xs mt-2">{erroRejeitar}</p>
+            )}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setShowRejeitarModal(false)}
+                className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-all text-xs uppercase tracking-wider cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleRejeitar}
+                disabled={rejeitando}
+                className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer"
+              >
+                {rejeitando ? 'Rejeitando...' : 'Rejeitar'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

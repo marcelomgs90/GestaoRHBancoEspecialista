@@ -9,6 +9,8 @@ import {
   AlertCircle,
   GitCompare,
   Send,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { solicitacaoService } from '@/services/solicitacaoService';
 import { projetoService } from '@/services/projetoService';
@@ -29,18 +31,38 @@ const STATUS_COLORS: Record<StatusSolicitacao, string> = {
   [StatusSolicitacao.REJEITADA]: 'bg-red-50 text-red-700 border-red-100',
 };
 
+const formatarDataHora = (isoString: string) => {
+  const data = new Date(isoString + 'Z');
+  const spTime = new Date(data.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  const dia = spTime.getDate().toString().padStart(2, '0');
+  const mes = (spTime.getMonth() + 1).toString().padStart(2, '0');
+  const ano = spTime.getFullYear();
+  const hora = spTime.getHours().toString().padStart(2, '0');
+  const min = spTime.getMinutes().toString().padStart(2, '0');
+  return `${dia}/${mes}/${ano} ${hora}:${min}`;
+};
+
 export default function SolicitacoesListPage() {
   const navigate = useNavigate();
-  const { podeCriarProjeto } = usePerfil();
+  const { podeCriarProjeto, podeAprovarSolicitacao } = usePerfil();
 
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [filtroTipo, setFiltroTipo] = useState<TipoSolicitacao | ''>('');
   const [filtroStatus, setFiltroStatus] = useState<StatusSolicitacao | ''>('');
+  const [filtroProjeto, setFiltroProjeto] = useState<number | ''>('');
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [erroSubmeter, setErroSubmeter] = useState<string | null>(null);
   const [submetendoId, setSubmetendoId] = useState<number | null>(null);
+  const [aproandoId, setAprovandoId] = useState<number | null>(null);
+  const [erroAprovar, setErroAprovar] = useState<string | null>(null);
+
+  const [showRejeitarModal, setShowRejeitarModal] = useState(false);
+  const [rejeitandoId, setRejeitandoId] = useState<number | null>(null);
+  const [justificativaRejeicao, setJustificativaRejeicao] = useState('');
+  const [rejeitando, setRejeitando] = useState(false);
+  const [erroRejeitar, setErroRejeitar] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -60,11 +82,18 @@ export default function SolicitacoesListPage() {
     void load();
   }, []);
 
-  const filtradas = solicitacoes.filter((s) => {
-    if (filtroTipo && s.tipo !== filtroTipo) return false;
-    if (filtroStatus && s.status !== filtroStatus) return false;
-    return true;
-  });
+  const filtradas = solicitacoes
+    .filter((s) => {
+      if (filtroTipo && s.tipo !== filtroTipo) return false;
+      if (filtroStatus && s.status !== filtroStatus) return false;
+      if (filtroProjeto && s.projeto_id !== filtroProjeto) return false;
+      return true;
+    })
+    // Mais recentes primeiro: compara por criado_em (desc) e usa id como desempate estável.
+    .sort((a, b) => {
+      const cmpData = (b.criado_em ?? '').localeCompare(a.criado_em ?? '');
+      return cmpData !== 0 ? cmpData : b.id - a.id;
+    });
 
   const nomeProjeto = (id: number) =>
     projetos.find((p) => p.id === id)?.codigo ?? `Projeto ${id}`;
@@ -82,6 +111,50 @@ export default function SolicitacoesListPage() {
     } finally {
       setSubmetendoId(null);
     }
+  };
+
+  const handleAprovar = async (sol: Solicitacao) => {
+    setAprovandoId(sol.id);
+    setErroAprovar(null);
+    try {
+      const atualizada = await solicitacaoService.aprobar(sol.id);
+      setSolicitacoes((prev) =>
+        prev.map((s) => (s.id === sol.id ? atualizada : s)),
+      );
+    } catch {
+      setErroAprovar(`Erro ao aprovar solicitação #${sol.id}.`);
+    } finally {
+      setAprovandoId(null);
+    }
+  };
+
+  const handleRejeitar = async () => {
+    if (!rejeitandoId) return;
+    setRejeitando(true);
+    setErroRejeitar(null);
+    try {
+      const atualizada = await solicitacaoService.rejeitar(
+        rejeitandoId,
+        justificativaRejeicao || undefined,
+      );
+      setSolicitacoes((prev) =>
+        prev.map((s) => (s.id === rejeitandoId ? atualizada : s)),
+      );
+      setShowRejeitarModal(false);
+      setJustificativaRejeicao('');
+      setRejeitandoId(null);
+    } catch {
+      setErroRejeitar(`Erro ao rejeitar solicitação #${rejeitandoId}.`);
+    } finally {
+      setRejeitando(false);
+    }
+  };
+
+  const abrirModalRejeitar = (sol: Solicitacao) => {
+    setRejeitandoId(sol.id);
+    setShowRejeitarModal(true);
+    setJustificativaRejeicao('');
+    setErroRejeitar(null);
   };
 
   return (
@@ -107,6 +180,19 @@ export default function SolicitacoesListPage() {
       <div className="flex items-center gap-3 flex-wrap">
         <Filter size={14} className="text-slate-400 shrink-0" />
         <select
+          value={filtroProjeto}
+          onChange={(e) => setFiltroProjeto(e.target.value === '' ? '' : Number(e.target.value))}
+          className="px-3 py-1.5 bg-white border border-slate-200 rounded text-xs font-medium outline-none focus:border-slate-400 transition-all text-slate-700 max-w-xs"
+        >
+          <option value="">Todos os projetos</option>
+          {projetos.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.codigo}
+              {p.titulo ? ` — ${p.titulo}` : ''}
+            </option>
+          ))}
+        </select>
+        <select
           value={filtroTipo}
           onChange={(e) => setFiltroTipo(e.target.value as TipoSolicitacao | '')}
           className="px-3 py-1.5 bg-white border border-slate-200 rounded text-xs font-medium outline-none focus:border-slate-400 transition-all text-slate-700"
@@ -130,9 +216,9 @@ export default function SolicitacoesListPage() {
             </option>
           ))}
         </select>
-        {(filtroTipo || filtroStatus) && (
+        {(filtroTipo || filtroStatus || filtroProjeto !== '') && (
           <button
-            onClick={() => { setFiltroTipo(''); setFiltroStatus(''); }}
+            onClick={() => { setFiltroTipo(''); setFiltroStatus(''); setFiltroProjeto(''); }}
             className="text-[10px] font-bold text-slate-400 hover:text-slate-700 uppercase tracking-wider cursor-pointer"
           >
             Limpar filtros
@@ -175,13 +261,11 @@ export default function SolicitacoesListPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.03 }}
-                  className="group bg-white border border-slate-200 p-6 rounded-lg hover:border-slate-400 hover:shadow-md transition-all"
+                  onClick={() => navigate(`/solicitacoes/${sol.id}/comparacao`)}
+                  className="group bg-white border border-slate-200 p-6 rounded-lg hover:border-slate-400 hover:shadow-md transition-all cursor-pointer"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div
-                      onClick={() => navigate(`/projetos/${sol.projeto_id}`)}
-                      className="flex-1 space-y-1 cursor-pointer"
-                    >
+                    <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-3">
                         <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[9px] font-bold rounded uppercase tracking-wider border border-slate-200">
                           #{sol.id}
@@ -210,17 +294,12 @@ export default function SolicitacoesListPage() {
                         </span>
                       </div>
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/solicitacoes/${sol.id}/comparacao`);
-                        }}
-                        title="Comparar versões (antes/depois)"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-900 hover:text-white border border-slate-200 hover:border-slate-900 rounded text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
-                      >
-                        <GitCompare size={12} />
-                        Comparar
-                      </button>
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Criado em</p>
+                        <span className="text-[10px] font-medium text-slate-600">
+                          {formatarDataHora(sol.criado_em)}
+                        </span>
+                      </div>
 
                       {sol.status === StatusSolicitacao.EM_EDICAO && (
                         <button
@@ -238,7 +317,10 @@ export default function SolicitacoesListPage() {
                       )}
 
                       <div className="hidden lg:block">
-                        <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all">
+                        <div
+                          onClick={() => navigate(`/solicitacoes/${sol.id}/comparacao`)}
+                          className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all cursor-pointer"
+                        >
                           <ChevronRight size={16} />
                         </div>
                       </div>
@@ -249,6 +331,57 @@ export default function SolicitacoesListPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Modal de rejeição */}
+      {showRejeitarModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+          >
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">Rejeitar Solicitação</h3>
+            <p className="text-slate-500 font-medium mb-2">
+              Você deseja realmente rejeitar a solicitação #{rejeitandoId}?
+            </p>
+            <p className="text-slate-400 text-xs mb-4">
+              Deseja adicionar uma justificativa?
+            </p>
+            <textarea
+              value={justificativaRejeicao}
+              onChange={(e) => setJustificativaRejeicao(e.target.value)}
+              placeholder="Justificativa (opcional)"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 resize-none"
+              rows={3}
+            />
+            {erroRejeitar && (
+              <p className="text-red-600 text-xs mt-2">{erroRejeitar}</p>
+            )}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowRejeitarModal(false);
+                  setRejeitandoId(null);
+                }}
+                className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-all text-xs uppercase tracking-wider cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleRejeitar}
+                disabled={rejeitando}
+                className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer"
+              >
+                {rejeitando ? 'Rejeitando...' : 'Rejeitar'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );

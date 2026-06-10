@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Body, Depends, status
 
 from app.core.dependencies import get_current_user, get_solicitacao_service
 from app.models.usuario_perfil import Usuario
-from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoImplantacaoCreate, SolicitacaoResponse
+from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoImplantacaoCreate, SolicitacaoResponse, SolicitacaoRejeitarRequest
 from app.services.solicitacao_service import SolicitacaoService
 
 router = APIRouter()
@@ -83,3 +83,33 @@ def comparar_solicitacao(
     Para ALTERAÇÃO: antes = versão vigente, depois = versão proposta.
     """
     return service.comparar(solicitacao_id)
+
+
+@router.post("/{solicitacao_id}/aprovar", response_model=SolicitacaoResponse)
+def aprobar_solicitacao(
+    solicitacao_id: int,
+    service: SolicitacaoService = Depends(get_solicitacao_service),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    Aprovar solicitação de RH.
+    Requer perfil GESTOR_POLO ou ADMINISTRADOR.
+    Muda status SUBMETIDA -> APROVADA.
+    """
+    return service.aprovar(solicitacao_id, current_user)
+
+
+@router.post("/{solicitacao_id}/rejeitar", response_model=SolicitacaoResponse)
+def rejeitar_solicitacao(
+    solicitacao_id: int,
+    dados: SolicitacaoRejeitarRequest = SolicitacaoRejeitarRequest(),
+    service: SolicitacaoService = Depends(get_solicitacao_service),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    Rejeitar solicitação de RH.
+    Requer perfil GESTOR_POLO ou ADMINISTRADOR.
+    Muda status SUBMETIDA -> REJEITADA.
+    O campo justificativa é opcional.
+    """
+    return service.rejeitar(solicitacao_id, current_user, dados.justificativa)

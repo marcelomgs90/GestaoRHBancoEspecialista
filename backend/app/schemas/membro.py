@@ -2,12 +2,14 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.utils.enums import CategoriaBolsa, FonteFinanciamento
 
 
 class MembroCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     ref_pesquisador: str
     nome_pesquisador: str
     categoria_bolsa: CategoriaBolsa
@@ -19,6 +21,8 @@ class MembroCreate(BaseModel):
 
 
 class MembroUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     categoria_bolsa: Optional[CategoriaBolsa] = None
     fonte_financiamento: Optional[FonteFinanciamento] = None
     carga_horaria_semanal: Optional[int] = None
@@ -27,6 +31,8 @@ class MembroUpdate(BaseModel):
 
 
 class MembroResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     ref_pesquisador: str
     nome_pesquisador: str
@@ -37,6 +43,3 @@ class MembroResponse(BaseModel):
     data_inicio: date
     data_fim: Optional[date]
     origem_rh: Optional[str]
-
-    class Config:
-        from_attributes = True

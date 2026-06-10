@@ -60,8 +60,11 @@ Conceito de domínio central — qualquer alteração em `SolicitacaoService` pr
 - `Solicitacao_RH.status`: `EM_EDICAO -> SUBMETIDA -> APROVADA | REJEITADA`
 - `Versao_RH_Projeto.status`: `PROPOSTA -> VIGENTE -> HISTORICO`
 - No máximo **uma** solicitação `EM_EDICAO` por (projeto, tipo) ao mesmo tempo — `criar()` retorna a existente em vez de duplicar
-- `POST /solicitacoes/{id}/submeter` promove status e versão em uma única operação; em alteração, demove a `VIGENTE` anterior para `HISTORICO`
+- **`submeter()` move apenas a solicitação para `SUBMETIDA`** — a versão `PROPOSTA` permanece `PROPOSTA` e a `VIGENTE` (se houver) **permanece inalterada**. Isso garante que inclusões/remoções nunca apareçam na equipe oficial sem aprovação do Gestor do Polo.
+- **`aprovar()` é quem promove a versão**: `PROPOSTA -> VIGENTE` (e em alteração, a `VIGENTE` anterior vai para `HISTORICO`).
+- **`rejeitar()` não desfaz transições de versão** — a `VIGENTE` original nunca foi alterada, então a equipe do projeto continua exatamente como antes da submissão.
 - `GET /solicitacoes/{id}/comparacao` retorna `antes`/`depois`/`diferencas` (inclusões, alterações, encerramentos) — usado pela tela de comparação
+- `VersaoService.listar_pesquisadores_da_versao_corrente` reflete a equipe **oficial**: retorna a `PROPOSTA` em `EM_EDICAO`/`SUBMETIDA` (apenas para preview das mudanças) e a `VIGENTE` em `APROVADA`/`REJEITADA`/sem solicitação.
 - Validação de CH global (`ParametroService.validar_carga_horaria_global`) considera apenas versões `VIGENTE` e exclui o próprio projeto editado (`projeto_id_excluir`) para não contar em dobro
 - Detalhes completos em `docs/04-regras-negocio.md` §3 e §5
 

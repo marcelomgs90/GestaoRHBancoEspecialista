@@ -48,4 +48,15 @@ export const solicitacaoService = {
     const response = await api.post<Solicitacao>(`/solicitacoes/${solicitacaoId}/submeter`)
     return response.data
   },
+
+  async aprobar(solicitacaoId: number): Promise<Solicitacao> {
+    const response = await api.post<Solicitacao>(`/solicitacoes/${solicitacaoId}/aprovar`)
+    return response.data
+  },
+
+  async rejeitar(solicitacaoId: number, justificativa?: string): Promise<Solicitacao> {
+    const body = justificativa ? { justificativa } : {}
+    const response = await api.post<Solicitacao>(`/solicitacoes/${solicitacaoId}/rejeitar`, body)
+    return response.data
+  },
 }
