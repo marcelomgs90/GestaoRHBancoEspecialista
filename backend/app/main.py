@@ -2,7 +2,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.routers import auth, usuarios, projetos, solicitacoes, membros, versoes, parametros
+from app.routers import (
+    auth,
+    usuarios,
+    projetos,
+    solicitacoes,
+    membros,
+    versoes,
+    parametros,
+    especialistas,
+)
 
 settings = get_settings()
 
@@ -31,6 +40,7 @@ app.include_router(solicitacoes.router, prefix="/solicitacoes", tags=["Solicita�
 app.include_router(membros.router, prefix="/solicitacoes", tags=["Membros"])
 app.include_router(versoes.router, prefix="/solicitacoes", tags=["Versões"])
 app.include_router(parametros.router, prefix="/parametros", tags=["Parâmetros"])
+app.include_router(especialistas.router)
 
 
 @app.get("/", tags=["Root"])

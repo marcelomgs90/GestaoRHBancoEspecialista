@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    # External API
-    BANCO_ESPECIALISTAS_URL: str = "https://api.bancoespecialistas.ifpb.edu.br"
+    # External Database (Read-Only)
+    BANCO_ESPECIALISTAS_URL: str = "postgresql://usuario:senha@host-do-banco:5432/nome_do_banco"
 
     # Application
     DEBUG: bool = False
