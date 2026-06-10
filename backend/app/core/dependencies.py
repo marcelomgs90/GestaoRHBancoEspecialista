@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, EspecialistasSessionLocal
 from app.core.security import decode_access_token
 from app.models.usuario_perfil import Usuario
 from app.services.auth_service import AuthService
@@ -25,6 +25,13 @@ def get_db() -> Generator[Session, None, None]:
     finally:
         db.close()
 
+def get_especialistas_db() -> Generator[Session, None, None]:
+    """Dependency para obter sessão do banco de especialistas externo."""
+    db = EspecialistasSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 def get_current_user(
     db: Session = Depends(get_db),

@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from typing import Generator
 
 from app.core.config import get_settings
 
@@ -15,11 +14,13 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Configuração do Banco de Especialistas (Externo - Somente Leitura)
+especialistas_engine = create_engine(
+    settings.BANCO_ESPECIALISTAS_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    connect_args={"connect_timeout": 10}  # Timeout de 10 segundos para conexões PostgreSQL
+)
 
-def get_db() -> Generator[Session, None, None]:
-    """Dependency para obter sessão do banco de dados."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+EspecialistasSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=especialistas_engine)

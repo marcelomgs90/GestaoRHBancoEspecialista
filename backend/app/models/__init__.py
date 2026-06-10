@@ -8,6 +8,7 @@ from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.versao_rh_projeto import VersaoRHProjeto
 from app.models.transferencia_rh import TransferenciaRH
+from app.models.especialista_externo import EspecialistaExterno, UsuarioExterno
 
 __all__ = [
     "Base",
@@ -20,4 +21,6 @@ __all__ = [
     "SolicitacaoRH",
     "VersaoRHProjeto",
     "TransferenciaRH",
+    "EspecialistaExterno",
+    "UsuarioExterno",
 ]
