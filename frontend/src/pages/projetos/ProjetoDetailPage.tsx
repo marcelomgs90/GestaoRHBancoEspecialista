@@ -16,8 +16,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { projetoService } from '@/services/projetoService';
 import type { Paginated } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
-import { formatDate, CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
+import { formatDate, formatCurrency, CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import {
+  FONTE_LABELS,
   STATUS_SOLICITACAO_LABELS,
   TIPO_SOLICITACAO_LABELS,
   StatusSolicitacao,
@@ -190,6 +191,23 @@ export default function ProjetoDetailPage() {
                   <Calendar size={12} className="text-slate-400" />
                   {formatDate(projeto.data_fim)}
                 </div>
+              </div>
+            </div>
+
+            <div className="pt-6">
+              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-3">
+                Fontes de Financiamento
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {projeto.fontes_financiamento.map((fonte) => (
+                  <span
+                    key={fonte.fonte}
+                    className="inline-flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800"
+                  >
+                    {FONTE_LABELS[fonte.fonte]}:
+                    <strong className="text-slate-950">{formatCurrency(fonte.valor)}</strong>
+                  </span>
+                ))}
               </div>
             </div>
           </section>
