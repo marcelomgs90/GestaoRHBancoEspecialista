@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import HTTPException, status
@@ -14,20 +15,32 @@ class ProjetoService:
         self.db = db
 
     def criar(self, dados: ProjetoCreate, current_user: Usuario) -> Projeto:
-        existente = self.db.query(Projeto).filter(Projeto.codigo == dados.codigo).first()
+        payload = dados.model_dump(mode="json")
+        payload["codigo"] = payload.get("codigo") or self._gerar_codigo()
+
+        existente = self.db.query(Projeto).filter(Projeto.codigo == payload["codigo"]).first()
         if existente:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Já existe um projeto com este código",
             )
         projeto = Projeto(
-            **dados.model_dump(),
+            **payload,
             coordenador_id=current_user.id,
         )
         self.db.add(projeto)
         self.db.commit()
         self.db.refresh(projeto)
         return projeto
+
+    def _gerar_codigo(self) -> str:
+        base = f"PROJ-{datetime.utcnow():%Y%m%d%H%M%S}"
+        codigo = base
+        sufixo = 1
+        while self.db.query(Projeto.id).filter(Projeto.codigo == codigo).first():
+            sufixo += 1
+            codigo = f"{base}-{sufixo}"
+        return codigo
 
     def listar(self, current_user: Usuario, status_filtro: Optional[StatusProjeto] = None) -> List[Projeto]:
         query = self.db.query(Projeto)

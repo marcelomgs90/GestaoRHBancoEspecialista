@@ -1,9 +1,15 @@
-import { CategoriaBolsa } from './enums'
+import { CategoriaBolsa, FonteFinanciamento } from './enums'
+
+export interface ProjetoFonteFinanciamento {
+  fonte: FonteFinanciamento
+  valor: number | string
+}
 
 export interface ProjetoCreate {
-  codigo: string
+  codigo?: string
   titulo: string
   descricao?: string
+  fontes_financiamento: ProjetoFonteFinanciamento[]
   data_inicio: string
   data_fim: string
   status?: string
@@ -23,6 +29,7 @@ export interface Projeto {
   codigo: string
   titulo: string
   descricao: string | null
+  fontes_financiamento: ProjetoFonteFinanciamento[]
   data_inicio: string
   data_fim: string
   status: string
