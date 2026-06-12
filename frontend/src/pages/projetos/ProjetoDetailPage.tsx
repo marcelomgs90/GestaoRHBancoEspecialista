@@ -22,6 +22,7 @@ import {
   STATUS_SOLICITACAO_LABELS,
   TIPO_SOLICITACAO_LABELS,
   StatusSolicitacao,
+  TipoSolicitacao,
 } from '@/types/enums';
 import type { Projeto, VersaoRHProjeto } from '@/types/projeto';
 import type { Membro, Solicitacao } from '@/types/solicitacao';
@@ -113,6 +114,10 @@ export default function ProjetoDetailPage() {
   const podeEditar = isCoordenador || podeCriarProjeto;
 
   const versaoVigente = versoes.find((v) => v.status === 'VIGENTE');
+  // Verifica se já existe implantação ativa (não rejeitada)
+  const jaTemImplantacaoAtiva = solicitacoes.some(
+    (s) => s.tipo === TipoSolicitacao.IMPLANTACAO && s.status !== StatusSolicitacao.REJEITADA
+  );
   const solicitacoesOrdenadas = [...solicitacoes].sort((a, b) => {
     if (a.id === versaoVigente?.solicitacao_id) return -1;
     if (b.id === versaoVigente?.solicitacao_id) return 1;
@@ -234,7 +239,7 @@ export default function ProjetoDetailPage() {
                   <Link
                     to={`/projetos/${projeto.id}/implantacao`}
                     className={`flex items-center px-4 py-2 border rounded font-bold text-[10px] uppercase tracking-wider transition-all ${
-                      membrosPag.total > 0
+                      jaTemImplantacaoAtiva
                         ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none'
                         : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
                     }`}
