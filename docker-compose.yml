@@ -31,7 +31,7 @@ services:
       SECRET_KEY: chave-secreta-producao-super-segura-mgs
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 1440
-      BANCO_ESPECIALISTAS_URL: https://api.bancoespecialistas.ifpb.edu.br
+      BANCO_ESPECIALISTAS_URL: postgresql://rh_access:%40TesteRHaccess12@ep-dark-frog-ackntz13-pooler.sa-east-1.aws.neon.tech:5432/banco_especialistas?sslmode=require
       PYDANTIC_CONFIG_EXTRA: allow
     ports:
       - "8000:8000"

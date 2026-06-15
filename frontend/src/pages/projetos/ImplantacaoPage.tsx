@@ -13,11 +13,19 @@ import {
 } from 'lucide-react';
 import { projetoService } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
+import { especialistaService, type Especialista } from '@/services/especialistaService';
 import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { cn } from '@/lib/cn';
 import { MembroEditor, type MembroLocalProps } from './MembroEditor';
 import type { Projeto } from '@/types/projeto';
+
+// Mock temporário para Candidatos (Processo Seletivo) - aguardando endpoint AIE
+const CANDIDATOS_MOCK = [
+  { ref: 'CAND001', nome: 'João Silva', categoria: CategoriaBolsa.PESQUISADOR_JUNIOR },
+  { ref: 'CAND002', nome: 'Maria Santos', categoria: CategoriaBolsa.ESTUDANTE_SUPERIOR_AVANCADO },
+  { ref: 'CAND003', nome: 'Pedro Oliveira', categoria: CategoriaBolsa.PROFISSIONAL_PLENO },
+];
 
 // Tipo de membro em edição na tela (antes de enviar ao backend)
 // backendId presente = já persistido; ausente = novo (ainda não enviado)
@@ -30,19 +38,6 @@ interface HistoryLog {
   detail: string;
 }
 
-// Candidatos mockados até existir endpoint do Banco de Especialistas
-const CANDIDATOS_MOCK = [
-  { ref: 'CAND-001', nome: 'Lucas Amado', categoria: CategoriaBolsa.PESQUISADOR_MASTER },
-  { ref: 'CAND-002', nome: 'Carla Dias', categoria: CategoriaBolsa.PESQUISADOR_PLENO },
-  { ref: 'CAND-003', nome: 'Bernardo Silva', categoria: CategoriaBolsa.PESQUISADOR_JUNIOR },
-];
-
-// Especialistas mockados até existir endpoint do Banco de Especialistas
-const ESPECIALISTAS_MOCK = [
-  { ref: 'ESP-001', nome: 'João Silva', email: 'joao.silva@if.edu.br', ch_atual: 40 },
-  { ref: 'ESP-002', nome: 'Maria Souza', email: 'maria.souza@if.edu.br', ch_atual: 20 },
-  { ref: 'ESP-003', nome: 'Pedro Oliver', email: 'pedro.oliver@ext.com', ch_atual: 0 },
-];
 
 export default function ImplantacaoPage() {
   const { id_projeto } = useParams<{ id_projeto: string }>();
@@ -58,6 +53,8 @@ export default function ImplantacaoPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [modalErro, setModalErro] = useState<string | null>(null);
+  const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
+  const [buscandoEspecialistas, setBuscandoEspecialistas] = useState(false);
 
   const projetoId = Number(id_projeto);
 
@@ -99,6 +96,26 @@ export default function ImplantacaoPage() {
     }
     void init();
   }, [projetoId]);
+
+  // Busca especialistas da API quando abre o modal ou muda o termo de busca
+  useEffect(() => {
+    if (showSearch !== 'especialistas') return;
+
+    const buscar = async () => {
+      setBuscandoEspecialistas(true);
+      try {
+        const resultado = await especialistaService.buscar(searchTerm || undefined);
+        setEspecialistas(resultado);
+      } catch {
+        setEspecialistas([]);
+      } finally {
+        setBuscandoEspecialistas(false);
+      }
+    };
+
+    const debounce = setTimeout(buscar, 300);
+    return () => clearTimeout(debounce);
+  }, [showSearch, searchTerm]);
 
   const log = (type: HistoryLog['type'], nome: string, detail: string) =>
     setHistory((prev) => [{ id: Math.random().toString(36).slice(2), type, nome, detail }, ...prev]);
@@ -170,12 +187,11 @@ export default function ImplantacaoPage() {
     }
   };
 
+  // Filtra candidatos localmente (mock)
   const filtrarCandidatos = CANDIDATOS_MOCK.filter((c) =>
     c.nome.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  const filtrarEspecialistas = ESPECIALISTAS_MOCK.filter((e) =>
-    e.nome.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // Especialistas já vêm filtrados da API pelo useEffect
 
   return (
     <div className="space-y-8 animate-in slide-in-up">
@@ -232,7 +248,7 @@ export default function ImplantacaoPage() {
               Banco de Especialistas
             </p>
             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-              Servidores e Remanejados — mock até endpoint AIE
+              Servidores e Remanejados — API integrada
             </p>
           </div>
         </button>
@@ -395,23 +411,34 @@ export default function ImplantacaoPage() {
                         </div>
                       </button>
                     ))
-                  : filtrarEspecialistas.map((e) => (
-                      <button
-                        key={e.ref}
-                        onClick={() => addMembro(e.ref, e.nome, CategoriaBolsa.PESQUISADOR_PLENO)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded transition-all text-left group cursor-pointer"
-                      >
-                        <div>
-                          <p className="font-bold text-slate-800 text-sm">{e.nome}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            {e.ch_atual}h atuais — {e.email}
-                          </p>
-                        </div>
-                        <div className="p-1 px-2 border border-slate-200 text-slate-400 rounded text-[10px] font-bold group-hover:bg-slate-900 group-hover:text-white transition-all">
-                          ADICIONAR
-                        </div>
-                      </button>
-                    ))}
+                  : buscandoEspecialistas ? (
+                      <div className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-400 mx-auto mb-2"></div>
+                        <p className="text-xs text-slate-400 font-medium">Buscando especialistas...</p>
+                      </div>
+                    ) : especialistas.length === 0 ? (
+                      <div className="p-8 text-center text-slate-400 text-xs font-medium">
+                        {searchTerm ? 'Nenhum especialista encontrado.' : 'Digite para buscar especialistas.'}
+                      </div>
+                    ) : (
+                      especialistas.map((e) => (
+                        <button
+                          key={e.id}
+                          onClick={() => addMembro(e.matricula, e.nome, CategoriaBolsa.PESQUISADOR_PLENO)}
+                          className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded transition-all text-left group cursor-pointer"
+                        >
+                          <div>
+                            <p className="font-bold text-slate-800 text-sm">{e.nome}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                              Matrícula: {e.matricula}
+                            </p>
+                          </div>
+                          <div className="p-1 px-2 border border-slate-200 text-slate-400 rounded text-[10px] font-bold group-hover:bg-slate-900 group-hover:text-white transition-all">
+                            ADICIONAR
+                          </div>
+                        </button>
+                      ))
+                    )}
               </div>
             </motion.div>
           </div>
