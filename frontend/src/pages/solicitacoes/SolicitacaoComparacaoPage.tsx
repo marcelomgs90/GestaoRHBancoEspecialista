@@ -19,7 +19,6 @@ import {
   STATUS_SOLICITACAO_LABELS,
   StatusSolicitacao,
   TIPO_SOLICITACAO_LABELS,
-  TipoSolicitacao,
 } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { usePerfil } from '@/hooks/usePerfil';

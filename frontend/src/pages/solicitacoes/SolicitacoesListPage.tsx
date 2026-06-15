@@ -7,9 +7,7 @@ import {
   ChevronRight,
   Filter,
   AlertCircle,
-  GitCompare,
   Send,
-  CheckCircle2,
   XCircle,
 } from 'lucide-react';
 import { solicitacaoService } from '@/services/solicitacaoService';
@@ -44,7 +42,7 @@ const formatarDataHora = (isoString: string) => {
 
 export default function SolicitacoesListPage() {
   const navigate = useNavigate();
-  const { podeCriarProjeto, podeAprovarSolicitacao } = usePerfil();
+  const { podeCriarProjeto } = usePerfil();
 
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -55,9 +53,6 @@ export default function SolicitacoesListPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [erroSubmeter, setErroSubmeter] = useState<string | null>(null);
   const [submetendoId, setSubmetendoId] = useState<number | null>(null);
-  const [aproandoId, setAprovandoId] = useState<number | null>(null);
-  const [erroAprovar, setErroAprovar] = useState<string | null>(null);
-
   const [showRejeitarModal, setShowRejeitarModal] = useState(false);
   const [rejeitandoId, setRejeitandoId] = useState<number | null>(null);
   const [justificativaRejeicao, setJustificativaRejeicao] = useState('');
@@ -113,21 +108,6 @@ export default function SolicitacoesListPage() {
     }
   };
 
-  const handleAprovar = async (sol: Solicitacao) => {
-    setAprovandoId(sol.id);
-    setErroAprovar(null);
-    try {
-      const atualizada = await solicitacaoService.aprobar(sol.id);
-      setSolicitacoes((prev) =>
-        prev.map((s) => (s.id === sol.id ? atualizada : s)),
-      );
-    } catch {
-      setErroAprovar(`Erro ao aprovar solicitação #${sol.id}.`);
-    } finally {
-      setAprovandoId(null);
-    }
-  };
-
   const handleRejeitar = async () => {
     if (!rejeitandoId) return;
     setRejeitando(true);
@@ -148,13 +128,6 @@ export default function SolicitacoesListPage() {
     } finally {
       setRejeitando(false);
     }
-  };
-
-  const abrirModalRejeitar = (sol: Solicitacao) => {
-    setRejeitandoId(sol.id);
-    setShowRejeitarModal(true);
-    setJustificativaRejeicao('');
-    setErroRejeitar(null);
   };
 
   return (

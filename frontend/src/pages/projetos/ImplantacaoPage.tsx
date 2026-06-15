@@ -7,7 +7,6 @@ import {
   Search,
   FileCheck,
   History,
-  CheckCircle2,
   X,
   UserPlus,
   AlertCircle,
