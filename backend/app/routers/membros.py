@@ -24,7 +24,7 @@ def incluir_membro(
     - Valida carga horária global do pesquisador
     - Exclusivo para o Coordenador do Projeto
     """
-    return service.incluir(solicitacao_id, dados, usuario_logado_id=current_user.id)
+    return service.incluir(solicitacao_id, dados, current_user=current_user)
 
 
 @router.get("/{solicitacao_id}/membros", response_model=List[MembroResponse])
@@ -51,7 +51,7 @@ def atualizar_membro(
     - Revalida regras de carga horária e recacula valores se necessário
     - Exclusivo para o Coordenador do Projeto
     """
-    return service.atualizar(solicitacao_id, membro_id, dados, usuario_logado_id=current_user.id)
+    return service.atualizar(solicitacao_id, membro_id, dados, current_user=current_user)
 
 
 @router.delete("/{solicitacao_id}/membros/{membro_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -66,5 +66,5 @@ def remover_membro(
     
     - Exclusivo para o Coordenador do Projeto
     """
-    service.remover(solicitacao_id, membro_id, usuario_logado_id=current_user.id)
+    service.remover(solicitacao_id, membro_id, current_user=current_user)
     return None

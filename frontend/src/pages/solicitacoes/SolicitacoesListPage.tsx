@@ -42,7 +42,7 @@ const formatarDataHora = (isoString: string) => {
 
 export default function SolicitacoesListPage() {
   const navigate = useNavigate();
-  const { podeCriarProjeto } = usePerfil();
+  const { podeEditarMembros } = usePerfil();
 
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -139,7 +139,7 @@ export default function SolicitacoesListPage() {
             Histórico de implantações e alterações de quadro.
           </p>
         </div>
-        {podeCriarProjeto && (
+        {podeEditarMembros && (
           <button
             onClick={() => navigate('/projetos')}
             className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm whitespace-nowrap cursor-pointer"

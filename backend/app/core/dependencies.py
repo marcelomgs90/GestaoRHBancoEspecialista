@@ -1,9 +1,10 @@
 from typing import Generator
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.core.database import SessionLocal, EspecialistasSessionLocal
+from app.core.database import EspecialistasSessionLocal, SessionLocal
 from app.core.security import decode_access_token
 from app.models.usuario_perfil import Usuario
 from app.services.auth_service import AuthService
@@ -18,33 +19,45 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def get_db() -> Generator[Session, None, None]:
-    """Dependency para obter sessão do banco de dados."""
+    """Dependency para obter sessao do banco de dados."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
+
 def get_especialistas_db() -> Generator[Session, None, None]:
-    """Dependency para obter sessão do banco de especialistas externo."""
+    """Dependency para obter sessao do banco de especialistas externo."""
+    if EspecialistasSessionLocal is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Banco de Especialistas nao configurado como banco de dados. "
+                "Configure BANCO_ESPECIALISTAS_URL com uma URL SQLAlchemy valida "
+                "ou implemente o cliente HTTP para a API externa."
+            ),
+        )
+
     db = EspecialistasSessionLocal()
     try:
         yield db
     finally:
         db.close()
 
+
 def get_current_user(
     db: Session = Depends(get_db),
-    token: str = Depends(oauth2_scheme)
+    token: str = Depends(oauth2_scheme),
 ) -> Usuario:
-    """Obtém usuário atual a partir do token JWT."""
+    """Obtem usuario atual a partir do token JWT."""
     payload = decode_access_token(token)
     user_id: str = payload.get("sub")
 
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido",
+            detail="Token invalido",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -53,14 +66,14 @@ def get_current_user(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuário não encontrado",
+            detail="Usuario nao encontrado",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not user.ativo:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuário inativo",
+            detail="Usuario inativo",
         )
 
     return user

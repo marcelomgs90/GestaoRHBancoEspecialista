@@ -19,6 +19,7 @@ interface Props {
   onChange: (changes: Partial<MembroLocalProps>) => void;
   onRemove: () => void;
   projetoId?: number;
+  onValorPreviewChange?: (valor: number | null) => void;
 }
 
 interface PreviewState {
@@ -36,7 +37,7 @@ interface PreviewState {
 
 const DEBOUNCE_MS = 400;
 
-export function MembroEditor({ membro, onChange, onRemove, projetoId }: Props) {
+export function MembroEditor({ membro, onChange, onRemove, projetoId, onValorPreviewChange }: Props) {
   const [preview, setPreview] = useState<PreviewState>({
     valorBolsa: null,
     validacaoCh: null,
@@ -133,6 +134,10 @@ export function MembroEditor({ membro, onChange, onRemove, projetoId }: Props) {
     // o PUT. O backend recalcula o `valor_bolsa` automaticamente.
     return;
   }, [preview.valorBolsa]);
+
+  useEffect(() => {
+    onValorPreviewChange?.(preview.valorBolsa);
+  }, [onValorPreviewChange, preview.valorBolsa]);
 
   const validacao = preview.validacaoCh;
   const chInvalida = validacao && !validacao.valido;

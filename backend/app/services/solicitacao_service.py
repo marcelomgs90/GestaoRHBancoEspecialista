@@ -47,7 +47,7 @@ class SolicitacaoService:
 
     def criar_implantacao(self, dados: SolicitacaoImplantacaoCreate, current_user: Usuario) -> SolicitacaoRH:
         projeto = self._buscar_projeto(dados.projeto_id)
-        self._verificar_permissao_coordenador(projeto, current_user)
+        self._verificar_permissao_edicao(projeto, current_user)
 
         existente = self._buscar_implantacao_existente(dados.projeto_id)
         if existente:
@@ -74,7 +74,7 @@ class SolicitacaoService:
     # --- MÉTODO GENÉRICO MANTIDO INTACTO ---
     def criar(self, dados: SolicitacaoCreate, current_user: Usuario) -> SolicitacaoRH:
         projeto = self._buscar_projeto(dados.projeto_id)
-        self._verificar_permissao_coordenador(projeto, current_user)
+        self._verificar_permissao_edicao(projeto, current_user)
 
         if dados.tipo == TipoSolicitacao.IMPLANTACAO:
             existente = self._buscar_implantacao_existente(dados.projeto_id)
@@ -144,17 +144,19 @@ class SolicitacaoService:
             )
         return projeto
 
-    def _verificar_permissao_coordenador(
+    def _verificar_permissao_edicao(
         self, projeto: Projeto, current_user: Usuario
     ) -> None:
-        if (
-            current_user.perfil == PerfilUsuario.COORDENADOR
-            and projeto.coordenador_id != current_user.id
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Você não é coordenador deste projeto",
-            )
+        if current_user.perfil in (PerfilUsuario.ADMINISTRADOR, PerfilUsuario.APOIO_COORDENADOR):
+            return
+
+        if current_user.perfil == PerfilUsuario.COORDENADOR and projeto.coordenador_id == current_user.id:
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario nao tem permissao para editar solicitacoes deste projeto",
+        )
 
     def _criar_versao_implantacao(self, projeto_id: int, solicitacao_id: int) -> None:
         versao_existente = (
@@ -213,7 +215,7 @@ class SolicitacaoService:
             )
 
         projeto = self._buscar_projeto(solicitacao.projeto_id)
-        self._verificar_permissao_coordenador(projeto, current_user)
+        self._verificar_permissao_edicao(projeto, current_user)
 
         solicitacao.status = StatusSolicitacao.SUBMETIDA
 
@@ -363,17 +365,22 @@ class SolicitacaoService:
             self.db.add(clone)
         self.db.commit()
 
-    def _verificar_permissao_gestor_polo(self, current_user: Usuario) -> None:
-        if current_user.perfil not in (PerfilUsuario.GESTOR_POLO, PerfilUsuario.ADMINISTRADOR):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Apenas Gestor do Polo ou Administrador pode realizar esta ação",
-            )
+    def _verificar_permissao_aprovacao(self, projeto: Projeto, current_user: Usuario) -> None:
+        if current_user.perfil == PerfilUsuario.ADMINISTRADOR:
+            return
+
+        if current_user.perfil == PerfilUsuario.COORDENADOR and projeto.coordenador_id == current_user.id:
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o coordenador do projeto ou Administrador pode realizar esta acao",
+        )
 
     def aprovar(self, solicitacao_id: int, current_user: Usuario) -> SolicitacaoRH:
-        self._verificar_permissao_gestor_polo(current_user)
-
         solicitacao = self.obter_por_id(solicitacao_id)
+        projeto = self._buscar_projeto(solicitacao.projeto_id)
+        self._verificar_permissao_aprovacao(projeto, current_user)
 
         if solicitacao.status != StatusSolicitacao.SUBMETIDA:
             raise HTTPException(
@@ -408,9 +415,9 @@ class SolicitacaoService:
     def rejeitar(
         self, solicitacao_id: int, current_user: Usuario, justificativa: Optional[str] = None
     ) -> SolicitacaoRH:
-        self._verificar_permissao_gestor_polo(current_user)
-
         solicitacao = self.obter_por_id(solicitacao_id)
+        projeto = self._buscar_projeto(solicitacao.projeto_id)
+        self._verificar_permissao_aprovacao(projeto, current_user)
 
         if solicitacao.status != StatusSolicitacao.SUBMETIDA:
             raise HTTPException(

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { projetoService } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
+import { especialistaService, type Especialista } from '@/services/especialistaService';
 import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao, FONTE_LABELS } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { MembroEditor, type MembroLocalProps } from './MembroEditor';
@@ -36,12 +37,6 @@ const CANDIDATOS_MOCK = [
   { ref: 'CAND-002', nome: 'Carla Dias', categoria: CategoriaBolsa.PESQUISADOR_PLENO },
   { ref: 'CAND-003', nome: 'Bernardo Silva', categoria: CategoriaBolsa.PESQUISADOR_JUNIOR },
 ];
-const ESPECIALISTAS_MOCK = [
-  { ref: 'ESP-001', nome: 'João Silva', email: 'joao.silva@if.edu.br' },
-  { ref: 'ESP-002', nome: 'Maria Souza', email: 'maria.souza@if.edu.br' },
-  { ref: 'ESP-003', nome: 'Pedro Oliver', email: 'pedro.oliver@ext.com' },
-];
-
 function membroToLocal(m: Membro): MembroLocalProps {
   return {
     _tempId: `existente-${m.id}`,
@@ -74,6 +69,13 @@ function membroMudou(local: MembroLocalProps, clone: Membro): boolean {
   return false;
 }
 
+const formatCurrencyBRL = (value: number) =>
+  value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+  });
+
 export default function AlteracaoPage() {
   const { id_projeto } = useParams<{ id_projeto: string }>();
   const navigate = useNavigate();
@@ -91,6 +93,9 @@ export default function AlteracaoPage() {
 
   const [showSearch, setShowSearch] = useState<'candidatos' | 'especialistas' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
+  const [buscandoEspecialistas, setBuscandoEspecialistas] = useState(false);
+  const [valorPreviewPorTempId, setValorPreviewPorTempId] = useState<Record<string, number | null>>({});
   const [history, setHistory] = useState<HistoryLog[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [submetendo, setSubmetendo] = useState(false);
@@ -162,6 +167,25 @@ export default function AlteracaoPage() {
     void init();
   }, [projetoId]);
 
+  useEffect(() => {
+    if (showSearch !== 'especialistas') return;
+
+    const buscar = async () => {
+      setBuscandoEspecialistas(true);
+      try {
+        const resultado = await especialistaService.buscar(searchTerm || undefined);
+        setEspecialistas(resultado);
+      } catch {
+        setEspecialistas([]);
+      } finally {
+        setBuscandoEspecialistas(false);
+      }
+    };
+
+    const debounce = window.setTimeout(buscar, 300);
+    return () => window.clearTimeout(debounce);
+  }, [showSearch, searchTerm]);
+
   const log = (type: HistoryLog['type'], nome: string, detail: string) =>
     setHistory((prev) => [{ id: Math.random().toString(36).slice(2), type, nome, detail }, ...prev]);
 
@@ -200,6 +224,11 @@ export default function AlteracaoPage() {
     }
     log('REMOVE', m.nome_pesquisador, m.id ? 'Marcado para encerramento' : 'Removido da lista');
     setEquipeProposta((prev) => prev.filter((x) => x._tempId !== tempId));
+    setValorPreviewPorTempId((prev) => {
+      const prox = { ...prev };
+      delete prox[tempId];
+      return prox;
+    });
   };
 
   const updateMembro = (tempId: string, changes: Partial<MembroLocalProps>) => {
@@ -207,6 +236,19 @@ export default function AlteracaoPage() {
       prev.map((m) => (m._tempId === tempId ? { ...m, ...changes } : m)),
     );
   };
+
+  const updateValorPreview = (tempId: string, valor: number | null) => {
+    setValorPreviewPorTempId((prev) => {
+      if (prev[tempId] === valor) return prev;
+      return { ...prev, [tempId]: valor };
+    });
+  };
+
+  const valorMembro = (membro: MembroLocalProps) =>
+    valorPreviewPorTempId[membro._tempId] ?? membro.valor_bolsa ?? 0;
+
+  const totalEquipeAtual = equipeAtual.reduce((acc, m) => acc + Number(m.valor_bolsa), 0);
+  const totalEquipeProposta = equipeProposta.reduce((acc, m) => acc + valorMembro(m), 0);
 
   /**
    * Garante que a solicitação existe e retorna o estado consistente dos clones.
@@ -409,10 +451,6 @@ export default function AlteracaoPage() {
   const filtrarCandidatos = CANDIDATOS_MOCK.filter((c) =>
     c.nome.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  const filtrarEspecialistas = ESPECIALISTAS_MOCK.filter((e) =>
-    e.nome.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
   if (carregando) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -502,7 +540,7 @@ export default function AlteracaoPage() {
               {equipeAtual.reduce((acc, m) => acc + m.carga_horaria_semanal, 0)}h total
             </span>
             <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
-              Total: R$ {equipeAtual.reduce((acc, m) => acc + Number(m.valor_bolsa), 0).toLocaleString('pt-BR')}
+              Total: {formatCurrencyBRL(totalEquipeAtual)}
             </span>
           </div>
         </div>
@@ -531,7 +569,7 @@ export default function AlteracaoPage() {
                   <td className="py-3 text-center text-xs">{m.carga_horaria_semanal}h</td>
                   <td className="py-3 text-xs">{FONTE_LABELS[m.fonte_financiamento]}</td>
                   <td className="py-3 text-right px-6 font-bold">
-                    R$ {Number(m.valor_bolsa).toLocaleString('pt-BR')}
+                    {formatCurrencyBRL(Number(m.valor_bolsa))}
                   </td>
                 </tr>
               ))}
@@ -564,7 +602,7 @@ export default function AlteracaoPage() {
               {equipeProposta.reduce((acc, m) => acc + m.carga_horaria_semanal, 0)}h total
             </span>
             <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
-              Total: R$ {equipeProposta.reduce((acc, m) => acc + (m.valor_bolsa ?? 0), 0).toLocaleString('pt-BR')}
+              Total: {formatCurrencyBRL(totalEquipeProposta)}
             </span>
           </div>
         </div>
@@ -614,6 +652,7 @@ export default function AlteracaoPage() {
                 onChange={(changes) => updateMembro(m._tempId, changes)}
                 onRemove={() => removeMembro(m._tempId)}
                 projetoId={projetoId}
+                onValorPreviewChange={(valor) => updateValorPreview(m._tempId, valor)}
               />
             </motion.div>
           ))}
@@ -789,23 +828,33 @@ export default function AlteracaoPage() {
                       </span>
                     </button>
                   ))
-                : filtrarEspecialistas.map((e) => (
-                    <button
-                      key={e.ref}
-                      onClick={() => addMembro(e.ref, e.nome, CategoriaBolsa.PESQUISADOR_PLENO)}
-                      className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded text-left cursor-pointer"
-                    >
-                      <div>
-                        <p className="font-bold text-slate-800 text-sm">{e.nome}</p>
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-                          {e.email}
-                        </p>
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-400 border border-slate-200 px-2 py-1 rounded">
-                        ADICIONAR
-                      </span>
-                    </button>
-                  ))}
+                : buscandoEspecialistas ? (
+                    <p className="p-6 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                      Buscando especialistas...
+                    </p>
+                  ) : especialistas.length === 0 ? (
+                    <p className="p-6 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                      Nenhum especialista encontrado
+                    </p>
+                  ) : (
+                    especialistas.map((e) => (
+                      <button
+                        key={e.id}
+                        onClick={() => addMembro(e.matricula, e.nome, CategoriaBolsa.PESQUISADOR_PLENO)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded text-left cursor-pointer"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-800 text-sm">{e.nome}</p>
+                          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                            Matricula: {e.matricula}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 border border-slate-200 px-2 py-1 rounded">
+                          ADICIONAR
+                        </span>
+                      </button>
+                    ))
+                  )}
             </div>
           </motion.div>
         </div>

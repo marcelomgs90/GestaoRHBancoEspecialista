@@ -32,8 +32,9 @@ export default function LoginPage() {
     try {
       await login(data);
       navigate('/dashboard', { replace: true });
-    } catch {
-      setSubmitError('E-mail ou senha incorretos.');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setSubmitError(error.response?.data?.detail ?? 'E-mail ou senha incorretos.');
     }
   };
 

@@ -12,7 +12,6 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { usePerfil } from '@/hooks/usePerfil';
-import { useAuth } from '@/contexts/AuthContext';
 import { projetoService } from '@/services/projetoService';
 import type { Paginated } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
@@ -37,8 +36,7 @@ const STATUS_COLORS: Record<StatusSolicitacao, string> = {
 export default function ProjetoDetailPage() {
   const { id_projeto } = useParams<{ id_projeto: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { podeCriarProjeto } = usePerfil();
+  const { podeEditarMembros } = usePerfil();
 
   const [projeto, setProjeto] = useState<Projeto | null>(null);
   const [versoes, setVersoes] = useState<VersaoRHProjeto[]>([]);
@@ -110,8 +108,7 @@ export default function ProjetoDetailPage() {
 
   const membros = membrosPag.items;
 
-  const isCoordenador = user?.id === projeto?.coordenador_id;
-  const podeEditar = isCoordenador || podeCriarProjeto;
+  const podeEditar = podeEditarMembros;
 
   const versaoVigente = versoes.find((v) => v.status === 'VIGENTE');
   // Verifica se já existe implantação ativa (não rejeitada)

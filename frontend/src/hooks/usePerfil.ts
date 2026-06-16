@@ -20,8 +20,12 @@ export function usePerfil() {
     isApoioCoordenador: perfil === PerfilUsuario.APOIO_COORDENADOR,
 
     podeCriarProjeto: is(PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR),
-    podeAprovarSolicitacao: is(PerfilUsuario.GESTOR_POLO, PerfilUsuario.ADMINISTRADOR),
-    podeEditarMembros: is(PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR),
+    podeAprovarSolicitacao: is(PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR),
+    podeEditarMembros: is(
+      PerfilUsuario.COORDENADOR,
+      PerfilUsuario.ADMINISTRADOR,
+      PerfilUsuario.APOIO_COORDENADOR,
+    ),
     podeGerenciarParametros: is(PerfilUsuario.ADMINISTRADOR),
   };
 }

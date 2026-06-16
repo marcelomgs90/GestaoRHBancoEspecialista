@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, Text, Enum as SQLEnum, JSON
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, Text, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, TimestampMixin
@@ -13,7 +13,6 @@ class Projeto(Base, TimestampMixin):
     codigo = Column(String(50), unique=True, nullable=False, index=True)
     titulo = Column(String(500), nullable=False)
     descricao = Column(Text, nullable=True)
-    fontes_financiamento = Column(JSON, nullable=False, default=list)
 
     # Datas
     data_inicio = Column(Date, nullable=False)
@@ -27,6 +26,11 @@ class Projeto(Base, TimestampMixin):
 
     # Relacionamentos
     coordenador = relationship("Usuario", back_populates="projetos_coordenados")
+    fontes_financiamento = relationship(
+        "ProjetoFonteFinanciamento",
+        back_populates="projeto",
+        cascade="all, delete-orphan",
+    )
     anexos = relationship("ProjetoAnexo", back_populates="projeto")
     versoes_rh = relationship("VersaoRHProjeto", back_populates="projeto")
     solicitacoes = relationship("SolicitacaoRH", back_populates="projeto")

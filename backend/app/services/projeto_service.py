@@ -2,8 +2,10 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import HTTPException, status
+from sqlalchemy.orm import selectinload
 from sqlalchemy.orm import Session
 
+from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
 from app.models.projeto import Projeto
 from app.models.usuario_perfil import Usuario
 from app.schemas.projeto import ProjetoCreate
@@ -16,6 +18,7 @@ class ProjetoService:
 
     def criar(self, dados: ProjetoCreate, current_user: Usuario) -> Projeto:
         payload = dados.model_dump(mode="json")
+        fontes = payload.pop("fontes_financiamento")
         payload["codigo"] = payload.get("codigo") or self._gerar_codigo()
 
         existente = self.db.query(Projeto).filter(Projeto.codigo == payload["codigo"]).first()
@@ -28,6 +31,13 @@ class ProjetoService:
             **payload,
             coordenador_id=current_user.id,
         )
+        projeto.fontes_financiamento = [
+            ProjetoFonteFinanciamento(
+                fonte=fonte["fonte"],
+                valor=fonte["valor"],
+            )
+            for fonte in fontes
+        ]
         self.db.add(projeto)
         self.db.commit()
         self.db.refresh(projeto)
@@ -43,7 +53,7 @@ class ProjetoService:
         return codigo
 
     def listar(self, current_user: Usuario, status_filtro: Optional[StatusProjeto] = None) -> List[Projeto]:
-        query = self.db.query(Projeto)
+        query = self.db.query(Projeto).options(selectinload(Projeto.fontes_financiamento))
 
         if current_user.perfil == PerfilUsuario.COORDENADOR:
             query = query.filter(Projeto.coordenador_id == current_user.id)
@@ -55,7 +65,12 @@ class ProjetoService:
         return query.all()
 
     def obter_por_id(self, projeto_id: int, current_user: Usuario) -> Projeto:
-        projeto = self.db.query(Projeto).filter(Projeto.id == projeto_id).first()
+        projeto = (
+            self.db.query(Projeto)
+            .options(selectinload(Projeto.fontes_financiamento))
+            .filter(Projeto.id == projeto_id)
+            .first()
+        )
 
         if not projeto:
             raise HTTPException(
