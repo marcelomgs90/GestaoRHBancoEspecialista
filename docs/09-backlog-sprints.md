@@ -529,12 +529,12 @@ EP-00 Aplicacao Web - Gestao RH Banco de Especialistas
 **Feature:** F-MO-02 - Visão consolidada por fonte de financiamento (EP-05)
 **Prioridade:** Normal
 
-**Descrição:** Como gestor do Polo, quero visualizar a distribuição por fonte de financiamento para acompanhar EMBRAPII, EMPRESA, SEBRAE e IFPB.
+**Descrição:** Como gestor do Polo, quero visualizar a distribuição por fonte de financiamento para acompanhar EMBRAPII, EMPRESA e SEBRAE.
 
 **BDD:** DADO que existam vínculos com fontes cadastradas, QUANDO abrir a visão consolidada, ENTAO o sistema deve apresentar totais separados por fonte.
 
 **Critérios de Aceitação:**
-- CA-F-MO-02-01: A visão deve separar fontes EMBRAPII, EMPRESA, SEBRAE e IFPB
+- CA-F-MO-02-01: A visão deve separar fontes EMBRAPII, EMPRESA e SEBRAE
 - CA-F-MO-02-02: O sistema deve apresentar totais por fonte
 - CA-F-MO-02-03: A consulta deve considerar apenas vínculos ativos ou vigentes no filtro
 

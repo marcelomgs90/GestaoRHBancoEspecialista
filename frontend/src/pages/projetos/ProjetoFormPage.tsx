@@ -21,8 +21,6 @@ const schema = z
     valor_empresa: z.coerce.number().positive('Informe o valor da fonte Empresa'),
     fonte_embrapii: z.boolean().default(false),
     valor_embrapii: optionalCurrency,
-    fonte_ifpb: z.boolean().default(false),
-    valor_ifpb: optionalCurrency,
     fonte_sebrae: z.boolean().default(false),
     valor_sebrae: optionalCurrency,
     data_inicio: z.string().min(1, 'Informe a data de início'),
@@ -34,13 +32,6 @@ const schema = z
         code: 'custom',
         path: ['valor_embrapii'],
         message: 'Informe o valor da fonte EMBRAPII',
-      });
-    }
-    if (d.fonte_ifpb && !d.valor_ifpb) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['valor_ifpb'],
-        message: 'Informe o valor da fonte IFPB',
       });
     }
     if (d.fonte_sebrae && !d.valor_sebrae) {
@@ -73,28 +64,24 @@ export default function ProjetoFormPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       fonte_embrapii: false,
-      fonte_ifpb: false,
       fonte_sebrae: false,
     },
   });
 
   const fonteEmbrapii = watch('fonte_embrapii');
-  const fonteIfpb = watch('fonte_ifpb');
   const fonteSebrae = watch('fonte_sebrae');
   const valorEmpresa = watch('valor_empresa');
   const valorEmbrapii = watch('valor_embrapii');
-  const valorIfpb = watch('valor_ifpb');
   const valorSebrae = watch('valor_sebrae');
 
   const totalFontes = useMemo(() => {
     const valores = [
       Number(valorEmpresa) || 0,
       fonteEmbrapii ? Number(valorEmbrapii) || 0 : 0,
-      fonteIfpb ? Number(valorIfpb) || 0 : 0,
       fonteSebrae ? Number(valorSebrae) || 0 : 0,
     ];
     return valores.reduce((total, valor) => total + valor, 0);
-  }, [fonteEmbrapii, fonteIfpb, fonteSebrae, valorEmpresa, valorEmbrapii, valorIfpb, valorSebrae]);
+  }, [fonteEmbrapii, fonteSebrae, valorEmpresa, valorEmbrapii, valorSebrae]);
 
   const onSubmit = async (data: FormData) => {
     setSubmitError(null);
@@ -103,9 +90,6 @@ export default function ProjetoFormPage() {
         { fonte: FonteFinanciamento.EMPRESA, valor: data.valor_empresa },
         ...(data.fonte_embrapii && data.valor_embrapii
           ? [{ fonte: FonteFinanciamento.EMBRAPII, valor: data.valor_embrapii }]
-          : []),
-        ...(data.fonte_ifpb && data.valor_ifpb
-          ? [{ fonte: FonteFinanciamento.IFPB, valor: data.valor_ifpb }]
           : []),
         ...(data.fonte_sebrae && data.valor_sebrae
           ? [{ fonte: FonteFinanciamento.SEBRAE, valor: data.valor_sebrae }]
@@ -288,31 +272,6 @@ export default function ProjetoFormPage() {
                 />
                 {errors.valor_embrapii && (
                   <p className="text-xs text-red-600">{errors.valor_embrapii.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-4 items-start rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <label className="flex items-center gap-3 text-sm font-black text-slate-800">
-                <input
-                  type="checkbox"
-                  {...register('fonte_ifpb')}
-                  className="h-5 w-5 rounded border-slate-300 text-blue-600"
-                />
-                IFPB
-              </label>
-              <div className="space-y-1">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  disabled={!fonteIfpb}
-                  {...register('valor_ifpb')}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-bold text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
-                  placeholder="Valor"
-                />
-                {errors.valor_ifpb && (
-                  <p className="text-xs text-red-600">{errors.valor_ifpb.message}</p>
                 )}
               </div>
             </div>

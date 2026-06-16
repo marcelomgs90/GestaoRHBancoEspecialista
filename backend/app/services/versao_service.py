@@ -13,7 +13,6 @@ _FONTES_VAZIAS = {
     FonteFinanciamento.EMPRESA.value: [],
     FonteFinanciamento.EMBRAPII.value: [],
     FonteFinanciamento.SEBRAE.value: [],
-    FonteFinanciamento.IFPB.value: [],
 }
 
 

@@ -37,7 +37,6 @@ const FONTES_ORDENADAS: FonteFinanciamento[] = [
   FonteFinanciamento.EMPRESA,
   FonteFinanciamento.EMBRAPII,
   FonteFinanciamento.SEBRAE,
-  FonteFinanciamento.IFPB,
 ];
 
 export default function SolicitacaoComparacaoPage() {

@@ -7,7 +7,7 @@ Este arquivo fornece orientações a agentes de IA (Claude Code, Cursor, Copilot
 **Gestão RH Banco de Especialistas** - Aplicação web para gestão de equipes de projetos de PD&I e Recursos Humanos do Polo de Inovação do IFPB. O sistema aplica as regras da Resolução 11/2022 para cálculos de bolsas, limites de carga horária e gera documentos PDF padronizados para submissão no SUAP.
 
 Conceitos-chave do domínio:
-- Coordenadores alocam pesquisadores em projetos com fontes de financiamento específicas (EMBRAPII, EMPRESA, SEBRAE, IFPB)
+- Coordenadores alocam pesquisadores em projetos com fontes de financiamento específicas (EMBRAPII, EMPRESA, SEBRAE)
 - Valores de bolsas são calculados automaticamente com base na categoria, horas semanais e tabelas de parâmetros com vigência temporal
 - Alterações de RH geram snapshots versionados (Antes/Depois) e PDFs padronizados
 - Transferências de pesquisadores entre projetos exigem aceite digital do coordenador cedente

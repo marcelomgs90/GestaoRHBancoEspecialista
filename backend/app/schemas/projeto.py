@@ -16,7 +16,7 @@ class ProjetoCreate(BaseModel):
     codigo: Optional[str] = None
     titulo: str
     descricao: Optional[str] = None
-    fontes_financiamento: list[ProjetoFonteFinanciamento] = Field(min_length=1, max_length=4)
+    fontes_financiamento: list[ProjetoFonteFinanciamento] = Field(min_length=1, max_length=3)
     data_inicio: date
     data_fim: date
     status: StatusProjeto = StatusProjeto.ATIVO

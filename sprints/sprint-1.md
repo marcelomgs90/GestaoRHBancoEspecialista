@@ -340,7 +340,7 @@ Seed mockado minimo:
     }
   }
   ```
-- Agrupar membros por `fonte_financiamento` (ordem fixa: EMPRESA, EMBRAPII, SEBRAE, IFPB)
+- Agrupar membros por `fonte_financiamento` (ordem fixa: EMPRESA, EMBRAPII, SEBRAE)
 - Comparar por `pesquisador_id` + `fonte_financiamento` para detectar diferenças
 - `GET /solicitacoes/{id}/versoes` — lista todas as versões de RH da solicitação
 

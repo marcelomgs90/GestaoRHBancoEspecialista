@@ -121,7 +121,7 @@ def incluir_membro(db, versao_id, ref, nome):
         nome_pesquisador=nome,
         versao_rh_id=versao_id,
         categoria_bolsa=CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE,
-        fonte_financiamento=FonteFinanciamento.IFPB,
+        fonte_financiamento=FonteFinanciamento.EMPRESA,
         carga_horaria_semanal=80,
         valor_bolsa=700,
         data_inicio=date.today(),
@@ -704,6 +704,38 @@ def test_delete_deve_usar_id_do_clone_da_proposta_nao_da_vigente(
 # TESTE 8: Backend rejeita campos extras em MembroCreate/MembroUpdate
 # ============================================================================
 
+def test_backend_rejeita_fonte_pagadora_ifpb():
+    """IFPB nao e mais uma fonte pagadora valida para projetos ou membros."""
+    from app.schemas.projeto import ProjetoCreate, ProjetoFonteFinanciamento
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        MembroCreate(
+            ref_pesquisador="PESQ-001",
+            nome_pesquisador="Joao",
+            categoria_bolsa=CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE,
+            fonte_financiamento="IFPB",
+            carga_horaria_semanal=20,
+            data_inicio=date.today(),
+        )
+
+    with pytest.raises(ValidationError):
+        ProjetoFonteFinanciamento(fonte="IFPB", valor=1000)
+
+    with pytest.raises(ValidationError):
+        ProjetoCreate(
+            codigo="PROJ-IFPB",
+            titulo="Projeto com fonte removida",
+            descricao=None,
+            fontes_financiamento=[
+                {"fonte": "EMPRESA", "valor": 1000},
+                {"fonte": "IFPB", "valor": 1000},
+            ],
+            data_inicio=date.today(),
+            data_fim=date.today() + timedelta(days=30),
+        )
+
+
 def test_backend_rejeita_campos_extras_em_membro_create_e_update(
     db, projeto, coordenador, gestor
 ):
@@ -720,7 +752,7 @@ def test_backend_rejeita_campos_extras_em_membro_create_e_update(
             ref_pesquisador="PESQ-001",
             nome_pesquisador="João",
             categoria_bolsa=CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE,
-            fonte_financiamento=FonteFinanciamento.IFPB,
+            fonte_financiamento=FonteFinanciamento.EMPRESA,
             carga_horaria_semanal=20,
             data_inicio=date.today(),
             valor_bolsa=9999,  # campo extra
@@ -731,7 +763,7 @@ def test_backend_rejeita_campos_extras_em_membro_create_e_update(
             ref_pesquisador="PESQ-001",
             nome_pesquisador="João",
             categoria_bolsa=CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE,
-            fonte_financiamento=FonteFinanciamento.IFPB,
+            fonte_financiamento=FonteFinanciamento.EMPRESA,
             carga_horaria_semanal=20,
             data_inicio=date.today(),
             id=42,  # campo extra
@@ -856,7 +888,7 @@ def _incluir_membro(client, token, solicitacao_id, ref, nome):
             "ref_pesquisador": ref,
             "nome_pesquisador": nome,
             "categoria_bolsa": "PESQUISADOR_JUNIOR",
-            "fonte_financiamento": "IFPB",
+            "fonte_financiamento": "EMPRESA",
             "carga_horaria_semanal": 80,
             "data_inicio": "2025-01-01",
             "data_fim": "2026-12-31",
