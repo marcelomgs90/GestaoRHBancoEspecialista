@@ -20,16 +20,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
 load_dotenv()
 
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, engine
 from app.core.security import get_password_hash as hash_password
-from app.models import Base, Usuario, Perfil, Projeto, ParametroRegra
+from app.models import Base, Usuario, Perfil, ParametroRegra
 from app.utils.enums import (
     PerfilUsuario,
-    StatusProjeto,
     TipoParametroRegra,
     CategoriaBolsa,
 )
-from app.core.database import engine
 
 # Garante que todas as tabelas existam (util em dev sem Alembic)
 Base.metadata.create_all(bind=engine)
@@ -99,32 +97,6 @@ def run_seed():
             print("  [OK] Usuários criados (admin/coord/gestor/apoio)")
         else:
             print("  [--] Usuários já existem, pulando")
-
-        # ----- Projetos -----
-        projetos_existentes = db.query(Projeto).count()
-        if projetos_existentes == 0:
-            coordenador = db.query(Usuario).filter(
-                Usuario.perfil == PerfilUsuario.COORDENADOR
-            ).first()
-            if coordenador:
-                db.add(Projeto(
-                    codigo="PROJ-2026-001",
-                    titulo="Desenvolvimento de Novas Tecnologias de Armazenamento de Energia (Teste)",
-                    descricao=(
-                        "Projeto de P&D focado em pesquisa aplicada a novas tecnologias "
-                        "de baterias de alto desempenho para aplicações industriais."
-                    ),
-                    data_inicio=date(2025, 1, 1),
-                    data_fim=date(2026, 12, 31),
-                    coordenador_id=coordenador.id,
-                    status=StatusProjeto.ATIVO,
-                ))
-                db.flush()
-                print("  [OK] Projeto seed criado")
-            else:
-                print("  [!] Nenhum coordenador encontrado; projeto nao criado")
-        else:
-            print("  [--] Projetos já existem, pulando")
 
         # ----- Parâmetros de Regra -----
         params_existentes = db.query(ParametroRegra).count()

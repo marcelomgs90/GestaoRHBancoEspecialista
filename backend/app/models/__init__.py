@@ -3,6 +3,7 @@ from app.models.base import Base
 from app.models.usuario_perfil import Usuario, Perfil
 from app.models.parametro_regra import ParametroRegra
 from app.models.projeto import Projeto
+from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
 from app.models.projeto_anexo import ProjetoAnexo
 from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.solicitacao_rh import SolicitacaoRH
@@ -16,6 +17,7 @@ __all__ = [
     "Perfil",
     "ParametroRegra",
     "Projeto",
+    "ProjetoFonteFinanciamento",
     "ProjetoAnexo",
     "PesquisadorProjeto",
     "SolicitacaoRH",
