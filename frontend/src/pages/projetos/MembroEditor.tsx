@@ -21,6 +21,7 @@ interface Props {
   projetoId?: number;
   projetoDataInicio?: string;
   projetoDataFim?: string;
+  fontesDisponiveis?: FonteFinanciamento[];
   onValorPreviewChange?: (valor: number | null) => void;
 }
 
@@ -46,6 +47,7 @@ export function MembroEditor({
   projetoId,
   projetoDataInicio,
   projetoDataFim,
+  fontesDisponiveis,
   onValorPreviewChange,
 }: Props) {
   const [preview, setPreview] = useState<PreviewState>({
@@ -151,6 +153,10 @@ export function MembroEditor({
 
   const validacao = preview.validacaoCh;
   const chInvalida = validacao && !validacao.valido;
+  const opcoesFonte =
+    fontesDisponiveis && fontesDisponiveis.length > 0
+      ? fontesDisponiveis
+      : Object.values(FonteFinanciamento);
 
   return (
     <div className="p-6 flex flex-col lg:flex-row gap-6 items-start lg:items-center">
@@ -207,7 +213,7 @@ export function MembroEditor({
               }
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-medium outline-none focus:border-slate-900"
             >
-              {Object.values(FonteFinanciamento).map((f) => (
+              {opcoesFonte.map((f) => (
                 <option key={f} value={f}>
                   {f}
                 </option>

@@ -25,6 +25,7 @@ from sqlalchemy.pool import StaticPool
 from app.models.base import Base
 from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.projeto import Projeto
+from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
 from app.models.usuario_perfil import Usuario
 from app.services.solicitacao_service import SolicitacaoService
 from app.services.versao_service import VersaoService
@@ -109,19 +110,27 @@ def projeto(db, coordenador):
         data_fim=hoje + timedelta(days=365),
     )
     db.add(projeto)
+    db.flush()
+    db.add(
+        ProjetoFonteFinanciamento(
+            projeto_id=projeto.id,
+            fonte=FonteFinanciamento.EMPRESA,
+            valor=1_000_000,
+        )
+    )
     db.commit()
     db.refresh(projeto)
     return projeto
 
 
-def incluir_membro(db, versao_id, ref, nome):
+def incluir_membro(db, versao_id, ref, nome, fonte=FonteFinanciamento.EMPRESA):
     """Cria um `PesquisadorProjeto` vinculado a uma versão de RH."""
     membro = PesquisadorProjeto(
         ref_pesquisador=ref,
         nome_pesquisador=nome,
         versao_rh_id=versao_id,
         categoria_bolsa=CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE,
-        fonte_financiamento=FonteFinanciamento.EMPRESA,
+        fonte_financiamento=fonte,
         carga_horaria_semanal=80,
         valor_bolsa=700,
         data_inicio=date.today(),
@@ -819,6 +828,172 @@ def test_membro_service_rejeita_atualizacao_com_data_inicio_fora_da_vigencia_do_
     assert "vigencia do projeto" in exc_info.value.detail
 
 
+def test_membro_service_rejeita_inclusao_quando_total_bolsas_excede_fontes(
+    db, projeto, coordenador
+):
+    """A soma das bolsas da proposta nao pode exceder o total das fontes do projeto."""
+    from fastapi import HTTPException
+
+    _criar_parametro_bolsa(db, CategoriaBolsa.PESQUISADOR_JUNIOR)
+    fonte = (
+        db.query(ProjetoFonteFinanciamento)
+        .filter(ProjetoFonteFinanciamento.projeto_id == projeto.id)
+        .first()
+    )
+    fonte.valor = 100
+    db.commit()
+
+    solicitacao_service = SolicitacaoService(db)
+    membro_service = MembroService(db)
+    solicitacao = solicitacao_service.criar_implantacao(
+        SolicitacaoImplantacaoCreate(
+            projeto_id=projeto.id,
+            identificador="IMPL-ORC-001",
+        ),
+        coordenador,
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        membro_service.incluir(
+            solicitacao.id,
+            MembroCreate(
+                ref_pesquisador="PESQ-ORC-001",
+                nome_pesquisador="Pesquisador Orcamento",
+                categoria_bolsa=CategoriaBolsa.PESQUISADOR_JUNIOR,
+                fonte_financiamento=FonteFinanciamento.EMPRESA,
+                carga_horaria_semanal=20,
+                data_inicio=projeto.data_inicio,
+            ),
+            coordenador,
+        )
+    assert exc_info.value.status_code == 400
+    assert "excede o total das fontes" in exc_info.value.detail
+
+
+def test_membro_service_rejeita_inclusao_quando_total_bolsas_excede_fonte_especifica(
+    db, projeto, coordenador
+):
+    """A soma das bolsas tambem deve respeitar o orcamento individual da fonte."""
+    from fastapi import HTTPException
+
+    _criar_parametro_bolsa(db, CategoriaBolsa.PESQUISADOR_JUNIOR)
+    db.add(
+        ProjetoFonteFinanciamento(
+            projeto_id=projeto.id,
+            fonte=FonteFinanciamento.SEBRAE,
+            valor=100,
+        )
+    )
+    db.commit()
+
+    solicitacao_service = SolicitacaoService(db)
+    membro_service = MembroService(db)
+    solicitacao = solicitacao_service.criar_implantacao(
+        SolicitacaoImplantacaoCreate(
+            projeto_id=projeto.id,
+            identificador="IMPL-ORC-FONTE-001",
+        ),
+        coordenador,
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        membro_service.incluir(
+            solicitacao.id,
+            MembroCreate(
+                ref_pesquisador="PESQ-ORC-FONTE-001",
+                nome_pesquisador="Pesquisador Orcamento Fonte",
+                categoria_bolsa=CategoriaBolsa.PESQUISADOR_JUNIOR,
+                fonte_financiamento=FonteFinanciamento.SEBRAE,
+                carga_horaria_semanal=20,
+                data_inicio=projeto.data_inicio,
+            ),
+            coordenador,
+        )
+    assert exc_info.value.status_code == 400
+    assert "fonte SEBRAE" in exc_info.value.detail
+    assert "excede o orçamento desta fonte" in exc_info.value.detail
+
+
+def test_submeter_rejeita_proposta_quando_total_bolsas_excede_fontes(
+    db, projeto, coordenador
+):
+    """Submissao tambem valida orcamento como barreira final."""
+    from fastapi import HTTPException
+    from app.models.versao_rh_projeto import VersaoRHProjeto
+
+    fonte = (
+        db.query(ProjetoFonteFinanciamento)
+        .filter(ProjetoFonteFinanciamento.projeto_id == projeto.id)
+        .first()
+    )
+    fonte.valor = 100
+    db.commit()
+
+    solicitacao_service = SolicitacaoService(db)
+    solicitacao = solicitacao_service.criar_implantacao(
+        SolicitacaoImplantacaoCreate(
+            projeto_id=projeto.id,
+            identificador="IMPL-ORC-002",
+        ),
+        coordenador,
+    )
+    versao_proposta = (
+        db.query(VersaoRHProjeto)
+        .filter_by(projeto_id=projeto.id, status=StatusVersaoRH.PROPOSTA)
+        .first()
+    )
+    incluir_membro(db, versao_proposta.id, "PESQ-ORC-002", "Pesquisador Orcamento")
+
+    with pytest.raises(HTTPException) as exc_info:
+        solicitacao_service.submeter(solicitacao.id, coordenador)
+    assert exc_info.value.status_code == 400
+    assert "excede o total das fontes" in exc_info.value.detail
+
+
+def test_submeter_rejeita_proposta_quando_total_bolsas_excede_fonte_especifica(
+    db, projeto, coordenador
+):
+    """Submissao valida tambem o limite individual de cada fonte."""
+    from fastapi import HTTPException
+    from app.models.versao_rh_projeto import VersaoRHProjeto
+
+    db.add(
+        ProjetoFonteFinanciamento(
+            projeto_id=projeto.id,
+            fonte=FonteFinanciamento.SEBRAE,
+            valor=100,
+        )
+    )
+    db.commit()
+
+    solicitacao_service = SolicitacaoService(db)
+    solicitacao = solicitacao_service.criar_implantacao(
+        SolicitacaoImplantacaoCreate(
+            projeto_id=projeto.id,
+            identificador="IMPL-ORC-FONTE-002",
+        ),
+        coordenador,
+    )
+    versao_proposta = (
+        db.query(VersaoRHProjeto)
+        .filter_by(projeto_id=projeto.id, status=StatusVersaoRH.PROPOSTA)
+        .first()
+    )
+    incluir_membro(
+        db,
+        versao_proposta.id,
+        "PESQ-ORC-FONTE-002",
+        "Pesquisador Orcamento Fonte",
+        FonteFinanciamento.SEBRAE,
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        solicitacao_service.submeter(solicitacao.id, coordenador)
+    assert exc_info.value.status_code == 400
+    assert "fonte SEBRAE" in exc_info.value.detail
+    assert "excede o orçamento desta fonte" in exc_info.value.detail
+
+
 def test_backend_rejeita_campos_extras_em_membro_create_e_update(
     db, projeto, coordenador, gestor
 ):
@@ -898,6 +1073,14 @@ def _criar_usuario_e_projeto_via_api(client, db_session, perfil=PerfilUsuario.CO
             data_fim=hoje + timedelta(days=365),
         )
         db_session.add(proj)
+        db_session.flush()
+        db_session.add(
+            ProjetoFonteFinanciamento(
+                projeto_id=proj.id,
+                fonte=FonteFinanciamento.EMPRESA,
+                valor=1_000_000,
+            )
+        )
         db_session.commit()
         db_session.refresh(proj)
     else:

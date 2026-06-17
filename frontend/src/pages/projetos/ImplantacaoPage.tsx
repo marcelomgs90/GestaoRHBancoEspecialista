@@ -29,6 +29,13 @@ const CANDIDATOS_MOCK = [
 
 // Tipo de membro em edição na tela (antes de enviar ao backend)
 // backendId presente = já persistido; ausente = novo (ainda não enviado)
+const formatCurrencyBRL = (value: number) =>
+  value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+  });
+
 type MembroLocal = MembroLocalProps & { backendId?: number };
 
 interface HistoryLog {
@@ -55,6 +62,7 @@ export default function ImplantacaoPage() {
   const [modalErro, setModalErro] = useState<string | null>(null);
   const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
   const [buscandoEspecialistas, setBuscandoEspecialistas] = useState(false);
+  const [valorPreviewPorTempId, setValorPreviewPorTempId] = useState<Record<string, number | null>>({});
 
   const projetoId = Number(id_projeto);
 
@@ -130,7 +138,8 @@ export default function ImplantacaoPage() {
       ref_pesquisador: ref,
       nome_pesquisador: nome,
       categoria_bolsa: categoria,
-      fonte_financiamento: FonteFinanciamento.EMPRESA,
+      fonte_financiamento:
+        projeto?.fontes_financiamento[0]?.fonte ?? FonteFinanciamento.EMPRESA,
       carga_horaria_semanal: 20,
       data_inicio: projeto?.data_inicio ?? '',
       data_fim: projeto?.data_fim,
@@ -145,12 +154,24 @@ export default function ImplantacaoPage() {
     const m = membros.find((x) => x._tempId === tempId);
     if (m) log('REMOVE', m.nome_pesquisador, 'Removido da lista');
     setMembros((prev) => prev.filter((x) => x._tempId !== tempId));
+    setValorPreviewPorTempId((prev) => {
+      const prox = { ...prev };
+      delete prox[tempId];
+      return prox;
+    });
   };
 
   const updateMembro = (tempId: string, changes: Partial<MembroLocalProps>) => {
     setMembros((prev) =>
       prev.map((m) => (m._tempId === tempId ? { ...m, ...changes } : m)),
     );
+  };
+
+  const updateValorPreview = (tempId: string, valor: number | null) => {
+    setValorPreviewPorTempId((prev) => {
+      if (prev[tempId] === valor) return prev;
+      return { ...prev, [tempId]: valor };
+    });
   };
 
   const handleFinalizar = async () => {
@@ -193,6 +214,18 @@ export default function ImplantacaoPage() {
     c.nome.toLowerCase().includes(searchTerm.toLowerCase()),
   );
   // Especialistas já vêm filtrados da API pelo useEffect
+
+  const totalFontes = (projeto?.fontes_financiamento ?? []).reduce(
+    (acc, fonte) => acc + Number(fonte.valor),
+    0,
+  );
+  const totalBolsas = membros.reduce(
+    (acc, membro) => acc + (valorPreviewPorTempId[membro._tempId] ?? membro.valor_bolsa ?? 0),
+    0,
+  );
+  const saldoFontes = totalFontes - totalBolsas;
+  const excedeOrcamento = totalBolsas > totalFontes;
+  const fontesDoProjeto = (projeto?.fontes_financiamento ?? []).map((fonte) => fonte.fonte);
 
   return (
     <div className="space-y-8 animate-in slide-in-up">
@@ -280,6 +313,8 @@ export default function ImplantacaoPage() {
                 projetoId={projetoId}
                 projetoDataInicio={projeto?.data_inicio}
                 projetoDataFim={projeto?.data_fim}
+                fontesDisponiveis={fontesDoProjeto}
+                onValorPreviewChange={(valor) => updateValorPreview(m._tempId, valor)}
               />
             </motion.div>
           ))}
@@ -341,9 +376,37 @@ export default function ImplantacaoPage() {
           </p>
           <p className="text-2xl font-bold text-slate-900">{membros.length}</p>
         </div>
+        <div
+          className={cn(
+            'flex-1 mx-8 rounded-lg border px-4 py-3',
+            excedeOrcamento
+              ? 'bg-red-50 border-red-200 text-red-800'
+              : 'bg-white border-slate-200 text-slate-700',
+          )}
+        >
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest">Fontes</p>
+              <p className="text-sm font-bold">{formatCurrencyBRL(totalFontes)}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest">Bolsas</p>
+              <p className="text-sm font-bold">{formatCurrencyBRL(totalBolsas)}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest">Saldo</p>
+              <p className="text-sm font-bold">{formatCurrencyBRL(saldoFontes)}</p>
+            </div>
+          </div>
+          {excedeOrcamento && (
+            <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest">
+              Total de bolsas excede o orçamento das fontes do projeto
+            </p>
+          )}
+        </div>
         <button
           onClick={handleFinalizar}
-          disabled={membros.length === 0 || finalizando}
+          disabled={membros.length === 0 || finalizando || excedeOrcamento}
           className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 disabled:grayscale shadow-sm active:scale-95 cursor-pointer"
         >
           {finalizando ? (

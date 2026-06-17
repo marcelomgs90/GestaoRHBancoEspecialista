@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.projeto import Projeto
+from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.usuario_perfil import Usuario
 from app.models.versao_rh_projeto import VersaoRHProjeto
@@ -216,6 +217,7 @@ class SolicitacaoService:
 
         projeto = self._buscar_projeto(solicitacao.projeto_id)
         self._verificar_permissao_edicao(projeto, current_user)
+        self._validar_orcamento_fontes(solicitacao)
 
         solicitacao.status = StatusSolicitacao.SUBMETIDA
 
@@ -318,6 +320,59 @@ class SolicitacaoService:
             "depois": depois,
             "diferencas": {"inclusoes": inclusoes, "alteracoes": alteracoes, "encerramentos": encerramentos},
         }
+
+    def _validar_orcamento_fontes(self, solicitacao: SolicitacaoRH) -> None:
+        versao = (
+            self.db.query(VersaoRHProjeto)
+            .filter(VersaoRHProjeto.solicitacao_id == solicitacao.id)
+            .first()
+        )
+        if not versao:
+            return
+
+        fontes = (
+            self.db.query(ProjetoFonteFinanciamento)
+            .filter(ProjetoFonteFinanciamento.projeto_id == solicitacao.projeto_id)
+            .all()
+        )
+        orcamento_por_fonte = {fonte.fonte: fonte.valor for fonte in fontes}
+        total_fontes = sum((fonte.valor for fonte in fontes), Decimal("0"))
+
+        total_por_fonte = {}
+        membros = (
+            self.db.query(PesquisadorProjeto)
+            .filter(PesquisadorProjeto.versao_rh_id == versao.id)
+            .all()
+        )
+        for membro in membros:
+            total_por_fonte[membro.fonte_financiamento] = (
+                total_por_fonte.get(membro.fonte_financiamento, Decimal("0"))
+                + membro.valor_bolsa
+            )
+
+        total_bolsas = sum(total_por_fonte.values(), Decimal("0"))
+
+        if total_bolsas > total_fontes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Total de bolsas da equipe "
+                    f"(R$ {total_bolsas:.2f}) excede o total das fontes de financiamento "
+                    f"do projeto (R$ {total_fontes:.2f})"
+                ),
+            )
+
+        for fonte, total in total_por_fonte.items():
+            orcamento = orcamento_por_fonte.get(fonte, Decimal("0"))
+            if total > orcamento:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"Total de bolsas da fonte {fonte.value} "
+                        f"(R$ {total:.2f}) excede o orçamento desta fonte "
+                        f"no projeto (R$ {orcamento:.2f})"
+                    ),
+                )
 
     def _agrupar_por_fonte(self, membros: List[PesquisadorProjeto]) -> Dict[str, List]:
         grupos: Dict[str, List] = {}
