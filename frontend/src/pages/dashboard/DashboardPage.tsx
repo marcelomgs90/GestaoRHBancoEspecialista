@@ -45,12 +45,12 @@ const budgetData = [
 
 // TODO: substituir por endpoint de relatórios
 const chartData = [
-  { month: 'Jan', Empresa: 45000, Embrapii: 60000, IFPB: 30000, Sebrae: 15000 },
-  { month: 'Fev', Empresa: 52000, Embrapii: 55000, IFPB: 25000, Sebrae: 18000 },
-  { month: 'Mar', Empresa: 48000, Embrapii: 70000, IFPB: 35000, Sebrae: 12000 },
-  { month: 'Abr', Empresa: 61000, Embrapii: 65000, IFPB: 28000, Sebrae: 21000 },
-  { month: 'Mai', Empresa: 55000, Embrapii: 58000, IFPB: 32000, Sebrae: 16000 },
-  { month: 'Jun', Empresa: 68000, Embrapii: 72000, IFPB: 40000, Sebrae: 24000 },
+  { month: 'Jan', Empresa: 45000, Embrapii: 60000, Sebrae: 15000 },
+  { month: 'Fev', Empresa: 52000, Embrapii: 55000, Sebrae: 18000 },
+  { month: 'Mar', Empresa: 48000, Embrapii: 70000, Sebrae: 12000 },
+  { month: 'Abr', Empresa: 61000, Embrapii: 65000, Sebrae: 21000 },
+  { month: 'Mai', Empresa: 55000, Embrapii: 58000, Sebrae: 16000 },
+  { month: 'Jun', Empresa: 68000, Embrapii: 72000, Sebrae: 24000 },
 ];
 
 export default function DashboardPage() {
@@ -208,7 +208,6 @@ export default function DashboardPage() {
                 />
                 <Bar dataKey="Empresa" stackId="a" fill="#0f172a" />
                 <Bar dataKey="Embrapii" stackId="a" fill="#1e40af" />
-                <Bar dataKey="IFPB" stackId="a" fill="#475569" />
                 <Bar dataKey="Sebrae" stackId="a" fill="#94a3b8" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

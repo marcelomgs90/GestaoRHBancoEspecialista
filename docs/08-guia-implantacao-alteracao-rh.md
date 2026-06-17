@@ -191,7 +191,7 @@ As seções do PDF são sempre agrupadas por fonte, na ordem fixa:
 2. **RH EMBRAPII**
 3. **RH SEBRAE**
 
-**Nota:** A fonte **IFPB** não apareceu nos exemplos analisados, mas está prevista na especificação do sistema.
+**Nota:** a fonte pagadora IFPB foi removida do escopo do sistema.
 
 ---
 
@@ -316,7 +316,7 @@ Os exemplos analisados mostram a evolução real de um único projeto:
 - Formatação de moeda brasileira (R$ X.XXX,XX)
 - Datas no formato DD/MM/AAAA
 - Quebra de página quando a tabela excede a página
-- Ordem fixa das fontes: EMPRESA, EMBRAPII, SEBRAE (, IFPB)
+- Ordem fixa das fontes: EMPRESA, EMBRAPII, SEBRAE
 
 ### 10.2 Dados Necessários para Gerar o PDF
 

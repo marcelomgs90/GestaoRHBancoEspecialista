@@ -59,7 +59,7 @@
 ### Funcionalidades
 
 - **Consulta/Relatório da Equipe Alocada por Projeto**
-  - Visualização por fonte de financiamento (EMBRAPII, EMPRESA, SEBRAE, IFPB)
+  - Visualização por fonte de financiamento (EMBRAPII, EMPRESA, SEBRAE)
   - Dados: pesquisador, fonte, carga horária, valor da bolsa, período de atuação, situação
 
 - **Visão Consolidada da Alocação por Fonte**

@@ -183,12 +183,12 @@ Fase 4: Evidências                [US-AQ-04]                      ── pós-i
 **Feature:** F-MO-02 - Visão consolidada por fonte de financiamento
 **Prioridade:** Normal
 
-**Descrição:** Como gestor do Polo, quero visualizar a distribuição por fonte de financiamento para acompanhar EMBRAPII, EMPRESA, SEBRAE e IFPB.
+**Descrição:** Como gestor do Polo, quero visualizar a distribuição por fonte de financiamento para acompanhar EMBRAPII, EMPRESA e SEBRAE.
 
 **BDD:** DADO que existam vínculos com fontes cadastradas, QUANDO abrir a visão consolidada, ENTAO o sistema deve apresentar totais separados por fonte.
 
 **Critérios de Aceitação:**
-- CA-01: A visão deve separar fontes EMBRAPII, EMPRESA, SEBRAE e IFPB
+- CA-01: A visão deve separar fontes EMBRAPII, EMPRESA e SEBRAE
 - CA-02: O sistema deve apresentar totais por fonte (CH total, valor total, qtd pesquisadores)
 - CA-03: A consulta deve considerar apenas vínculos ativos ou vigentes no filtro
 

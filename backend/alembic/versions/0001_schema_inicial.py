@@ -27,7 +27,7 @@ def upgrade() -> None:
     # Cria os tipos ENUM com DO block — idempotente independente de versão de biblioteca
     enums = [
         ("perfilusuario",       ["ADMINISTRADOR", "COORDENADOR", "GESTOR_POLO", "APOIO_COORDENADOR"]),
-        ("fontefinanciamento",  ["EMBRAPII", "EMPRESA", "SEBRAE", "IFPB"]),
+        ("fontefinanciamento",  ["EMBRAPII", "EMPRESA", "SEBRAE"]),
         ("tiposolicitacao",     ["IMPLANTACAO", "ALTERACAO", "PAGAMENTO"]),
         ("statussolicitacao",   ["EM_EDICAO", "SUBMETIDA", "APROVADA", "REJEITADA"]),
         ("statusversaorh",      ["PROPOSTA", "VIGENTE", "HISTORICO"]),

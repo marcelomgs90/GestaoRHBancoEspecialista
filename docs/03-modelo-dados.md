@@ -118,7 +118,7 @@ Registra a participação (vínculo) de pesquisadores nos projetos. Permite que 
 | ref_vinculacao | INT (PK) | Identificador único |
 | projeto_id | INT (FK) | FK para Projeto |
 | pesquisador_id | INT (FK) | FK para Pesquisador (AIE) |
-| fonte_financiamento | VARCHAR(20) | EMBRAPII, EMPRESA, SEBRAE, IFPB |
+| fonte_financiamento | VARCHAR(20) | EMBRAPII, EMPRESA, SEBRAE |
 | carga_horaria_semanal | INT | Horas por semana |
 | valor_bolsa | DECIMAL(10,2) | Valor calculado da bolsa |
 | categoria_bolsa | VARCHAR(50) | Referência à categoria de Parametro_Regra |

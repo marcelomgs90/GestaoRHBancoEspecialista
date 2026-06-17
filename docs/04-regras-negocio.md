@@ -31,14 +31,13 @@ O sistema deve codificar as regras da Resolução 11/2022 do IFPB para impedir f
 
 ## 2. Fontes de Financiamento
 
-O sistema deve controlar a alocação de pesquisadores por 4 fontes de financiamento:
+O sistema deve controlar a alocação de pesquisadores por 3 fontes de financiamento:
 
 | Fonte | Sigla |
 |-------|-------|
 | EMBRAPII | EMBRAPII |
 | EMPRESA | EMPRESA |
 | SEBRAE | SEBRAE |
-| IFPB | IFPB |
 
 - Cada pesquisador em um projeto deve estar vinculado a exatamente uma fonte
 - O sistema deve fornecer visão consolidada por fonte (somatório de CH, somatório financeiro, percentual)

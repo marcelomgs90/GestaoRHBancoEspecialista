@@ -18,7 +18,7 @@ A gestão atual é descentralizada e manual, gerando:
 1. **Riscos Financeiros e de Auditoria**: erros em cálculos manuais de bolsas proporcionais à carga horária e categorias (Resolução 11/2022) podem levar a reprovações de prestação de contas
 2. **Burocracia Excessiva em Alterações**: solicitações de mudanças na equipe exigem levantamentos manuais do histórico ("Antes") para comparação com o proposto ("Depois"), sem fonte única de verdade
 3. **Dificuldade de Parametrização Temporal**: alterações nas tabelas de valores de bolsas não são refletidas retroativamente, gerando confusão no cálculo de projetos antigos sem controle de vigência histórica
-4. **Inexistência de Visão por Fonte**: falta de clareza sobre distribuição da equipe entre as fontes EMBRAPII, EMPRESA, SEBRAE e IFPB
+4. **Inexistência de Visão por Fonte**: falta de clareza sobre distribuição da equipe entre as fontes EMBRAPII, EMPRESA e SEBRAE
 
 ## Objetivo
 
