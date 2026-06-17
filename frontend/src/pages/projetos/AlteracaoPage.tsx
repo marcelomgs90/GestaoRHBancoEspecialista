@@ -652,6 +652,8 @@ export default function AlteracaoPage() {
                 onChange={(changes) => updateMembro(m._tempId, changes)}
                 onRemove={() => removeMembro(m._tempId)}
                 projetoId={projetoId}
+                projetoDataInicio={projeto?.data_inicio}
+                projetoDataFim={projeto?.data_fim}
                 onValorPreviewChange={(valor) => updateValorPreview(m._tempId, valor)}
               />
             </motion.div>

@@ -30,7 +30,7 @@ from app.services.solicitacao_service import SolicitacaoService
 from app.services.versao_service import VersaoService
 from app.services.membro_service import MembroService
 from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoImplantacaoCreate
-from app.schemas.membro import MembroCreate
+from app.schemas.membro import MembroCreate, MembroUpdate
 from app.utils.enums import (
     CategoriaBolsa,
     FonteFinanciamento,
@@ -734,6 +734,89 @@ def test_backend_rejeita_fonte_pagadora_ifpb():
             data_inicio=date.today(),
             data_fim=date.today() + timedelta(days=30),
         )
+
+
+def test_membro_service_rejeita_inclusao_com_data_inicio_fora_da_vigencia_do_projeto(
+    db, projeto, coordenador
+):
+    """Inclusao deve respeitar data_inicio <= membro.data_inicio <= data_fim do projeto."""
+    from fastapi import HTTPException
+
+    solicitacao_service = SolicitacaoService(db)
+    membro_service = MembroService(db)
+    solicitacao = solicitacao_service.criar_implantacao(
+        SolicitacaoImplantacaoCreate(
+            projeto_id=projeto.id,
+            identificador="IMPL-DATA-001",
+        ),
+        coordenador,
+    )
+
+    dados_base = {
+        "ref_pesquisador": "PESQ-DATA-001",
+        "nome_pesquisador": "Pesquisador Data",
+        "categoria_bolsa": CategoriaBolsa.ESTUDANTE_SUPERIOR_INICIANTE,
+        "fonte_financiamento": FonteFinanciamento.EMPRESA,
+        "carga_horaria_semanal": 20,
+    }
+
+    with pytest.raises(HTTPException) as exc_info:
+        membro_service.incluir(
+            solicitacao.id,
+            MembroCreate(
+                **dados_base,
+                data_inicio=projeto.data_inicio - timedelta(days=1),
+            ),
+            coordenador,
+        )
+    assert exc_info.value.status_code == 400
+    assert "vigencia do projeto" in exc_info.value.detail
+
+    with pytest.raises(HTTPException) as exc_info:
+        membro_service.incluir(
+            solicitacao.id,
+            MembroCreate(
+                **{**dados_base, "ref_pesquisador": "PESQ-DATA-002"},
+                data_inicio=projeto.data_fim + timedelta(days=1),
+            ),
+            coordenador,
+        )
+    assert exc_info.value.status_code == 400
+    assert "vigencia do projeto" in exc_info.value.detail
+
+
+def test_membro_service_rejeita_atualizacao_com_data_inicio_fora_da_vigencia_do_projeto(
+    db, projeto, coordenador
+):
+    """Alteracao de membro tambem deve manter a data de inicio dentro da vigencia."""
+    from fastapi import HTTPException
+    from app.models.versao_rh_projeto import VersaoRHProjeto
+
+    solicitacao_service = SolicitacaoService(db)
+    membro_service = MembroService(db)
+    solicitacao = solicitacao_service.criar_implantacao(
+        SolicitacaoImplantacaoCreate(
+            projeto_id=projeto.id,
+            identificador="IMPL-DATA-002",
+        ),
+        coordenador,
+    )
+    versao_proposta = (
+        db.query(VersaoRHProjeto)
+        .filter_by(projeto_id=projeto.id, status=StatusVersaoRH.PROPOSTA)
+        .first()
+    )
+    membro = incluir_membro(db, versao_proposta.id, "PESQ-DATA-003", "Pesquisador Data")
+
+    with pytest.raises(HTTPException) as exc_info:
+        membro_service.atualizar(
+            solicitacao.id,
+            membro.id,
+            MembroUpdate(data_inicio=projeto.data_fim + timedelta(days=1)),
+            coordenador,
+        )
+    assert exc_info.value.status_code == 400
+    assert "vigencia do projeto" in exc_info.value.detail
 
 
 def test_backend_rejeita_campos_extras_em_membro_create_e_update(

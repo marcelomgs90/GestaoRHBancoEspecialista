@@ -23,6 +23,10 @@ class MembroService:
     ) -> PesquisadorProjeto:
         solicitacao = self._buscar_solicitacao_editavel(solicitacao_id, current_user)
         versao = self._buscar_versao(solicitacao.id)
+        self._validar_data_inicio_no_periodo_do_projeto(
+            solicitacao.projeto_id,
+            dados.data_inicio,
+        )
 
         existente = (
             self.db.query(PesquisadorProjeto)
@@ -96,6 +100,12 @@ class MembroService:
         campos_alterados = dados.model_dump(exclude_unset=True)
         for field, value in campos_alterados.items():
             setattr(membro, field, value)
+
+        if "data_inicio" in campos_alterados:
+            self._validar_data_inicio_no_periodo_do_projeto(
+                solicitacao.projeto_id,
+                membro.data_inicio,
+            )
 
         if campos_alterados.keys() & {"carga_horaria_semanal", "data_inicio", "data_fim"}:
             self.parametros.validar_carga_horaria_global(
@@ -193,6 +203,27 @@ class MembroService:
                 detail="Solicitacao nao possui versao de RH associada",
             )
         return versao
+
+    def _validar_data_inicio_no_periodo_do_projeto(
+        self,
+        projeto_id: int,
+        data_inicio_membro,
+    ) -> None:
+        projeto = self.db.query(Projeto).filter(Projeto.id == projeto_id).first()
+        if not projeto:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Projeto nao encontrado",
+            )
+
+        if data_inicio_membro < projeto.data_inicio or data_inicio_membro > projeto.data_fim:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Data de inicio do membro deve estar dentro da vigencia do projeto "
+                    f"({projeto.data_inicio.isoformat()} a {projeto.data_fim.isoformat()})"
+                ),
+            )
 
     def _buscar_membro_da_solicitacao(
         self, solicitacao_id: int, membro_id: int

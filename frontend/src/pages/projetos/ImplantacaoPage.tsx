@@ -180,8 +180,9 @@ export default function ImplantacaoPage() {
       // Submete a solicitação: EM_EDICAO → SUBMETIDA e PROPOSTA → VIGENTE
       await solicitacaoService.submeter(id);
       setShowSuccessModal(true);
-    } catch {
-      setErro('Erro ao finalizar solicitação. Tente novamente.');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      setErro(e?.response?.data?.detail ?? 'Erro ao finalizar solicitação. Tente novamente.');
     } finally {
       setFinalizando(false);
     }
@@ -277,6 +278,8 @@ export default function ImplantacaoPage() {
                 onChange={(changes) => updateMembro(m._tempId, changes)}
                 onRemove={() => removeMembro(m._tempId)}
                 projetoId={projetoId}
+                projetoDataInicio={projeto?.data_inicio}
+                projetoDataFim={projeto?.data_fim}
               />
             </motion.div>
           ))}

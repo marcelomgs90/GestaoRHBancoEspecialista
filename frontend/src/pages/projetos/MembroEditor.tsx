@@ -19,6 +19,8 @@ interface Props {
   onChange: (changes: Partial<MembroLocalProps>) => void;
   onRemove: () => void;
   projetoId?: number;
+  projetoDataInicio?: string;
+  projetoDataFim?: string;
   onValorPreviewChange?: (valor: number | null) => void;
 }
 
@@ -37,7 +39,15 @@ interface PreviewState {
 
 const DEBOUNCE_MS = 400;
 
-export function MembroEditor({ membro, onChange, onRemove, projetoId, onValorPreviewChange }: Props) {
+export function MembroEditor({
+  membro,
+  onChange,
+  onRemove,
+  projetoId,
+  projetoDataInicio,
+  projetoDataFim,
+  onValorPreviewChange,
+}: Props) {
   const [preview, setPreview] = useState<PreviewState>({
     valorBolsa: null,
     validacaoCh: null,
@@ -231,6 +241,8 @@ export function MembroEditor({ membro, onChange, onRemove, projetoId, onValorPre
             <input
               type="date"
               value={membro.data_inicio}
+              min={projetoDataInicio}
+              max={projetoDataFim}
               onChange={(e) => onChange({ data_inicio: e.target.value })}
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-bold outline-none focus:border-slate-900"
             />
