@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import List, Union
 
 from fastapi import HTTPException, status
@@ -5,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.projeto import Projeto
+from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.usuario_perfil import Usuario
 from app.models.versao_rh_projeto import VersaoRHProjeto
@@ -53,6 +55,12 @@ class MembroService:
             categoria=dados.categoria_bolsa,
             ch_semanal=dados.carga_horaria_semanal,
             data_referencia=dados.data_inicio,
+        )
+        self._validar_orcamento_fontes(
+            projeto_id=solicitacao.projeto_id,
+            versao_id=versao.id,
+            valor_membro=valor_bolsa,
+            fonte_membro=dados.fonte_financiamento,
         )
 
         membro = PesquisadorProjeto(
@@ -123,6 +131,14 @@ class MembroService:
                 ch_semanal=membro.carga_horaria_semanal,
                 data_referencia=membro.data_inicio,
             )
+
+        self._validar_orcamento_fontes(
+            projeto_id=solicitacao.projeto_id,
+            versao_id=membro.versao_rh_id,
+            valor_membro=membro.valor_bolsa,
+            fonte_membro=membro.fonte_financiamento,
+            membro_id=membro.id,
+        )
 
         self.db.commit()
         self.db.refresh(membro)
@@ -224,6 +240,66 @@ class MembroService:
                     f"({projeto.data_inicio.isoformat()} a {projeto.data_fim.isoformat()})"
                 ),
             )
+
+    def _validar_orcamento_fontes(
+        self,
+        projeto_id: int,
+        versao_id: int,
+        valor_membro,
+        fonte_membro,
+        membro_id: int | None = None,
+    ) -> None:
+        fontes = (
+            self.db.query(ProjetoFonteFinanciamento)
+            .filter(ProjetoFonteFinanciamento.projeto_id == projeto_id)
+            .all()
+        )
+        orcamento_por_fonte = {fonte.fonte: fonte.valor for fonte in fontes}
+        total_fontes = sum((fonte.valor for fonte in fontes), Decimal("0"))
+
+        total_por_fonte = {}
+        membros = (
+            self.db.query(PesquisadorProjeto)
+            .filter(PesquisadorProjeto.versao_rh_id == versao_id)
+            .all()
+        )
+        for membro in membros:
+            if membro_id is not None and membro.id == membro_id:
+                continue
+            total_por_fonte[membro.fonte_financiamento] = (
+                total_por_fonte.get(membro.fonte_financiamento, Decimal("0"))
+                + membro.valor_bolsa
+            )
+        total_por_fonte[fonte_membro] = (
+            total_por_fonte.get(fonte_membro, Decimal("0")) + Decimal(valor_membro)
+        )
+
+        total_bolsas = sum(
+            total_por_fonte.values(),
+            Decimal("0"),
+        )
+
+        if total_bolsas > total_fontes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Total de bolsas da equipe "
+                    f"(R$ {total_bolsas:.2f}) excede o total das fontes de financiamento "
+                    f"do projeto (R$ {total_fontes:.2f})"
+                ),
+            )
+
+        for fonte, total in total_por_fonte.items():
+            orcamento = orcamento_por_fonte.get(fonte, Decimal("0"))
+            if total > orcamento:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"Total de bolsas da fonte {fonte.value} "
+                        f"(R$ {total:.2f}) excede o orçamento desta fonte "
+                        f"no projeto (R$ {orcamento:.2f})"
+                    ),
+                )
 
     def _buscar_membro_da_solicitacao(
         self, solicitacao_id: int, membro_id: int

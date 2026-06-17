@@ -194,6 +194,12 @@ export default function AlteracaoPage() {
       setModalErro(`O pesquisador ${nome} já está na equipe proposta`);
       return;
     }
+    setRefsRemovidos((s) => {
+      if (!s.has(ref)) return s;
+      const prox = new Set(s);
+      prox.delete(ref);
+      return prox;
+    });
     setEquipeProposta((prev) => [
       ...prev,
       {
@@ -201,7 +207,8 @@ export default function AlteracaoPage() {
         ref_pesquisador: ref,
         nome_pesquisador: nome,
         categoria_bolsa: categoria,
-        fonte_financiamento: FonteFinanciamento.EMPRESA,
+        fonte_financiamento:
+          projeto?.fontes_financiamento[0]?.fonte ?? FonteFinanciamento.EMPRESA,
         carga_horaria_semanal: 20,
         data_inicio: projeto?.data_inicio ?? '',
         data_fim: projeto?.data_fim,
@@ -249,6 +256,13 @@ export default function AlteracaoPage() {
 
   const totalEquipeAtual = equipeAtual.reduce((acc, m) => acc + Number(m.valor_bolsa), 0);
   const totalEquipeProposta = equipeProposta.reduce((acc, m) => acc + valorMembro(m), 0);
+  const totalFontes = (projeto?.fontes_financiamento ?? []).reduce(
+    (acc, fonte) => acc + Number(fonte.valor),
+    0,
+  );
+  const saldoFontes = totalFontes - totalEquipeProposta;
+  const excedeOrcamento = totalEquipeProposta > totalFontes;
+  const fontesDoProjeto = (projeto?.fontes_financiamento ?? []).map((fonte) => fonte.fonte);
 
   /**
    * Garante que a solicitação existe e retorna o estado consistente dos clones.
@@ -330,9 +344,44 @@ export default function AlteracaoPage() {
     mapaRefParaIdClonado: Map<string, number>,
     estadoOriginalClones: Map<number, Membro>,
   ) => {
+    const membrosNormalizados = membros.map((m) => {
+      if (m.id) return m;
+      const cloneId = mapaRefParaIdClonado.get(m.ref_pesquisador);
+      return cloneId ? { ...m, id: cloneId, _tempId: `existente-${cloneId}` } : m;
+    });
+
+    const refsNaProposta = new Set(membrosNormalizados.map((m) => m.ref_pesquisador));
+    const encerramentosFalhos: string[] = [];
+    for (const ref of refsARemover) {
+      if (!refsNaProposta.has(ref)) {
+        const idClonado = mapaRefParaIdClonado.get(ref);
+        if (!idClonado) continue;
+        try {
+          await solicitacaoService.encerrarMembro(
+            id_solicitacao,
+            idClonado,
+            'Encerrado na alteracao',
+          );
+        } catch (err) {
+          const e = err as { response?: { status?: number; data?: { detail?: string } } };
+          if (e?.response?.status === 400 || e?.response?.status === 404) {
+            encerramentosFalhos.push(ref);
+          } else {
+            throw err;
+          }
+        }
+      }
+    }
+    if (encerramentosFalhos.length > 0) {
+      throw new Error(
+        `A solicitacao nao esta mais em edicao ou os membros ja foram removidos. ` +
+          `Reabra como nova alteracao para encerrar ${encerramentosFalhos.length} membro(s).`,
+      );
+    }
+
     // 1) Inclusões (membros novos, sem id do clone).
     //    Payload alinhado com o schema `MembroCreate` do backend.
-    for (const m of membros.filter((x) => !x.id)) {
+    for (const m of membrosNormalizados.filter((x) => !x.id)) {
       const dadosCreate = {
         ref_pesquisador: m.ref_pesquisador,
         nome_pesquisador: m.nome_pesquisador,
@@ -352,7 +401,7 @@ export default function AlteracaoPage() {
     //    campo extra como `ref_pesquisador`, `nome_pesquisador`, `id` ou
     //    `valor_bolsa` — o `valor_bolsa` é sempre recalculado a partir de
     //    `categoria_bolsa`/`carga_horaria_semanal`/`data_inicio`.
-    for (const m of membros.filter((x) => !!x.id)) {
+    for (const m of membrosNormalizados.filter((x) => !!x.id)) {
       const clone = estadoOriginalClones.get(m.id!);
       if (!clone) continue;
       if (membroMudou(m, clone)) {
@@ -373,37 +422,6 @@ export default function AlteracaoPage() {
       }
     }
 
-    // 3) Encerramentos: usar o id do CLONE (não o da VIGENTE).
-    //    Cruza refs_pesquisador (estável) → id do clone na PROPOSTA.
-    const refsNaProposta = new Set(membros.map((m) => m.ref_pesquisador));
-    const encerramentosFalhos: string[] = [];
-    for (const ref of refsARemover) {
-      // Só encerrar se o membro de fato sumiu da proposta E tinha clone
-      if (!refsNaProposta.has(ref)) {
-        const idClonado = mapaRefParaIdClonado.get(ref);
-        if (!idClonado) continue; // nunca chegou a ser clonado
-        try {
-          await solicitacaoService.encerrarMembro(
-            id_solicitacao,
-            idClonado,
-            'Encerrado na alteração',
-          );
-        } catch (err) {
-          const e = err as { response?: { status?: number; data?: { detail?: string } } };
-          if (e?.response?.status === 400 || e?.response?.status === 404) {
-            encerramentosFalhos.push(ref);
-          } else {
-            throw err;
-          }
-        }
-      }
-    }
-    if (encerramentosFalhos.length > 0) {
-      throw new Error(
-        `A solicitação não está mais em edição ou os membros já foram removidos. ` +
-          `Reabra como nova alteração para encerrar ${encerramentosFalhos.length} membro(s).`,
-      );
-    }
   };
 
   const handleSalvar = async () => {
@@ -654,6 +672,7 @@ export default function AlteracaoPage() {
                 projetoId={projetoId}
                 projetoDataInicio={projeto?.data_inicio}
                 projetoDataFim={projeto?.data_fim}
+                fontesDisponiveis={fontesDoProjeto}
                 onValorPreviewChange={(valor) => updateValorPreview(m._tempId, valor)}
               />
             </motion.div>
@@ -736,10 +755,38 @@ export default function AlteracaoPage() {
             Salve o rascunho para ver a comparação
           </span>
         )}
+        <div
+          className={cn(
+            'flex-1 mx-6 rounded-lg border px-4 py-3',
+            excedeOrcamento
+              ? 'bg-red-50 border-red-200 text-red-800'
+              : 'bg-white border-slate-200 text-slate-700',
+          )}
+        >
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest">Fontes</p>
+              <p className="text-sm font-bold">{formatCurrencyBRL(totalFontes)}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest">Bolsas</p>
+              <p className="text-sm font-bold">{formatCurrencyBRL(totalEquipeProposta)}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest">Saldo</p>
+              <p className="text-sm font-bold">{formatCurrencyBRL(saldoFontes)}</p>
+            </div>
+          </div>
+          {excedeOrcamento && (
+            <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest">
+              Total de bolsas excede o orçamento das fontes do projeto
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <button
             onClick={handleSalvar}
-            disabled={salvando || submetendo}
+            disabled={salvando || submetendo || excedeOrcamento}
             className="flex items-center px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition-all disabled:opacity-30 shadow-sm active:scale-95 cursor-pointer"
           >
             {salvando ? (
@@ -756,7 +803,7 @@ export default function AlteracaoPage() {
           </button>
           <button
             onClick={handleSubmeter}
-            disabled={salvando || submetendo}
+            disabled={salvando || submetendo || excedeOrcamento}
             className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 shadow-sm active:scale-95 cursor-pointer"
           >
             {submetendo ? (
