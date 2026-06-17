@@ -10,6 +10,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Pencil,
 } from 'lucide-react';
 import { usePerfil } from '@/hooks/usePerfil';
 import { projetoService } from '@/services/projetoService';
@@ -21,6 +22,7 @@ import {
   STATUS_SOLICITACAO_LABELS,
   TIPO_SOLICITACAO_LABELS,
   StatusSolicitacao,
+  StatusProjeto,
   TipoSolicitacao,
 } from '@/types/enums';
 import type { Projeto, VersaoRHProjeto } from '@/types/projeto';
@@ -36,7 +38,7 @@ const STATUS_COLORS: Record<StatusSolicitacao, string> = {
 export default function ProjetoDetailPage() {
   const { id_projeto } = useParams<{ id_projeto: string }>();
   const navigate = useNavigate();
-  const { podeEditarMembros } = usePerfil();
+  const { podeEditarMembros, podeEditarProjeto } = usePerfil();
 
   const [projeto, setProjeto] = useState<Projeto | null>(null);
   const [versoes, setVersoes] = useState<VersaoRHProjeto[]>([]);
@@ -109,6 +111,7 @@ export default function ProjetoDetailPage() {
   const membros = membrosPag.items;
 
   const podeEditar = podeEditarMembros;
+  const projetoAtivo = projeto?.status === StatusProjeto.ATIVO;
 
   const versaoVigente = versoes.find((v) => v.status === 'VIGENTE');
   // Verifica se já existe implantação ativa (não rejeitada)
@@ -121,6 +124,8 @@ export default function ProjetoDetailPage() {
     return b.id - a.id;
   }).slice(0, 3);
   const versoesLimitadas = [...versoes].sort((a, b) => b.id - a.id).slice(0, 4);
+  const implantacaoBloqueada = !projetoAtivo || jaTemImplantacaoAtiva;
+  const alteracaoBloqueada = !projetoAtivo || !versoes.some((v) => v.status === 'VIGENTE');
 
   if (isLoading) {
     return (
@@ -165,9 +170,20 @@ export default function ProjetoDetailPage() {
                   </span>
                   <span className="text-slate-700 font-bold text-lg">{projeto.codigo}</span>
                 </div>
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded uppercase tracking-wider border border-blue-100">
-                  {projeto.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  {podeEditarProjeto && (
+                    <Link
+                      to={`/projetos/${projeto.id}/editar`}
+                      className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-50"
+                    >
+                      <Pencil size={12} />
+                      Editar
+                    </Link>
+                  )}
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded uppercase tracking-wider border border-blue-100">
+                    {projeto.status}
+                  </span>
+                </div>
               </div>
               <h2 className="text-3xl font-bold text-slate-950 leading-tight">{projeto.titulo}</h2>
               {projeto.descricao && (
@@ -236,7 +252,7 @@ export default function ProjetoDetailPage() {
                   <Link
                     to={`/projetos/${projeto.id}/implantacao`}
                     className={`flex items-center px-4 py-2 border rounded font-bold text-[10px] uppercase tracking-wider transition-all ${
-                      jaTemImplantacaoAtiva
+                      implantacaoBloqueada
                         ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none'
                         : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
                     }`}
@@ -247,7 +263,7 @@ export default function ProjetoDetailPage() {
                   <Link
                     to={`/projetos/${projeto.id}/alteracao`}
                     className={`flex items-center px-4 py-2 rounded font-bold text-[10px] uppercase tracking-wider transition-all shadow-sm ${
-                      versoes.some((v) => v.status === 'VIGENTE')
+                      !alteracaoBloqueada
                         ? 'bg-slate-900 text-white hover:bg-slate-800'
                         : 'bg-slate-300 text-slate-500 cursor-not-allowed pointer-events-none'
                     }`}

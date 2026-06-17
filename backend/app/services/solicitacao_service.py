@@ -2,11 +2,12 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.projeto import Projeto
 from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
+from app.models.solicitacao_justificativa import SolicitacaoJustificativa
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.usuario_perfil import Usuario
 from app.models.versao_rh_projeto import VersaoRHProjeto
@@ -17,6 +18,7 @@ from app.utils.enums import (
     StatusProjeto,
     StatusSolicitacao,
     StatusVersaoRH,
+    TipoJustificativaSolicitacao,
     TipoSolicitacao,
 )
 
@@ -54,7 +56,7 @@ class SolicitacaoService:
         if existente:
             return existente
 
-        # Força os dados corretos para uma Implantação Inicial (sem justificativa/mês)
+        # Forca os dados corretos para uma Implantacao Inicial.
         solicitacao = SolicitacaoRH(
             identificador=dados.identificador,
             projeto_id=dados.projeto_id,
@@ -67,10 +69,15 @@ class SolicitacaoService:
 
         # Cria a versão 1 vinculada
         self._criar_versao_implantacao(dados.projeto_id, solicitacao.id)
+        self._salvar_justificativa(
+            solicitacao,
+            TipoJustificativaSolicitacao.IMPLANTACAO,
+            dados.justificativa,
+            current_user,
+        )
 
         self.db.commit()
-        self.db.refresh(solicitacao)
-        return solicitacao
+        return self.obter_por_id(solicitacao.id)
 
     # --- MÉTODO GENÉRICO MANTIDO INTACTO ---
     def criar(self, dados: SolicitacaoCreate, current_user: Usuario) -> SolicitacaoRH:
@@ -90,7 +97,6 @@ class SolicitacaoService:
             identificador=dados.identificador,
             projeto_id=dados.projeto_id,
             tipo=dados.tipo,
-            justificativa=dados.justificativa,
             mes_ano_referencia=dados.mes_ano_referencia,
             status=StatusSolicitacao.EM_EDICAO,
             criado_por=current_user.id,
@@ -103,12 +109,20 @@ class SolicitacaoService:
         elif dados.tipo == TipoSolicitacao.ALTERACAO:
             self._criar_versao_alteracao(dados.projeto_id, solicitacao.id)
 
+        tipo_justificativa = self._tipo_justificativa_da_solicitacao(dados.tipo)
+        if tipo_justificativa and dados.justificativa:
+            self._salvar_justificativa(
+                solicitacao,
+                tipo_justificativa,
+                dados.justificativa,
+                current_user,
+            )
+
         self.db.commit()
-        self.db.refresh(solicitacao)
-        return solicitacao
+        return self.obter_por_id(solicitacao.id)
 
     def listar(self, current_user: Usuario, projeto_id: Optional[int] = None) -> List[SolicitacaoRH]:
-        query = self.db.query(SolicitacaoRH)
+        query = self.db.query(SolicitacaoRH).options(selectinload(SolicitacaoRH.justificativas))
 
         if projeto_id:
             query = query.filter(SolicitacaoRH.projeto_id == projeto_id)
@@ -121,6 +135,7 @@ class SolicitacaoService:
     def obter_por_id(self, solicitacao_id: int) -> SolicitacaoRH:
         solicitacao = (
             self.db.query(SolicitacaoRH)
+            .options(selectinload(SolicitacaoRH.justificativas))
             .filter(SolicitacaoRH.id == solicitacao_id)
             .first()
         )
@@ -130,6 +145,75 @@ class SolicitacaoService:
                 detail="Solicitação não encontrada",
             )
         return solicitacao
+
+    def atualizar_justificativa(
+        self, solicitacao_id: int, justificativa: str, current_user: Usuario
+    ) -> SolicitacaoRH:
+        solicitacao = self.obter_por_id(solicitacao_id)
+        projeto = self._buscar_projeto(solicitacao.projeto_id)
+        self._verificar_permissao_edicao(projeto, current_user)
+
+        if solicitacao.status != StatusSolicitacao.EM_EDICAO:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Justificativa so pode ser alterada em solicitacao em edicao",
+            )
+
+        tipo_justificativa = self._tipo_justificativa_da_solicitacao(solicitacao.tipo)
+        if not tipo_justificativa:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Tipo de solicitacao nao possui justificativa editavel",
+            )
+
+        self._salvar_justificativa(
+            solicitacao,
+            tipo_justificativa,
+            justificativa,
+            current_user,
+        )
+        self.db.commit()
+        return self.obter_por_id(solicitacao.id)
+
+    def _tipo_justificativa_da_solicitacao(
+        self, tipo: TipoSolicitacao
+    ) -> Optional[TipoJustificativaSolicitacao]:
+        if tipo == TipoSolicitacao.IMPLANTACAO:
+            return TipoJustificativaSolicitacao.IMPLANTACAO
+        if tipo == TipoSolicitacao.ALTERACAO:
+            return TipoJustificativaSolicitacao.ALTERACAO
+        return None
+
+    def _salvar_justificativa(
+        self,
+        solicitacao: SolicitacaoRH,
+        tipo: TipoJustificativaSolicitacao,
+        descricao: str,
+        current_user: Usuario,
+    ) -> SolicitacaoJustificativa:
+        descricao_normalizada = descricao.strip()
+        justificativa = (
+            self.db.query(SolicitacaoJustificativa)
+            .filter(
+                SolicitacaoJustificativa.solicitacao_id == solicitacao.id,
+                SolicitacaoJustificativa.tipo == tipo,
+            )
+            .first()
+        )
+
+        if justificativa:
+            justificativa.descricao = descricao_normalizada
+            justificativa.criado_por = current_user.id
+        else:
+            justificativa = SolicitacaoJustificativa(
+                solicitacao_id=solicitacao.id,
+                tipo=tipo,
+                descricao=descricao_normalizada,
+                criado_por=current_user.id,
+            )
+            self.db.add(justificativa)
+
+        return justificativa
 
     def _buscar_projeto(self, projeto_id: int) -> Projeto:
         projeto = self.db.query(Projeto).filter(Projeto.id == projeto_id).first()
@@ -217,6 +301,7 @@ class SolicitacaoService:
 
         projeto = self._buscar_projeto(solicitacao.projeto_id)
         self._verificar_permissao_edicao(projeto, current_user)
+        self._validar_justificativa_obrigatoria(solicitacao)
         self._validar_orcamento_fontes(solicitacao)
 
         solicitacao.status = StatusSolicitacao.SUBMETIDA
@@ -224,6 +309,21 @@ class SolicitacaoService:
         self.db.commit()
         self.db.refresh(solicitacao)
         return solicitacao
+
+    def _validar_justificativa_obrigatoria(self, solicitacao: SolicitacaoRH) -> None:
+        if solicitacao.tipo not in (TipoSolicitacao.IMPLANTACAO, TipoSolicitacao.ALTERACAO):
+            return
+
+        tipo_justificativa = self._tipo_justificativa_da_solicitacao(solicitacao.tipo)
+        if tipo_justificativa:
+            justificativa_evento = solicitacao.obter_justificativa(tipo_justificativa)
+            if justificativa_evento and justificativa_evento.strip():
+                return
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Justificativa e obrigatoria para implantacao e alteracao",
+        )
 
     def comparar(self, solicitacao_id: int) -> Dict[str, Any]:
         solicitacao = self.obter_por_id(solicitacao_id)
@@ -481,8 +581,12 @@ class SolicitacaoService:
             )
 
         solicitacao.status = StatusSolicitacao.REJEITADA
-        if justificativa:
-            solicitacao.justificativa = justificativa
+        if justificativa and justificativa.strip():
+            self._salvar_justificativa(
+                solicitacao,
+                TipoJustificativaSolicitacao.REJEICAO,
+                justificativa,
+                current_user,
+            )
         self.db.commit()
-        self.db.refresh(solicitacao)
-        return solicitacao
+        return self.obter_por_id(solicitacao.id)

@@ -34,3 +34,11 @@ class Projeto(Base, TimestampMixin):
     anexos = relationship("ProjetoAnexo", back_populates="projeto")
     versoes_rh = relationship("VersaoRHProjeto", back_populates="projeto")
     solicitacoes = relationship("SolicitacaoRH", back_populates="projeto")
+
+    @property
+    def coordenador_nome(self):
+        return self.coordenador.nome if self.coordenador else None
+
+    @property
+    def usuario_nome(self):
+        return self.coordenador.nome if self.coordenador else None

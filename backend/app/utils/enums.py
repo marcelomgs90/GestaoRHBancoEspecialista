@@ -23,6 +23,13 @@ class TipoSolicitacao(str, Enum):
     PAGAMENTO = "PAGAMENTO"
 
 
+class TipoJustificativaSolicitacao(str, Enum):
+    """Tipos de justificativa de solicitacao de RH."""
+    IMPLANTACAO = "IMPLANTACAO"
+    ALTERACAO = "ALTERACAO"
+    REJEICAO = "REJEICAO"
+
+
 class StatusSolicitacao(str, Enum):
     """Status da solicitação"""
     EM_EDICAO = "EM_EDICAO"

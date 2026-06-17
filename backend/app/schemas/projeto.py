@@ -46,6 +46,20 @@ class ProjetoCreate(BaseModel):
         return self
 
 
+class ProjetoUpdate(BaseModel):
+    titulo: str
+    descricao: Optional[str] = None
+    data_inicio: date
+    data_fim: date
+    status: StatusProjeto = StatusProjeto.ATIVO
+
+    @model_validator(mode="after")
+    def validar_datas(self):
+        if self.data_fim < self.data_inicio:
+            raise ValueError("Data de encerramento deve ser posterior ao inicio")
+        return self
+
+
 class ProjetoResponse(BaseModel):
     id: int
     codigo: str
@@ -56,6 +70,8 @@ class ProjetoResponse(BaseModel):
     data_fim: date
     status: StatusProjeto
     coordenador_id: int
+    coordenador_nome: Optional[str] = None
+    usuario_nome: Optional[str] = None
     criado_em: datetime
     atualizado_em: datetime
 

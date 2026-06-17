@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, Text, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, TimestampMixin
-from app.utils.enums import TipoSolicitacao, StatusSolicitacao
+from app.utils.enums import TipoJustificativaSolicitacao, TipoSolicitacao, StatusSolicitacao
 
 
 class SolicitacaoRH(Base, TimestampMixin):
@@ -21,9 +21,6 @@ class SolicitacaoRH(Base, TimestampMixin):
     # Para solicitações de pagamento
     mes_ano_referencia = Column(String(7), nullable=True)  # YYYY-MM
 
-    # Justificativa
-    justificativa = Column(Text, nullable=True)
-
     # Usuário que criou
     criado_por = Column(Integer, ForeignKey("usuario.id"), nullable=False)
 
@@ -38,3 +35,34 @@ class SolicitacaoRH(Base, TimestampMixin):
         foreign_keys="VersaoRHProjeto.solicitacao_id",
         uselist=False
     )
+    justificativas = relationship(
+        "SolicitacaoJustificativa",
+        back_populates="solicitacao",
+        cascade="all, delete-orphan",
+    )
+
+    def obter_justificativa(self, tipo: TipoJustificativaSolicitacao):
+        for justificativa in self.justificativas or []:
+            if justificativa.tipo == tipo:
+                return justificativa.descricao
+        return None
+
+    @property
+    def justificativa_implantacao(self):
+        return self.obter_justificativa(TipoJustificativaSolicitacao.IMPLANTACAO)
+
+    @property
+    def justificativa_alteracao(self):
+        return self.obter_justificativa(TipoJustificativaSolicitacao.ALTERACAO)
+
+    @property
+    def justificativa_rejeicao(self):
+        return self.obter_justificativa(TipoJustificativaSolicitacao.REJEICAO)
+
+    @property
+    def justificativa_evento(self):
+        if self.tipo == TipoSolicitacao.IMPLANTACAO:
+            return self.justificativa_implantacao
+        if self.tipo == TipoSolicitacao.ALTERACAO:
+            return self.justificativa_alteracao
+        return None

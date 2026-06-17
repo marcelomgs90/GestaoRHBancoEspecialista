@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Save, X, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
@@ -13,12 +13,18 @@ const optionalCurrency = z.preprocess(
   z.number().positive('Informe um valor maior que zero').optional(),
 );
 
+const requiredCurrency = (message: string) =>
+  z.preprocess(
+    (value) => (value === '' || value === undefined || value === null ? 0 : Number(value)),
+    z.number().positive(message),
+  );
+
 const schema = z
   .object({
     codigo: z.string().trim().optional(),
     titulo: z.string().min(3, 'Título deve ter pelo menos 3 caracteres'),
     descricao: z.string().optional(),
-    valor_empresa: z.coerce.number().positive('Informe o valor da fonte Empresa'),
+    valor_empresa: requiredCurrency('Informe o valor da fonte Empresa'),
     fonte_embrapii: z.boolean().default(false),
     valor_embrapii: optionalCurrency,
     fonte_sebrae: z.boolean().default(false),
@@ -49,14 +55,32 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
+const parseCurrencyBRL = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  return Number(digits) / 100;
+};
+
+const formatCurrencyBRL = (value: unknown) => {
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue) || numberValue <= 0) return '';
+  return numberValue.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+  });
+};
+
 export default function ProjetoFormPage() {
   const navigate = useNavigate();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
   const [codigoCriado, setCodigoCriado] = useState('');
+  const [projetoCriadoId, setProjetoCriadoId] = useState<number | null>(null);
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
@@ -104,6 +128,7 @@ export default function ProjetoFormPage() {
         fontes_financiamento,
       });
       setCodigoCriado(projeto.codigo);
+      setProjetoCriadoId(projeto.id);
       setSucesso(true);
     } catch (err) {
       const ax = err as AxiosError<{ detail: string }>;
@@ -237,13 +262,21 @@ export default function ProjetoFormPage() {
                 Empresa*
               </label>
               <div className="space-y-1">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...register('valor_empresa')}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-bold text-sm text-slate-900"
-                  placeholder="Valor"
+                <Controller
+                  name="valor_empresa"
+                  control={control}
+                  render={({ field }) => (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatCurrencyBRL(field.value)}
+                      onChange={(e) => field.onChange(parseCurrencyBRL(e.target.value))}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-bold text-sm text-slate-900"
+                      placeholder="R$ 0,00"
+                    />
+                  )}
                 />
                 {errors.valor_empresa && (
                   <p className="text-xs text-red-600">{errors.valor_empresa.message}</p>
@@ -261,14 +294,22 @@ export default function ProjetoFormPage() {
                 EMBRAPII
               </label>
               <div className="space-y-1">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  disabled={!fonteEmbrapii}
-                  {...register('valor_embrapii')}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-bold text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
-                  placeholder="Valor"
+                <Controller
+                  name="valor_embrapii"
+                  control={control}
+                  render={({ field }) => (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      disabled={!fonteEmbrapii}
+                      value={formatCurrencyBRL(field.value)}
+                      onChange={(e) => field.onChange(parseCurrencyBRL(e.target.value))}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-bold text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
+                      placeholder="R$ 0,00"
+                    />
+                  )}
                 />
                 {errors.valor_embrapii && (
                   <p className="text-xs text-red-600">{errors.valor_embrapii.message}</p>
@@ -286,14 +327,22 @@ export default function ProjetoFormPage() {
                 SEBRAE
               </label>
               <div className="space-y-1">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  disabled={!fonteSebrae}
-                  {...register('valor_sebrae')}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-bold text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
-                  placeholder="Valor"
+                <Controller
+                  name="valor_sebrae"
+                  control={control}
+                  render={({ field }) => (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      disabled={!fonteSebrae}
+                      value={formatCurrencyBRL(field.value)}
+                      onChange={(e) => field.onChange(parseCurrencyBRL(e.target.value))}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-bold text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
+                      placeholder="R$ 0,00"
+                    />
+                  )}
                 />
                 {errors.valor_sebrae && (
                   <p className="text-xs text-red-600">{errors.valor_sebrae.message}</p>
@@ -335,24 +384,40 @@ export default function ProjetoFormPage() {
       </form>
 
       {sucesso && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => navigate('/projetos')} />
-          <div className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center">
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 size={40} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]"
+            onClick={() => setSucesso(false)}
+          />
+          <div className="bg-white w-full max-w-sm p-5 rounded-xl shadow-2xl relative z-10 border border-slate-200">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center border border-emerald-100 shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="text-left min-w-0">
+                <h3 className="text-base font-bold text-slate-900">Projeto criado</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  O projeto <span className="text-blue-600 font-bold">{codigoCriado}</span> foi cadastrado com sucesso.
+                </p>
+              </div>
             </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Projeto Criado!</h3>
-            <p className="text-slate-500 font-medium mb-8">
-              O projeto <span className="text-blue-600 font-bold">{codigoCriado}</span> foi
-              cadastrado com sucesso.
-            </p>
-            <button
-              onClick={() => navigate('/projetos')}
-              className="w-full py-4 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs cursor-pointer"
-            >
-              Ver lista de projetos
-              <ArrowRight size={18} />
-            </button>
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => setSucesso(false)}
+                className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => projetoCriadoId && navigate(`/projetos/${projetoCriadoId}`)}
+                className="py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+              >
+                Confirmar
+                <ArrowRight size={14} />
+              </button>
+            </div>
           </div>
         </div>
       )}

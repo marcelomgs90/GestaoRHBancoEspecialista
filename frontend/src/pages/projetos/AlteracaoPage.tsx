@@ -97,6 +97,8 @@ export default function AlteracaoPage() {
   const [buscandoEspecialistas, setBuscandoEspecialistas] = useState(false);
   const [valorPreviewPorTempId, setValorPreviewPorTempId] = useState<Record<string, number | null>>({});
   const [history, setHistory] = useState<HistoryLog[]>([]);
+  const [justificativa, setJustificativa] = useState('');
+  const [justificativaErro, setJustificativaErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [submetendo, setSubmetendo] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -136,6 +138,7 @@ export default function AlteracaoPage() {
         );
         if (existente) {
           setSolicitacaoId(existente.id);
+          setJustificativa(existente.justificativa_alteracao ?? '');
           const propostos = await solicitacaoService.listarMembros(existente.id);
           const locais = propostos.map(membroToLocal);
           setEquipeProposta(locais);
@@ -283,7 +286,15 @@ export default function AlteracaoPage() {
     mapaRefParaIdClonado: Map<string, number>;
     estadoOriginalClones: Map<number, Membro>;
   }> => {
+    const justificativaTratada = justificativa.trim();
+    if (!justificativaTratada) {
+      setJustificativaErro('Informe a justificativa da alteração.');
+      throw new Error('Informe a justificativa da alteração.');
+    }
+    setJustificativaErro(null);
+
     if (solicitacaoId) {
+      await solicitacaoService.atualizarJustificativa(solicitacaoId, justificativaTratada);
       // Solicitação já existe: revalidar o estado dos clones a cada salvamento.
       const propostos = await solicitacaoService.listarMembros(solicitacaoId);
       const mapaRefParaIdClonado = new Map(
@@ -302,6 +313,7 @@ export default function AlteracaoPage() {
       identificador: `ALT-${projetoId}-${Date.now()}`,
       projeto_id: projetoId,
       tipo: TipoSolicitacao.ALTERACAO,
+      justificativa: justificativaTratada,
     });
     setSolicitacaoId(nova.id);
 
@@ -437,7 +449,7 @@ export default function AlteracaoPage() {
       const e = err as { response?: { data?: { detail?: string } } };
       setErro(
         e?.response?.data?.detail ??
-          (err instanceof Error ? err.message : 'Erro ao salvar alterações. Tente novamente.'),
+          (err instanceof Error && !justificativaErro ? err.message : 'Erro ao salvar alterações. Tente novamente.'),
       );
     } finally {
       setSalvando(false);
@@ -459,7 +471,7 @@ export default function AlteracaoPage() {
       const e = err as { response?: { data?: { detail?: string } } };
       setErro(
         e?.response?.data?.detail ??
-          (err instanceof Error ? err.message : 'Erro ao submeter alteração. Tente novamente.'),
+          (err instanceof Error && !justificativaErro ? err.message : 'Erro ao submeter alteração. Tente novamente.'),
       );
     } finally {
       setSubmetendo(false);
@@ -700,6 +712,30 @@ export default function AlteracaoPage() {
         </div>
       </section>
 
+      <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-3">
+        <div>
+          <h3 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
+            Justificativa
+          </h3>
+          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mt-1">
+            Obrigatória para salvar ou submeter a alteração
+          </p>
+        </div>
+        <textarea
+          rows={4}
+          value={justificativa}
+          onChange={(event) => {
+            setJustificativa(event.target.value);
+            if (justificativaErro) setJustificativaErro(null);
+          }}
+          className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-slate-900 focus:bg-white"
+          placeholder="Descreva o motivo da alteração no quadro de RH..."
+        />
+        {justificativaErro && (
+          <p className="text-xs font-medium text-red-600">{justificativaErro}</p>
+        )}
+      </section>
+
       {/* Historico da sessao */}
       <section className="bg-white rounded-lg shadow-sm border border-slate-200">
         <div className="p-4 border-b border-slate-200 flex items-center gap-2">
@@ -786,7 +822,7 @@ export default function AlteracaoPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSalvar}
-            disabled={salvando || submetendo || excedeOrcamento}
+            disabled={salvando || submetendo || excedeOrcamento || !justificativa.trim()}
             className="flex items-center px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition-all disabled:opacity-30 shadow-sm active:scale-95 cursor-pointer"
           >
             {salvando ? (
@@ -803,7 +839,7 @@ export default function AlteracaoPage() {
           </button>
           <button
             onClick={handleSubmeter}
-            disabled={salvando || submetendo || excedeOrcamento}
+            disabled={salvando || submetendo || excedeOrcamento || !justificativa.trim()}
             className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 shadow-sm active:scale-95 cursor-pointer"
           >
             {submetendo ? (
@@ -823,38 +859,43 @@ export default function AlteracaoPage() {
 
       {/* Modal de busca */}
       {showSearch && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/35 backdrop-blur-[2px]">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white w-full max-w-xl rounded-lg shadow-2xl flex flex-col overflow-hidden max-h-[80vh] border border-slate-200"
+            initial={{ opacity: 0, scale: 0.98, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white w-full max-w-md rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[min(520px,calc(100vh-2rem))] border border-slate-200"
           >
-            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider">
-                {showSearch === 'candidatos' ? 'Processo Seletivo' : 'Banco de Especialistas'}
-              </h3>
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-slate-900">
+                  {showSearch === 'candidatos' ? 'Processo seletivo' : 'Banco de Especialistas'}
+                </p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Selecionar pesquisador
+                </p>
+              </div>
               <button
                 onClick={() => { setShowSearch(null); setModalErro(null); }}
-                className="p-2 hover:bg-slate-100 rounded-full cursor-pointer"
+                className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 rounded-lg cursor-pointer"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
-            <div className="p-4 bg-slate-50 border-b border-slate-200">
+            <div className="p-3 border-b border-slate-100">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
                 <input
                   type="text"
-                  placeholder="Filtrar por nome..."
+                  placeholder="Buscar por nome..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded text-xs font-medium outline-none focus:border-slate-900"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-slate-900"
                 />
               </div>
             </div>
             {modalErro && (
-              <div className="mx-4 mt-4 flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
-                <AlertCircle size={14} className="mt-0.5 shrink-0" />
+              <div className="mx-3 mt-3 flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+                <AlertCircle size={13} className="mt-0.5 shrink-0" />
                 <span>{modalErro}</span>
               </div>
             )}
@@ -864,25 +905,29 @@ export default function AlteracaoPage() {
                     <button
                       key={c.ref}
                       onClick={() => addMembro(c.ref, c.nome, c.categoria)}
-                      className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded text-left cursor-pointer"
+                      className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 rounded-lg text-left cursor-pointer group"
                     >
-                      <div>
-                        <p className="font-bold text-slate-800 text-sm">{c.nome}</p>
+                      <div className="h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-black text-slate-600 shrink-0">
+                        {c.nome.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-slate-800 text-sm truncate">{c.nome}</p>
                         <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
                           {CATEGORIA_BOLSA_LABELS[c.categoria]?.nivel ?? c.categoria}
                         </p>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400 border border-slate-200 px-2 py-1 rounded">
+                      <span className="text-[10px] font-bold text-slate-400 border border-slate-200 px-2 py-1 rounded-md group-hover:bg-slate-900 group-hover:text-white transition-all">
                         ADICIONAR
                       </span>
                     </button>
                   ))
                 : buscandoEspecialistas ? (
-                    <p className="p-6 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                      Buscando especialistas...
-                    </p>
+                    <div className="p-8 text-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-400 mx-auto mb-2"></div>
+                      <p className="text-xs text-slate-400 font-medium">Buscando especialistas...</p>
+                    </div>
                   ) : especialistas.length === 0 ? (
-                    <p className="p-6 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                    <p className="p-8 text-center text-slate-400 text-xs font-medium">
                       Nenhum especialista encontrado
                     </p>
                   ) : (
@@ -890,15 +935,18 @@ export default function AlteracaoPage() {
                       <button
                         key={e.id}
                         onClick={() => addMembro(e.matricula, e.nome, CategoriaBolsa.PESQUISADOR_PLENO)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded text-left cursor-pointer"
+                        className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 rounded-lg text-left cursor-pointer group"
                       >
-                        <div>
-                          <p className="font-bold text-slate-800 text-sm">{e.nome}</p>
+                        <div className="h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-black text-slate-600 shrink-0">
+                          {e.nome.charAt(0)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-slate-800 text-sm truncate">{e.nome}</p>
                           <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
                             Matricula: {e.matricula}
                           </p>
                         </div>
-                        <span className="text-[10px] font-bold text-slate-400 border border-slate-200 px-2 py-1 rounded">
+                        <span className="text-[10px] font-bold text-slate-400 border border-slate-200 px-2 py-1 rounded-md group-hover:bg-slate-900 group-hover:text-white transition-all">
                           ADICIONAR
                         </span>
                       </button>
@@ -911,31 +959,35 @@ export default function AlteracaoPage() {
 
       {/* Modal de sucesso (rascunho salvo) */}
       {showSuccessModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+            className="bg-white w-full max-w-sm p-5 rounded-xl shadow-2xl relative z-10 border border-slate-200"
           >
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 size={40} />
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center border border-emerald-100 shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="text-left min-w-0">
+                <h3 className="text-base font-bold text-slate-900">Rascunho salvo</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  As mudanças continuam em edição até a submissão.
+                </p>
+              </div>
             </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Rascunho Salvo!</h3>
-            <p className="text-slate-500 font-medium mb-6">
-              Suas mudanças foram salvas. A alteração continua em edição até ser submetida.
-            </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 mt-5">
               <Link
                 to={`/solicitacoes/${solicitacaoId}/comparacao`}
-                className="py-3 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+                className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
               >
                 <GitCompare size={14} />
                 Comparar
               </Link>
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+                className="py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
               >
                 Continuar
               </button>
@@ -946,35 +998,35 @@ export default function AlteracaoPage() {
 
       {/* Modal de submissão final */}
       {showSubmetidaModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+            className="bg-white w-full max-w-sm p-5 rounded-xl shadow-2xl relative z-10 border border-slate-200"
           >
-            <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FileCheck size={40} />
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center border border-amber-100 shrink-0">
+                <FileCheck size={20} />
+              </div>
+              <div className="text-left min-w-0">
+                <h3 className="text-base font-bold text-slate-900">Alteração submetida</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Solicitação #{submetidaSolicitacaoId}. A equipe oficial permanece intacta até a aprovação.
+                </p>
+              </div>
             </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Alteração Submetida!</h3>
-            <p className="text-slate-500 font-medium mb-2">
-              Solicitação #{submetidaSolicitacaoId}
-            </p>
-            <p className="text-slate-500 font-medium mb-6">
-              Aguardando aprovação do Gestor do Polo. A equipe oficial do projeto
-              permanece <strong>intacta</strong> até a aprovação.
-            </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 mt-5">
               <Link
                 to={`/solicitacoes/${submetidaSolicitacaoId}/comparacao`}
-                className="py-3 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+                className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
               >
                 <GitCompare size={14} />
                 Ver Comparação
               </Link>
               <button
                 onClick={() => navigate(`/projetos/${projetoId}`)}
-                className="py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+                className="py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
               >
                 Voltar ao Projeto
               </button>
