@@ -20,6 +20,7 @@ export function usePerfil() {
     isApoioCoordenador: perfil === PerfilUsuario.APOIO_COORDENADOR,
 
     podeCriarProjeto: is(PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR),
+    podeEditarProjeto: is(PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR),
     podeAprovarSolicitacao: is(PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR),
     podeEditarMembros: is(
       PerfilUsuario.COORDENADOR,

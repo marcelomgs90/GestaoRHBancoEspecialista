@@ -10,6 +10,12 @@ export enum TipoSolicitacao {
   PAGAMENTO = 'PAGAMENTO',
 }
 
+export enum TipoJustificativaSolicitacao {
+  IMPLANTACAO = 'IMPLANTACAO',
+  ALTERACAO = 'ALTERACAO',
+  REJEICAO = 'REJEICAO',
+}
+
 export enum StatusSolicitacao {
   EM_EDICAO = 'EM_EDICAO',
   SUBMETIDA = 'SUBMETIDA',
@@ -21,6 +27,12 @@ export enum StatusVersaoRH {
   PROPOSTA = 'PROPOSTA',
   VIGENTE = 'VIGENTE',
   HISTORICO = 'HISTORICO',
+}
+
+export enum StatusProjeto {
+  ATIVO = 'ATIVO',
+  FINALIZADO = 'FINALIZADO',
+  SUSPENSO = 'SUSPENSO',
 }
 
 export enum CategoriaBolsa {
@@ -49,6 +61,12 @@ export const STATUS_SOLICITACAO_LABELS: Record<StatusSolicitacao, string> = {
   [StatusSolicitacao.SUBMETIDA]: 'Submetida',
   [StatusSolicitacao.APROVADA]: 'Aprovada',
   [StatusSolicitacao.REJEITADA]: 'Rejeitada',
+}
+
+export const STATUS_PROJETO_LABELS: Record<StatusProjeto, string> = {
+  [StatusProjeto.ATIVO]: 'Ativo',
+  [StatusProjeto.FINALIZADO]: 'Finalizado',
+  [StatusProjeto.SUSPENSO]: 'Suspenso',
 }
 
 export const TIPO_SOLICITACAO_LABELS: Record<TipoSolicitacao, string> = {

@@ -6,7 +6,7 @@ from app.core.dependencies import get_current_user, get_projeto_service, get_ver
 from app.models.usuario_perfil import Usuario
 from app.schemas.common import PaginatedResponse
 from app.schemas.membro import MembroResponse
-from app.schemas.projeto import ProjetoCreate, ProjetoResponse
+from app.schemas.projeto import ProjetoCreate, ProjetoResponse, ProjetoUpdate
 from app.schemas.versao import VersaoRHProjetoResponse
 from app.services.projeto_service import ProjetoService
 from app.services.versao_service import VersaoService
@@ -25,7 +25,7 @@ def criar_projeto(
     return service.criar(dados, current_user)
 
 
-@router.get("/")
+@router.get("/", response_model=List[ProjetoResponse])
 def listar_projetos(
     status: Optional[StatusProjeto] = None,
     service: ProjetoService = Depends(get_projeto_service),
@@ -38,6 +38,17 @@ def listar_projetos(
     - Administradores e Gestores do Polo veem todos
     """
     return service.listar(current_user, status_filtro=status)
+
+
+@router.put("/{projeto_id}", response_model=ProjetoResponse)
+def atualizar_projeto(
+    projeto_id: int,
+    dados: ProjetoUpdate,
+    service: ProjetoService = Depends(get_projeto_service),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Atualizar dados cadastrais do projeto sem alterar codigo, coordenador ou fontes."""
+    return service.atualizar(projeto_id, dados, current_user)
 
 
 @router.get("/{projeto_id}/versoes", response_model=List[VersaoRHProjetoResponse])
@@ -120,7 +131,7 @@ def listar_pesquisadores_vigentes_projeto(
     )
 
 
-@router.get("/{projeto_id}")
+@router.get("/{projeto_id}", response_model=ProjetoResponse)
 def obter_projeto(
     projeto_id: int,
     service: ProjetoService = Depends(get_projeto_service),

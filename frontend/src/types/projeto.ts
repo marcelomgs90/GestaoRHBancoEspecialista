@@ -1,4 +1,4 @@
-import { CategoriaBolsa, FonteFinanciamento } from './enums'
+import { CategoriaBolsa, FonteFinanciamento, StatusProjeto } from './enums'
 
 export interface ProjetoFonteFinanciamento {
   fonte: FonteFinanciamento
@@ -12,7 +12,15 @@ export interface ProjetoCreate {
   fontes_financiamento: ProjetoFonteFinanciamento[]
   data_inicio: string
   data_fim: string
-  status?: string
+  status?: StatusProjeto
+}
+
+export interface ProjetoUpdate {
+  titulo: string
+  descricao?: string
+  data_inicio: string
+  data_fim: string
+  status: StatusProjeto
 }
 
 export interface VersaoRHProjeto {
@@ -32,8 +40,10 @@ export interface Projeto {
   fontes_financiamento: ProjetoFonteFinanciamento[]
   data_inicio: string
   data_fim: string
-  status: string
+  status: StatusProjeto
   coordenador_id: number
+  coordenador_nome?: string | null
+  usuario_nome?: string | null
   criado_em: string
   atualizado_em: string
 }

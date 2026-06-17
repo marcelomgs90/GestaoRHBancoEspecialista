@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
 from app.models.projeto import Projeto
 from app.models.usuario_perfil import Usuario
-from app.schemas.projeto import ProjetoCreate
+from app.schemas.projeto import ProjetoCreate, ProjetoUpdate
 from app.utils.enums import PerfilUsuario, StatusProjeto
 
 
@@ -53,7 +53,10 @@ class ProjetoService:
         return codigo
 
     def listar(self, current_user: Usuario, status_filtro: Optional[StatusProjeto] = None) -> List[Projeto]:
-        query = self.db.query(Projeto).options(selectinload(Projeto.fontes_financiamento))
+        query = self.db.query(Projeto).options(
+            selectinload(Projeto.fontes_financiamento),
+            selectinload(Projeto.coordenador),
+        )
 
         if current_user.perfil == PerfilUsuario.COORDENADOR:
             query = query.filter(Projeto.coordenador_id == current_user.id)
@@ -67,7 +70,10 @@ class ProjetoService:
     def obter_por_id(self, projeto_id: int, current_user: Usuario) -> Projeto:
         projeto = (
             self.db.query(Projeto)
-            .options(selectinload(Projeto.fontes_financiamento))
+            .options(
+                selectinload(Projeto.fontes_financiamento),
+                selectinload(Projeto.coordenador),
+            )
             .filter(Projeto.id == projeto_id)
             .first()
         )
@@ -88,3 +94,32 @@ class ProjetoService:
             )
 
         return projeto
+
+    def atualizar(self, projeto_id: int, dados: ProjetoUpdate, current_user: Usuario) -> Projeto:
+        projeto = self.obter_por_id(projeto_id, current_user)
+        self._validar_permissao_edicao(projeto, current_user)
+
+        projeto.titulo = dados.titulo
+        projeto.descricao = dados.descricao
+        projeto.data_inicio = dados.data_inicio
+        projeto.data_fim = dados.data_fim
+        projeto.status = dados.status
+
+        self.db.commit()
+        self.db.refresh(projeto)
+        return self.obter_por_id(projeto.id, current_user)
+
+    def _validar_permissao_edicao(self, projeto: Projeto, current_user: Usuario) -> None:
+        if current_user.perfil == PerfilUsuario.ADMINISTRADOR:
+            return
+
+        if (
+            current_user.perfil == PerfilUsuario.COORDENADOR
+            and projeto.coordenador_id == current_user.id
+        ):
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o coordenador responsavel ou administrador pode editar o projeto",
+        )

@@ -9,6 +9,7 @@ import DashboardPage from '@/pages/dashboard/DashboardPage';
 import ProjetosListPage from '@/pages/projetos/ProjetosListPage';
 import ProjetoFormPage from '@/pages/projetos/ProjetoFormPage';
 import ProjetoDetailPage from '@/pages/projetos/ProjetoDetailPage';
+import ProjetoEditPage from '@/pages/projetos/ProjetoEditPage';
 import ImplantacaoPage from '@/pages/projetos/ImplantacaoPage';
 import AlteracaoPage from '@/pages/projetos/AlteracaoPage';
 import SolicitacoesListPage from '@/pages/solicitacoes/SolicitacoesListPage';
@@ -38,6 +39,14 @@ export function AppRoutes() {
             }
           />
           <Route path="/projetos/:id_projeto" element={<ProjetoDetailPage />} />
+          <Route
+            path="/projetos/:id_projeto/editar"
+            element={
+              <RoleRoute allowedRoles={[PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR]}>
+                <ProjetoEditPage />
+              </RoleRoute>
+            }
+          />
           <Route path="/projetos/:id_projeto/implantacao" element={<ImplantacaoPage />} />
           <Route path="/projetos/:id_projeto/alteracao" element={<AlteracaoPage />} />
 

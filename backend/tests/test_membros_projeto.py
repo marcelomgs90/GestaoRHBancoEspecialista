@@ -18,6 +18,7 @@ Cenários cobertos:
 from datetime import date, timedelta
 
 import pytest
+from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -30,6 +31,8 @@ from app.models.usuario_perfil import Usuario
 from app.services.solicitacao_service import SolicitacaoService
 from app.services.versao_service import VersaoService
 from app.services.membro_service import MembroService
+from app.services.projeto_service import ProjetoService
+from app.schemas.projeto import ProjetoUpdate
 from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoImplantacaoCreate
 from app.schemas.membro import MembroCreate, MembroUpdate
 from app.utils.enums import (
@@ -121,6 +124,100 @@ def projeto(db, coordenador):
     db.commit()
     db.refresh(projeto)
     return projeto
+
+
+def test_projeto_service_atualiza_dados_sem_alterar_codigo_ou_fontes(
+    db, projeto, coordenador
+):
+    """Edicao cadastral do projeto nao altera codigo, coordenador ou fontes."""
+    hoje = date.today()
+    service = ProjetoService(db)
+
+    atualizado = service.atualizar(
+        projeto.id,
+        ProjetoUpdate(
+            titulo="Projeto Atualizado",
+            descricao="Descricao ajustada",
+            data_inicio=hoje + timedelta(days=1),
+            data_fim=hoje + timedelta(days=90),
+            status=StatusProjeto.SUSPENSO,
+        ),
+        coordenador,
+    )
+
+    assert atualizado.titulo == "Projeto Atualizado"
+    assert atualizado.descricao == "Descricao ajustada"
+    assert atualizado.status == StatusProjeto.SUSPENSO
+    assert atualizado.codigo == "PROJ-TESTE"
+    assert atualizado.coordenador_id == coordenador.id
+    assert len(atualizado.fontes_financiamento) == 1
+    assert atualizado.fontes_financiamento[0].fonte == FonteFinanciamento.EMPRESA
+
+
+def test_projeto_service_bloqueia_edicao_para_gestor(db, projeto, gestor):
+    """Gestor pode consultar fluxos, mas nao edita cadastro do projeto."""
+    hoje = date.today()
+    service = ProjetoService(db)
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.atualizar(
+            projeto.id,
+            ProjetoUpdate(
+                titulo="Tentativa Indevida",
+                descricao=None,
+                data_inicio=hoje,
+                data_fim=hoje + timedelta(days=30),
+                status=StatusProjeto.ATIVO,
+            ),
+            gestor,
+        )
+
+    assert exc_info.value.status_code == 403
+
+
+def test_solicitacao_bloqueia_implantacao_quando_projeto_nao_esta_ativo(
+    db, projeto, coordenador
+):
+    """Projeto suspenso/finalizado nao pode iniciar implantacao de RH."""
+    projeto.status = StatusProjeto.SUSPENSO
+    db.commit()
+
+    service = SolicitacaoService(db)
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.criar_implantacao(
+            SolicitacaoImplantacaoCreate(
+                projeto_id=projeto.id,
+                identificador="IMPL-INATIVO-001",
+            ),
+            coordenador,
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "projeto ativo" in exc_info.value.detail
+
+
+def test_solicitacao_bloqueia_alteracao_quando_projeto_nao_esta_ativo(
+    db, projeto, coordenador
+):
+    """Projeto suspenso/finalizado nao pode iniciar alteracao de RH."""
+    projeto.status = StatusProjeto.FINALIZADO
+    db.commit()
+
+    service = SolicitacaoService(db)
+
+    with pytest.raises(HTTPException) as exc_info:
+        service.criar(
+            SolicitacaoCreate(
+                projeto_id=projeto.id,
+                identificador="ALT-INATIVO-001",
+                tipo=TipoSolicitacao.ALTERACAO,
+            ),
+            coordenador,
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "projeto ativo" in exc_info.value.detail
 
 
 def incluir_membro(db, versao_id, ref, nome, fonte=FonteFinanciamento.EMPRESA):

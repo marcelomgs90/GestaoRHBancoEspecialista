@@ -4,7 +4,13 @@ from fastapi import APIRouter, Body, Depends, status
 
 from app.core.dependencies import get_current_user, get_solicitacao_service
 from app.models.usuario_perfil import Usuario
-from app.schemas.solicitacao import SolicitacaoCreate, SolicitacaoImplantacaoCreate, SolicitacaoResponse, SolicitacaoRejeitarRequest
+from app.schemas.solicitacao import (
+    SolicitacaoCreate,
+    SolicitacaoImplantacaoCreate,
+    SolicitacaoJustificativaUpdate,
+    SolicitacaoRejeitarRequest,
+    SolicitacaoResponse,
+)
 from app.services.solicitacao_service import SolicitacaoService
 
 router = APIRouter()
@@ -55,6 +61,21 @@ def obter_solicitacao(
 ):
     """Obter detalhes de uma solicitação."""
     return service.obter_por_id(solicitacao_id)
+
+
+@router.patch("/{solicitacao_id}/justificativa", response_model=SolicitacaoResponse)
+def atualizar_justificativa_solicitacao(
+    solicitacao_id: int,
+    dados: SolicitacaoJustificativaUpdate,
+    service: SolicitacaoService = Depends(get_solicitacao_service),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Atualizar justificativa de uma solicitacao em edicao."""
+    return service.atualizar_justificativa(
+        solicitacao_id,
+        dados.justificativa,
+        current_user,
+    )
 
 
 @router.post("/{solicitacao_id}/submeter", response_model=SolicitacaoResponse)

@@ -303,12 +303,12 @@ const handleAprovar = async () => {
       </div>
 
       {/* Justificativa da rejeição (caso exista) */}
-      {solicitacao?.justificativa && (
+      {solicitacao?.justificativa_rejeicao && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-[9px] font-bold text-red-600 uppercase tracking-wider mb-1">
             Justificativa da Rejeição
           </p>
-          <p className="text-sm text-slate-700">{solicitacao.justificativa}</p>
+          <p className="text-sm text-slate-700">{solicitacao.justificativa_rejeicao}</p>
         </div>
       )}
 
@@ -338,34 +338,38 @@ const handleAprovar = async () => {
 
       {/* Modal de aprovação */}
       {showAprovarModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+            className="bg-white w-full max-w-sm p-5 rounded-xl shadow-2xl relative z-10 border border-slate-200"
           >
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 size={32} />
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center border border-emerald-100 shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="text-left min-w-0">
+                <h3 className="text-base font-bold text-slate-900">Aprovar solicitação</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  A solicitação #{solicitacaoId} será aprovada e a versão proposta passará a valer.
+                </p>
+              </div>
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">Aprovar Solicitação</h3>
-            <p className="text-slate-500 font-medium mb-6">
-              Você deseja realmente aprobar a solicitação #{solicitacaoId}?
-            </p>
             {erroAprovar && (
-              <p className="text-red-600 text-xs mb-4">{erroAprovar}</p>
+              <p className="mt-4 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">{erroAprovar}</p>
             )}
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-2 mt-5">
               <button
                 onClick={() => setShowAprovarModal(false)}
-                className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-all text-xs uppercase tracking-wider cursor-pointer"
+                className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all text-xs uppercase tracking-wider cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAprovar}
                 disabled={aproandoId === solicitacaoId}
-                className="flex-1 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-all text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer"
+                className="py-2.5 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-all text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer"
               >
                 {aproandoId === solicitacaoId ? 'Aprovando...' : 'Aprovar'}
               </button>
@@ -376,44 +380,45 @@ const handleAprovar = async () => {
 
       {/* Modal de rejeição */}
       {showRejeitarModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+            className="bg-white w-full max-w-sm p-5 rounded-xl shadow-2xl relative z-10 border border-slate-200"
           >
-            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <XCircle size={32} />
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center border border-red-100 shrink-0">
+                <XCircle size={20} />
+              </div>
+              <div className="text-left min-w-0">
+                <h3 className="text-base font-bold text-slate-900">Rejeitar solicitação</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  A solicitação #{solicitacaoId} será rejeitada e a equipe oficial permanecerá inalterada.
+                </p>
+              </div>
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">Rejeitar Solicitação</h3>
-            <p className="text-slate-500 font-medium mb-2">
-              Você deseja realmente rejeitar a solicitação #{solicitacaoId}?
-            </p>
-            <p className="text-slate-400 text-xs mb-4">
-              Deseja adicionar uma justificativa?
-            </p>
             <textarea
               value={justificativaRejeicao}
               onChange={(e) => setJustificativaRejeicao(e.target.value)}
               placeholder="Justificativa (opcional)"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 resize-none"
+              className="mt-4 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 resize-none"
               rows={3}
             />
             {erroRejeitar && (
-              <p className="text-red-600 text-xs mt-2">{erroRejeitar}</p>
+              <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">{erroRejeitar}</p>
             )}
-            <div className="flex gap-3 mt-4">
+            <div className="grid grid-cols-2 gap-2 mt-4">
               <button
                 onClick={() => setShowRejeitarModal(false)}
-                className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-all text-xs uppercase tracking-wider cursor-pointer"
+                className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all text-xs uppercase tracking-wider cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleRejeitar}
                 disabled={rejeitando}
-                className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer"
+                className="py-2.5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer"
               >
                 {rejeitando ? 'Rejeitando...' : 'Rejeitar'}
               </button>

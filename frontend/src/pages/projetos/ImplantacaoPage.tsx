@@ -56,6 +56,8 @@ export default function ImplantacaoPage() {
   const [showSearch, setShowSearch] = useState<'candidatos' | 'especialistas' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [history, setHistory] = useState<HistoryLog[]>([]);
+  const [justificativa, setJustificativa] = useState('');
+  const [justificativaErro, setJustificativaErro] = useState<string | null>(null);
   const [finalizando, setFinalizando] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -83,6 +85,7 @@ export default function ImplantacaoPage() {
         );
         if (existente) {
           setSolicitacaoId(existente.id);
+          setJustificativa(existente.justificativa_implantacao ?? '');
           const ms = await solicitacaoService.listarMembros(existente.id);
           setMembros(
             ms.map((m) => ({
@@ -176,8 +179,14 @@ export default function ImplantacaoPage() {
 
   const handleFinalizar = async () => {
     if (membros.length === 0) return;
+    const justificativaTratada = justificativa.trim();
+    if (!justificativaTratada) {
+      setJustificativaErro('Informe a justificativa da implantação.');
+      return;
+    }
     setFinalizando(true);
     setErro(null);
+    setJustificativaErro(null);
     try {
       // Cria a solicitação apenas agora (no submit), se ainda não existir rascunho.
       let id = solicitacaoId;
@@ -186,9 +195,12 @@ export default function ImplantacaoPage() {
           identificador: `IMP-${projetoId}-${Date.now()}`,
           projeto_id: projetoId,
           tipo: TipoSolicitacao.IMPLANTACAO,
+          justificativa: justificativaTratada,
         });
         id = nova.id;
         setSolicitacaoId(id);
+      } else {
+        await solicitacaoService.atualizarJustificativa(id, justificativaTratada);
       }
       // Envia apenas membros novos (sem backendId) — os já persistidos não precisam ser re-enviados
       const novos = membros.filter((m) => !m.backendId);
@@ -219,11 +231,14 @@ export default function ImplantacaoPage() {
     (acc, fonte) => acc + Number(fonte.valor),
     0,
   );
+  const totalCargaHoraria = membros.reduce(
+    (acc, membro) => acc + Number(membro.carga_horaria_semanal || 0),
+    0,
+  );
   const totalBolsas = membros.reduce(
     (acc, membro) => acc + (valorPreviewPorTempId[membro._tempId] ?? membro.valor_bolsa ?? 0),
     0,
   );
-  const saldoFontes = totalFontes - totalBolsas;
   const excedeOrcamento = totalBolsas > totalFontes;
   const fontesDoProjeto = (projeto?.fontes_financiamento ?? []).map((fonte) => fonte.fonte);
 
@@ -289,7 +304,7 @@ export default function ImplantacaoPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-6 border-b border-slate-200 flex items-start justify-between gap-4">
           <div>
             <h3 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
               Designações Pendentes
@@ -298,9 +313,17 @@ export default function ImplantacaoPage() {
               Aguardando finalização
             </p>
           </div>
-          <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
-            {membros.length} Pesquisadores
-          </span>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
+              {membros.length} Membros
+            </span>
+            <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">
+              {totalCargaHoraria}h Total
+            </span>
+            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+              {formatCurrencyBRL(totalBolsas)}
+            </span>
+          </div>
         </div>
 
         <div className="divide-y divide-slate-100">
@@ -329,6 +352,30 @@ export default function ImplantacaoPage() {
           )}
         </div>
       </div>
+
+      <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-3">
+        <div>
+          <h3 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
+            Justificativa
+          </h3>
+          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mt-1">
+            Obrigatória para submeter a implantação
+          </p>
+        </div>
+        <textarea
+          rows={4}
+          value={justificativa}
+          onChange={(event) => {
+            setJustificativa(event.target.value);
+            if (justificativaErro) setJustificativaErro(null);
+          }}
+          className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-slate-900 focus:bg-white"
+          placeholder="Descreva o motivo da implantação da equipe de RH..."
+        />
+        {justificativaErro && (
+          <p className="text-xs font-medium text-red-600">{justificativaErro}</p>
+        )}
+      </section>
 
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50/30">
@@ -369,44 +416,10 @@ export default function ImplantacaoPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between p-8 bg-slate-100 border border-slate-200 rounded-lg">
-        <div>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-            Pesquisadores a incluir
-          </p>
-          <p className="text-2xl font-bold text-slate-900">{membros.length}</p>
-        </div>
-        <div
-          className={cn(
-            'flex-1 mx-8 rounded-lg border px-4 py-3',
-            excedeOrcamento
-              ? 'bg-red-50 border-red-200 text-red-800'
-              : 'bg-white border-slate-200 text-slate-700',
-          )}
-        >
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest">Fontes</p>
-              <p className="text-sm font-bold">{formatCurrencyBRL(totalFontes)}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest">Bolsas</p>
-              <p className="text-sm font-bold">{formatCurrencyBRL(totalBolsas)}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest">Saldo</p>
-              <p className="text-sm font-bold">{formatCurrencyBRL(saldoFontes)}</p>
-            </div>
-          </div>
-          {excedeOrcamento && (
-            <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest">
-              Total de bolsas excede o orçamento das fontes do projeto
-            </p>
-          )}
-        </div>
+      <div className="flex items-center justify-end p-8 bg-slate-100 border border-slate-200 rounded-lg">
         <button
           onClick={handleFinalizar}
-          disabled={membros.length === 0 || finalizando || excedeOrcamento}
+          disabled={membros.length === 0 || finalizando || excedeOrcamento || !justificativa.trim()}
           className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 disabled:grayscale shadow-sm active:scale-95 cursor-pointer"
         >
           {finalizando ? (
@@ -425,36 +438,44 @@ export default function ImplantacaoPage() {
 
       <AnimatePresence>
         {showSearch && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/35 backdrop-blur-[2px]">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white w-full max-w-xl rounded-lg shadow-2xl flex flex-col overflow-hidden max-h-[80vh] border border-slate-200"
+              initial={{ opacity: 0, scale: 0.98, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 10 }}
+              className="bg-white w-full max-w-md rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[min(520px,calc(100vh-2rem))] border border-slate-200"
             >
-              <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider">
-                  {showSearch === 'candidatos' ? 'Processo Seletivo' : 'Banco de Especialistas'}
-                </h3>
-                <button onClick={() => { setShowSearch(null); setModalErro(null); }} className="p-2 hover:bg-slate-100 rounded-full cursor-pointer">
-                  <X size={18} />
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-slate-900">
+                    {showSearch === 'candidatos' ? 'Processo seletivo' : 'Banco de Especialistas'}
+                  </p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Selecionar pesquisador
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setShowSearch(null); setModalErro(null); }}
+                  className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 rounded-lg cursor-pointer"
+                >
+                  <X size={16} />
                 </button>
               </div>
-              <div className="p-4 bg-slate-50 border-b border-slate-200">
+              <div className="p-3 border-b border-slate-100">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
                   <input
                     type="text"
-                    placeholder="Filtrar por nome..."
+                    placeholder="Buscar por nome..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded text-xs font-medium outline-none focus:border-slate-900"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-slate-900"
                   />
                 </div>
               </div>
               {modalErro && (
-                <div className="mx-4 mt-4 flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
-                  <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                <div className="mx-3 mt-3 flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  <AlertCircle size={13} className="mt-0.5 shrink-0" />
                   <span>{modalErro}</span>
                 </div>
               )}
@@ -464,22 +485,25 @@ export default function ImplantacaoPage() {
                       <button
                         key={c.ref}
                         onClick={() => addMembro(c.ref, c.nome, c.categoria)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded transition-all text-left group cursor-pointer"
+                        className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 rounded-lg transition-all text-left group cursor-pointer"
                       >
-                        <div>
-                          <p className="font-bold text-slate-800 text-sm">{c.nome}</p>
+                        <div className="h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-black text-slate-600 shrink-0">
+                          {c.nome.charAt(0)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-slate-800 text-sm truncate">{c.nome}</p>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             {CATEGORIA_BOLSA_LABELS[c.categoria]?.nivel ?? c.categoria}
                           </p>
                         </div>
-                        <div className="p-1 px-2 border border-slate-200 text-slate-400 rounded text-[10px] font-bold group-hover:bg-slate-900 group-hover:text-white transition-all">
+                        <div className="px-2 py-1 border border-slate-200 text-slate-400 rounded-md text-[10px] font-bold group-hover:bg-slate-900 group-hover:text-white transition-all">
                           ADICIONAR
                         </div>
                       </button>
                     ))
                   : buscandoEspecialistas ? (
                       <div className="p-8 text-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-400 mx-auto mb-2"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-400 mx-auto mb-2"></div>
                         <p className="text-xs text-slate-400 font-medium">Buscando especialistas...</p>
                       </div>
                     ) : especialistas.length === 0 ? (
@@ -491,15 +515,18 @@ export default function ImplantacaoPage() {
                         <button
                           key={e.id}
                           onClick={() => addMembro(e.matricula, e.nome, CategoriaBolsa.PESQUISADOR_PLENO)}
-                          className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded transition-all text-left group cursor-pointer"
+                          className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 rounded-lg transition-all text-left group cursor-pointer"
                         >
-                          <div>
-                            <p className="font-bold text-slate-800 text-sm">{e.nome}</p>
+                          <div className="h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-black text-slate-600 shrink-0">
+                            {e.nome.charAt(0)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-slate-800 text-sm truncate">{e.nome}</p>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                               Matrícula: {e.matricula}
                             </p>
                           </div>
-                          <div className="p-1 px-2 border border-slate-200 text-slate-400 rounded text-[10px] font-bold group-hover:bg-slate-900 group-hover:text-white transition-all">
+                          <div className="px-2 py-1 border border-slate-200 text-slate-400 rounded-md text-[10px] font-bold group-hover:bg-slate-900 group-hover:text-white transition-all">
                             ADICIONAR
                           </div>
                         </button>
@@ -513,36 +540,36 @@ export default function ImplantacaoPage() {
 
       <AnimatePresence>
         {showSuccessModal && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl relative z-10 text-center"
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              className="bg-white w-full max-w-sm p-5 rounded-xl shadow-2xl relative z-10 border border-slate-200"
             >
-              <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <FileCheck size={40} />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center border border-amber-100 shrink-0">
+                  <FileCheck size={20} />
+                </div>
+                <div className="text-left min-w-0">
+                  <h3 className="text-base font-bold text-slate-900">Implantação submetida</h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Solicitação #{solicitacaoId}. A equipe oficial permanece intacta até a aprovação.
+                  </p>
+                </div>
               </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2">Implantação Submetida!</h3>
-              <p className="text-slate-500 font-medium mb-2">
-                Solicitação #{solicitacaoId}
-              </p>
-              <p className="text-slate-500 font-medium mb-6">
-                Aguardando aprovação do Gestor do Polo. A equipe oficial do projeto
-                permanece <strong>intacta</strong> até a aprovação.
-              </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 mt-5">
                 <button
                   onClick={() => navigate(`/solicitacoes/${solicitacaoId}/comparacao`)}
-                  className="py-3 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+                  className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
                 >
                   <FileCheck size={14} />
                   Ver Solicitação
                 </button>
                 <button
                   onClick={() => navigate(`/projetos/${projetoId}`)}
-                  className="py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
+                  className="py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
                 >
                   Voltar ao Projeto
                 </button>

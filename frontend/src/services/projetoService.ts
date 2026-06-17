@@ -1,5 +1,5 @@
 import { api } from './api'
-import { Projeto, ProjetoCreate, VersaoRHProjeto } from '../types/projeto'
+import { Projeto, ProjetoCreate, ProjetoUpdate, VersaoRHProjeto } from '../types/projeto'
 import { Membro } from '../types/solicitacao'
 
 export interface Paginated<T> {
@@ -24,6 +24,11 @@ export const projetoService = {
 
   async obter(id: number): Promise<Projeto> {
     const response = await api.get<Projeto>(`/projetos/${id}`)
+    return response.data
+  },
+
+  async atualizar(id: number, dados: ProjetoUpdate): Promise<Projeto> {
+    const response = await api.put<Projeto>(`/projetos/${id}`, dados)
     return response.data
   },
 

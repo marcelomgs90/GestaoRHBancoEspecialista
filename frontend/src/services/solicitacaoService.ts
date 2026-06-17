@@ -18,6 +18,14 @@ export const solicitacaoService = {
     return response.data
   },
 
+  async atualizarJustificativa(solicitacaoId: number, justificativa: string): Promise<Solicitacao> {
+    const response = await api.patch<Solicitacao>(
+      `/solicitacoes/${solicitacaoId}/justificativa`,
+      { justificativa },
+    )
+    return response.data
+  },
+
   async listarMembros(solicitacaoId: number): Promise<Membro[]> {
     const response = await api.get<Membro[]>(`/solicitacoes/${solicitacaoId}/membros`)
     return response.data

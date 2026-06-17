@@ -7,6 +7,7 @@ from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
 from app.models.projeto_anexo import ProjetoAnexo
 from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.solicitacao_rh import SolicitacaoRH
+from app.models.solicitacao_justificativa import SolicitacaoJustificativa
 from app.models.versao_rh_projeto import VersaoRHProjeto
 from app.models.transferencia_rh import TransferenciaRH
 from app.models.especialista_externo import EspecialistaExterno, UsuarioExterno
@@ -21,6 +22,7 @@ __all__ = [
     "ProjetoAnexo",
     "PesquisadorProjeto",
     "SolicitacaoRH",
+    "SolicitacaoJustificativa",
     "VersaoRHProjeto",
     "TransferenciaRH",
     "EspecialistaExterno",

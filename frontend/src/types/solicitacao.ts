@@ -1,4 +1,18 @@
-import { TipoSolicitacao, StatusSolicitacao, FonteFinanciamento, CategoriaBolsa } from './enums'
+import {
+  TipoSolicitacao,
+  StatusSolicitacao,
+  FonteFinanciamento,
+  CategoriaBolsa,
+  TipoJustificativaSolicitacao,
+} from './enums'
+
+export interface SolicitacaoJustificativa {
+  id: number
+  tipo: TipoJustificativaSolicitacao
+  descricao: string
+  criado_por: number
+  criado_em: string
+}
 
 export interface Solicitacao {
   id: number
@@ -6,8 +20,11 @@ export interface Solicitacao {
   projeto_id: number
   tipo: TipoSolicitacao
   status: StatusSolicitacao
-  justificativa?: string
-  mes_ano_referencia?: string
+  justificativa_implantacao?: string | null
+  justificativa_alteracao?: string | null
+  justificativa_rejeicao?: string | null
+  justificativas?: SolicitacaoJustificativa[]
+  mes_ano_referencia?: string | null
   criado_por: number
   criado_em: string
 }
