@@ -302,6 +302,7 @@ class SolicitacaoService:
         projeto = self._buscar_projeto(solicitacao.projeto_id)
         self._verificar_permissao_edicao(projeto, current_user)
         self._validar_justificativa_obrigatoria(solicitacao)
+        self._validar_membros_obrigatorios(solicitacao)
         self._validar_orcamento_fontes(solicitacao)
 
         solicitacao.status = StatusSolicitacao.SUBMETIDA
@@ -323,6 +324,35 @@ class SolicitacaoService:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Justificativa e obrigatoria para implantacao e alteracao",
+        )
+
+    def _validar_membros_obrigatorios(self, solicitacao: SolicitacaoRH) -> None:
+        if solicitacao.tipo not in (TipoSolicitacao.IMPLANTACAO, TipoSolicitacao.ALTERACAO):
+            return
+
+        versao = (
+            self.db.query(VersaoRHProjeto)
+            .filter(VersaoRHProjeto.solicitacao_id == solicitacao.id)
+            .first()
+        )
+        if not versao:
+            return
+
+        total_membros = (
+            self.db.query(PesquisadorProjeto)
+            .filter(PesquisadorProjeto.versao_rh_id == versao.id)
+            .count()
+        )
+        if total_membros > 0:
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Implantacao deve possuir pelo menos um membro na equipe proposta"
+                if solicitacao.tipo == TipoSolicitacao.IMPLANTACAO
+                else "Alteracao deve possuir pelo menos um membro na equipe proposta"
+            ),
         )
 
     def comparar(self, solicitacao_id: int) -> Dict[str, Any]:

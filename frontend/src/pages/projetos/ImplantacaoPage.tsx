@@ -59,6 +59,7 @@ export default function ImplantacaoPage() {
   const [justificativa, setJustificativa] = useState('');
   const [justificativaErro, setJustificativaErro] = useState<string | null>(null);
   const [finalizando, setFinalizando] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [modalErro, setModalErro] = useState<string | null>(null);
@@ -177,8 +178,16 @@ export default function ImplantacaoPage() {
     });
   };
 
+  const temMembrosDesignacao = membros.length > 0;
+
+  const validarDesignacoes = () => {
+    if (temMembrosDesignacao) return true;
+    setErro('Inclua pelo menos um membro na implantação antes de cadastrar a solicitação.');
+    return false;
+  };
+
   const handleFinalizar = async () => {
-    if (membros.length === 0) return;
+    if (!validarDesignacoes()) return;
     const justificativaTratada = justificativa.trim();
     if (!justificativaTratada) {
       setJustificativaErro('Informe a justificativa da implantação.');
@@ -307,7 +316,7 @@ export default function ImplantacaoPage() {
         <div className="p-6 border-b border-slate-200 flex items-start justify-between gap-4">
           <div>
             <h3 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
-              Designações Pendentes
+              Quadro de Membros
             </h3>
             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
               Aguardando finalização
@@ -346,7 +355,10 @@ export default function ImplantacaoPage() {
             <div className="p-24 text-center">
               <Users size={64} className="mx-auto mb-6 text-slate-100" />
               <p className="font-black text-slate-300 uppercase tracking-widest text-xs italic">
-                Lista de designação vazia
+                Inclua pelo menos um membro na implantação.
+              </p>
+              <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Não é permitido cadastrar uma implantação sem membros.
               </p>
             </div>
           )}
@@ -418,8 +430,8 @@ export default function ImplantacaoPage() {
 
       <div className="flex items-center justify-end p-8 bg-slate-100 border border-slate-200 rounded-lg">
         <button
-          onClick={handleFinalizar}
-          disabled={membros.length === 0 || finalizando || excedeOrcamento || !justificativa.trim()}
+          onClick={() => setShowConfirmModal(true)}
+          disabled={!temMembrosDesignacao || finalizando || excedeOrcamento || !justificativa.trim()}
           className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 disabled:grayscale shadow-sm active:scale-95 cursor-pointer"
         >
           {finalizando ? (
@@ -430,7 +442,7 @@ export default function ImplantacaoPage() {
           ) : (
             <>
               <FileCheck size={18} className="mr-3" />
-              Finalizar Solicitação
+              Cadastrar Implantação
             </>
           )}
         </button>
@@ -539,6 +551,70 @@ export default function ImplantacaoPage() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              className="bg-white w-full max-w-sm p-5 rounded-xl shadow-2xl relative z-10 border border-slate-200"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-slate-100 text-slate-700 rounded-lg flex items-center justify-center border border-slate-200 shrink-0">
+                  <FileCheck size={20} />
+                </div>
+                <div className="text-left min-w-0">
+                  <h3 className="text-base font-bold text-slate-900">Cadastrar implantação</h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    A solicitação será criada e submetida para aprovação com os membros informados.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Membros</p>
+                  <p className="text-sm font-bold text-slate-900">{membros.length}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Carga</p>
+                  <p className="text-sm font-bold text-slate-900">{totalCargaHoraria}h</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Bolsas</p>
+                  <p className="text-sm font-bold text-slate-900">{formatCurrencyBRL(totalBolsas)}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-5">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(false)}
+                  disabled={finalizando}
+                  className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    void handleFinalizar();
+                  }}
+                  disabled={finalizando}
+                  className="py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer"
+                >
+                  {finalizando ? 'Confirmando...' : 'Confirmar'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {showSuccessModal && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />

@@ -266,6 +266,13 @@ export default function AlteracaoPage() {
   const saldoFontes = totalFontes - totalEquipeProposta;
   const excedeOrcamento = totalEquipeProposta > totalFontes;
   const fontesDoProjeto = (projeto?.fontes_financiamento ?? []).map((fonte) => fonte.fonte);
+  const temMembrosProposta = equipeProposta.length > 0;
+
+  const validarEquipeProposta = () => {
+    if (temMembrosProposta) return true;
+    setErro('Inclua pelo menos um membro na equipe proposta antes de salvar ou submeter a alteração.');
+    return false;
+  };
 
   /**
    * Garante que a solicitação existe e retorna o estado consistente dos clones.
@@ -437,6 +444,7 @@ export default function AlteracaoPage() {
   };
 
   const handleSalvar = async () => {
+    if (!validarEquipeProposta()) return;
     setSalvando(true);
     setErro(null);
 
@@ -457,6 +465,7 @@ export default function AlteracaoPage() {
   };
 
   const handleSubmeter = async () => {
+    if (!validarEquipeProposta()) return;
     setSubmetendo(true);
     setErro(null);
 
@@ -702,10 +711,10 @@ export default function AlteracaoPage() {
           {equipeProposta.length === 0 && equipeAtual.length > 0 && (
             <div className="p-8 text-center">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                Todos os {equipeAtual.length} membros da versão vigente serão encerrados nesta alteração.
+                Inclua pelo menos um membro na equipe proposta.
               </p>
               <p className="text-[10px] text-slate-400 mt-2">
-                Adicione novos membros ou submeta para encerrar a equipe vigente.
+                Não é permitido salvar ou submeter uma alteração sem membros.
               </p>
             </div>
           )}
@@ -822,7 +831,7 @@ export default function AlteracaoPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSalvar}
-            disabled={salvando || submetendo || excedeOrcamento || !justificativa.trim()}
+            disabled={salvando || submetendo || excedeOrcamento || !justificativa.trim() || !temMembrosProposta}
             className="flex items-center px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition-all disabled:opacity-30 shadow-sm active:scale-95 cursor-pointer"
           >
             {salvando ? (
@@ -839,7 +848,7 @@ export default function AlteracaoPage() {
           </button>
           <button
             onClick={handleSubmeter}
-            disabled={salvando || submetendo || excedeOrcamento || !justificativa.trim()}
+            disabled={salvando || submetendo || excedeOrcamento || !justificativa.trim() || !temMembrosProposta}
             className="flex items-center px-8 py-3 bg-slate-900 text-white rounded font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-all disabled:opacity-30 shadow-sm active:scale-95 cursor-pointer"
           >
             {submetendo ? (
