@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.utils.enums import FonteFinanciamento, StatusProjeto
+from app.utils.enums import FonteFinanciamento, StatusProjeto, TipoDocumentoProjeto
 
 
 class ProjetoFonteFinanciamento(BaseModel):
@@ -74,6 +74,20 @@ class ProjetoResponse(BaseModel):
     usuario_nome: Optional[str] = None
     criado_em: datetime
     atualizado_em: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ProjetoAnexoResponse(BaseModel):
+    id: int
+    projeto_id: int
+    tipo_documento: TipoDocumentoProjeto
+    numero_documento: Optional[str] = None
+    nome_arquivo_original: str
+    content_type: Optional[str] = None
+    tamanho_bytes: Optional[int] = None
+    data_upload: datetime
 
     class Config:
         from_attributes = True

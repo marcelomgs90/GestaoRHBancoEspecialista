@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     APP_NAME: str = "Gestao RH Banco de Especialistas"
     APP_VERSION: str = "1.0.0"
+    UPLOAD_DIR: str = "uploads"
+    MAX_UPLOAD_SIZE_MB: int = 10
 
     class Config:
         env_file = ".env"

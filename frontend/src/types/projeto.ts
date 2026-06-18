@@ -1,4 +1,4 @@
-import { CategoriaBolsa, FonteFinanciamento, StatusProjeto } from './enums'
+import { CategoriaBolsa, FonteFinanciamento, StatusProjeto, TipoDocumentoProjeto } from './enums'
 
 export interface ProjetoFonteFinanciamento {
   fonte: FonteFinanciamento
@@ -46,6 +46,17 @@ export interface Projeto {
   usuario_nome?: string | null
   criado_em: string
   atualizado_em: string
+}
+
+export interface ProjetoAnexo {
+  id: number
+  projeto_id: number
+  tipo_documento: TipoDocumentoProjeto
+  numero_documento?: string | null
+  nome_arquivo_original: string
+  content_type?: string | null
+  tamanho_bytes?: number | null
+  data_upload: string
 }
 
 export const CATEGORIA_BOLSA_LABELS: Record<CategoriaBolsa, { funcao: string; nivel: string }> = {
