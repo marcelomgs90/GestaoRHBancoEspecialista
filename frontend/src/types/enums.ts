@@ -16,6 +16,12 @@ export enum TipoJustificativaSolicitacao {
   REJEICAO = 'REJEICAO',
 }
 
+export enum TipoDocumentoProjeto {
+  ACORDO_PARCEIRA = 'ACORDO_PARCEIRA',
+  PLANO_TRABALHO = 'PLANO_TRABALHO',
+  DIARIO_OFICIAL = 'DIARIO_OFICIAL',
+}
+
 export enum StatusSolicitacao {
   EM_EDICAO = 'EM_EDICAO',
   SUBMETIDA = 'SUBMETIDA',
@@ -73,4 +79,10 @@ export const TIPO_SOLICITACAO_LABELS: Record<TipoSolicitacao, string> = {
   [TipoSolicitacao.IMPLANTACAO]: 'Implantação',
   [TipoSolicitacao.ALTERACAO]: 'Alteração',
   [TipoSolicitacao.PAGAMENTO]: 'Pagamento',
+}
+
+export const TIPO_DOCUMENTO_PROJETO_LABELS: Record<TipoDocumentoProjeto, string> = {
+  [TipoDocumentoProjeto.ACORDO_PARCEIRA]: 'Acordo de Parceria',
+  [TipoDocumentoProjeto.PLANO_TRABALHO]: 'Plano de Trabalho',
+  [TipoDocumentoProjeto.DIARIO_OFICIAL]: 'Diário Oficial',
 }

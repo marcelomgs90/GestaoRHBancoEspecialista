@@ -1,5 +1,6 @@
 import { api } from './api'
-import { Projeto, ProjetoCreate, ProjetoUpdate, VersaoRHProjeto } from '../types/projeto'
+import { TipoDocumentoProjeto } from '../types/enums'
+import { Projeto, ProjetoAnexo, ProjetoCreate, ProjetoUpdate, VersaoRHProjeto } from '../types/projeto'
 import { Membro } from '../types/solicitacao'
 
 export interface Paginated<T> {
@@ -29,6 +30,40 @@ export const projetoService = {
 
   async atualizar(id: number, dados: ProjetoUpdate): Promise<Projeto> {
     const response = await api.put<Projeto>(`/projetos/${id}`, dados)
+    return response.data
+  },
+
+  async listarAnexos(id: number): Promise<ProjetoAnexo[]> {
+    const response = await api.get<ProjetoAnexo[]>(`/projetos/${id}/anexos`)
+    return response.data
+  },
+
+  async enviarAnexo(
+    id: number,
+    tipoDocumento: TipoDocumentoProjeto,
+    arquivo: File,
+    numeroDocumento?: string,
+  ): Promise<ProjetoAnexo> {
+    const formData = new FormData()
+    formData.append('tipo_documento', tipoDocumento)
+    formData.append('arquivo', arquivo)
+    if (numeroDocumento?.trim()) {
+      formData.append('numero_documento', numeroDocumento.trim())
+    }
+    const response = await api.post<ProjetoAnexo>(`/projetos/${id}/anexos`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  },
+
+  async removerAnexo(id: number, anexoId: number): Promise<void> {
+    await api.delete(`/projetos/${id}/anexos/${anexoId}`)
+  },
+
+  async baixarAnexo(id: number, anexoId: number): Promise<Blob> {
+    const response = await api.get(`/projetos/${id}/anexos/${anexoId}/download`, {
+      responseType: 'blob',
+    })
     return response.data
   },
 

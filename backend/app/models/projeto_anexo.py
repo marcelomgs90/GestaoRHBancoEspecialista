@@ -16,6 +16,8 @@ class ProjetoAnexo(Base):
     numero_documento = Column(String(100), nullable=True)
     caminho_arquivo = Column(String(500), nullable=False)
     nome_arquivo_original = Column(String(255), nullable=False)
+    content_type = Column(String(100), nullable=True)
+    tamanho_bytes = Column(Integer, nullable=True)
 
     data_upload = Column(DateTime, default=datetime.utcnow, nullable=False)
 

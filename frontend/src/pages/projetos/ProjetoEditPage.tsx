@@ -8,9 +8,12 @@ import {
   ArrowLeft,
   ArrowRight,
   Calendar,
-  CheckCircle2,
+  Download,
+  FileText,
   LockKeyhole,
   Save,
+  Trash2,
+  Upload,
 } from 'lucide-react';
 import type { AxiosError } from 'axios';
 import { projetoService } from '@/services/projetoService';
@@ -20,7 +23,10 @@ import {
   FONTE_LABELS,
   STATUS_PROJETO_LABELS,
   StatusProjeto,
+  TipoDocumentoProjeto,
+  TIPO_DOCUMENTO_PROJETO_LABELS,
 } from '@/types/enums';
+import type { ProjetoAnexo } from '@/types/projeto';
 
 const schema = z
   .object({
@@ -36,6 +42,7 @@ const schema = z
   });
 
 type FormData = z.infer<typeof schema>;
+type AnexosPendentes = Partial<Record<TipoDocumentoProjeto, File>>;
 
 const statusOptions = [
   StatusProjeto.ATIVO,
@@ -43,22 +50,59 @@ const statusOptions = [
   StatusProjeto.SUSPENSO,
 ];
 
+const documentoSlots = [
+  TipoDocumentoProjeto.ACORDO_PARCEIRA,
+  TipoDocumentoProjeto.PLANO_TRABALHO,
+  TipoDocumentoProjeto.DIARIO_OFICIAL,
+];
+const extensoesPermitidas = ['.pdf', '.doc', '.docx'];
+
+const formatFileSize = (bytes?: number | null) => {
+  if (!bytes) return '';
+  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const getApiErrorMessage = (err: unknown, fallback: string) => {
+  const ax = err as AxiosError<{ detail?: unknown }>;
+  const detail = ax.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object' && 'msg' in item) {
+          return String((item as { msg: unknown }).msg);
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .join(' ');
+  }
+  return fallback;
+};
+
 export default function ProjetoEditPage() {
   const { id_projeto } = useParams<{ id_projeto: string }>();
   const navigate = useNavigate();
   const projetoId = Number(id_projeto);
 
   const [projeto, setProjeto] = useState<Projeto | null>(null);
+  const [anexos, setAnexos] = useState<ProjetoAnexo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [sucesso, setSucesso] = useState(false);
+  const [anexoError, setAnexoError] = useState<string | null>(null);
+  const [anexosPendentes, setAnexosPendentes] = useState<AnexosPendentes>({});
+  const [anexosRemovidos, setAnexosRemovidos] = useState<number[]>([]);
+  const [confirmacaoSalvar, setConfirmacaoSalvar] = useState<FormData | null>(null);
+  const [salvando, setSalvando] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -75,8 +119,12 @@ export default function ProjetoEditPage() {
 
     async function load() {
       try {
-        const data = await projetoService.obter(projetoId);
+        const [data, anexosData] = await Promise.all([
+          projetoService.obter(projetoId),
+          projetoService.listarAnexos(projetoId),
+        ]);
         setProjeto(data);
+        setAnexos(anexosData);
         reset({
           titulo: data.titulo,
           descricao: data.descricao ?? '',
@@ -102,9 +150,25 @@ export default function ProjetoEditPage() {
     );
   }, [projeto]);
 
-  const onSubmit = async (data: FormData) => {
-    if (!projetoId) return;
+  const totalAnexosVisiveis = useMemo(
+    () =>
+      documentoSlots.filter((tipo) => {
+        const anexo = anexos.find((item) => item.tipo_documento === tipo);
+        return Boolean(anexosPendentes[tipo] || (anexo && !anexosRemovidos.includes(anexo.id)));
+      }).length,
+    [anexos, anexosPendentes, anexosRemovidos],
+  );
+
+  const onSubmit = (data: FormData) => {
     setSubmitError(null);
+    setConfirmacaoSalvar(data);
+  };
+
+  const confirmarSalvar = async () => {
+    const data = confirmacaoSalvar;
+    if (!projetoId || !data) return;
+    setSubmitError(null);
+    setSalvando(true);
 
     try {
       const atualizado = await projetoService.atualizar(projetoId, {
@@ -114,7 +178,22 @@ export default function ProjetoEditPage() {
         data_fim: data.data_fim,
         status: data.status,
       });
+
+      for (const anexoId of anexosRemovidos) {
+        await projetoService.removerAnexo(projetoId, anexoId);
+      }
+
+      for (const [tipo, arquivo] of Object.entries(anexosPendentes)) {
+        if (arquivo) {
+          await projetoService.enviarAnexo(projetoId, tipo as TipoDocumentoProjeto, arquivo);
+        }
+      }
+
+      const anexosAtualizados = await projetoService.listarAnexos(projetoId);
       setProjeto(atualizado);
+      setAnexos(anexosAtualizados);
+      setAnexosPendentes({});
+      setAnexosRemovidos([]);
       reset({
         titulo: atualizado.titulo,
         descricao: atualizado.descricao ?? '',
@@ -122,10 +201,66 @@ export default function ProjetoEditPage() {
         data_fim: atualizado.data_fim.split('T')[0],
         status: atualizado.status,
       });
-      setSucesso(true);
+      setConfirmacaoSalvar(null);
+      navigate(`/projetos/${atualizado.id}`);
     } catch (err) {
-      const ax = err as AxiosError<{ detail: string }>;
-      setSubmitError(ax.response?.data?.detail ?? 'Erro ao atualizar projeto. Tente novamente.');
+      setSubmitError(getApiErrorMessage(err, 'Erro ao atualizar projeto. Tente novamente.'));
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const getAnexoPorTipo = (tipo: TipoDocumentoProjeto) =>
+    anexos.find((anexo) => anexo.tipo_documento === tipo);
+
+  const handleUploadAnexo = (tipo: TipoDocumentoProjeto, file?: File) => {
+    if (!file) return;
+    setAnexoError(null);
+
+    const extensao = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+    if (!extensoesPermitidas.includes(extensao)) {
+      setAnexoError('Formato de arquivo nao permitido. Use apenas PDF, DOC ou DOCX.');
+      return;
+    }
+
+    const anexoAtual = getAnexoPorTipo(tipo);
+    setAnexosPendentes((atuais) => ({ ...atuais, [tipo]: file }));
+    if (anexoAtual) {
+      setAnexosRemovidos((atuais) => atuais.filter((id) => id !== anexoAtual.id));
+    }
+  };
+
+  const handleBaixarAnexo = async (anexo: ProjetoAnexo) => {
+    if (!projetoId) return;
+    setAnexoError(null);
+    try {
+      const blob = await projetoService.baixarAnexo(projetoId, anexo.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = anexo.nome_arquivo_original;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setAnexoError('Erro ao baixar documento. Tente novamente.');
+    }
+  };
+
+  const handleRemoverAnexo = (tipo: TipoDocumentoProjeto, anexo?: ProjetoAnexo) => {
+    setAnexoError(null);
+
+    setAnexosPendentes((atuais) => {
+      const atualizados = { ...atuais };
+      delete atualizados[tipo];
+      return atualizados;
+    });
+
+    if (anexo) {
+      setAnexosRemovidos((atuais) =>
+        atuais.includes(anexo.id) ? atuais : [...atuais, anexo.id],
+      );
     }
   };
 
@@ -275,6 +410,136 @@ export default function ProjetoEditPage() {
               </div>
             </div>
           </div>
+
+          <div className="mt-8 border-t border-slate-100 pt-6">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">
+                  Documentos do projeto
+                </h3>
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  Anexe um arquivo para cada tipo de documento obrigatório.
+                </p>
+              </div>
+              <span className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
+                {totalAnexosVisiveis}/3 anexos
+              </span>
+            </div>
+
+            {anexoError && (
+              <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
+                <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                <span>{anexoError}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-3">
+              {documentoSlots.map((tipo) => {
+                const anexo = getAnexoPorTipo(tipo) as ProjetoAnexo;
+                const arquivoPendente = anexosPendentes[tipo];
+                const remocaoPendente = anexo ? anexosRemovidos.includes(anexo.id) : false;
+                const anexoVisivel = remocaoPendente ? undefined : anexo;
+                const nomeArquivo = arquivoPendente?.name ?? anexoVisivel?.nome_arquivo_original;
+                return (
+                  <div
+                    key={tipo}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500">
+                          <FileText size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-black uppercase tracking-widest text-slate-900">
+                            {TIPO_DOCUMENTO_PROJETO_LABELS[tipo]}
+                          </p>
+                          {nomeArquivo ? (
+                            <>
+                              <p className="mt-1 truncate text-sm font-bold text-slate-800">
+                                {nomeArquivo}
+                              </p>
+                              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                {arquivoPendente ? `${formatFileSize(arquivoPendente.size)} - Pendente` : (
+                                  <>
+                                {formatFileSize(anexo.tamanho_bytes)} · {formatDate(anexo.data_upload)}
+                                  </>
+                                )}
+                              </p>
+                            </>
+                          ) : remocaoPendente ? (
+                            <p className="mt-1 text-xs font-bold text-red-500">
+                              Remoção pendente
+                            </p>
+                          ) : (
+                            <p className="mt-1 text-xs font-medium text-slate-400">
+                              Nenhum arquivo anexado
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {anexoVisivel && !arquivoPendente && (
+                          <button
+                            type="button"
+                            onClick={() => void handleBaixarAnexo(anexoVisivel)}
+                            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 transition-all hover:bg-slate-100 cursor-pointer"
+                          >
+                            <Download size={13} />
+                            Baixar
+                          </button>
+                        )}
+
+                        {(anexoVisivel || arquivoPendente) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRemoverAnexo(tipo, arquivoPendente ? undefined : anexoVisivel)
+                            }
+                            className="flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-600 transition-all hover:bg-red-50 cursor-pointer"
+                          >
+                            <Trash2 size={13} />
+                            {arquivoPendente && anexoVisivel ? 'Cancelar troca' : 'Remover'}
+                          </button>
+                        )}
+
+                        {remocaoPendente && anexo && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAnexosRemovidos((atuais) =>
+                                atuais.filter((id) => id !== anexo.id),
+                              )
+                            }
+                            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 transition-all hover:bg-slate-100 cursor-pointer"
+                          >
+                            Desfazer
+                          </button>
+                        )}
+
+                        <label className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-slate-800">
+                          <Upload size={13} />
+                          {arquivoPendente || anexoVisivel ? 'Substituir' : 'Anexar'}
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.doc,.docx"
+                            disabled={salvando}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              event.target.value = '';
+                              handleUploadAnexo(tipo, file);
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </section>
 
         <aside className="space-y-4">
@@ -348,16 +613,60 @@ export default function ProjetoEditPage() {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !isDirty}
+              disabled={isSubmitting || salvando}
               className="flex items-center gap-2 rounded-lg bg-slate-900 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
             >
               <Save size={15} />
-              {isSubmitting ? 'Salvando...' : 'Salvar'}
+              {salvando ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </aside>
       </form>
 
+      {confirmacaoSalvar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]"
+            onClick={() => {
+              if (!salvando) setConfirmacaoSalvar(null);
+            }}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600">
+                <Save size={20} />
+              </div>
+              <div className="min-w-0 text-left">
+                <h3 className="text-base font-bold text-slate-900">Salvar alterações?</h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Confirme para gravar as alterações do projeto {projeto.codigo}.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={salvando}
+                onClick={() => setConfirmacaoSalvar(null)}
+                className="rounded-lg border border-slate-200 bg-white py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={salvando}
+                onClick={() => void confirmarSalvar()}
+                className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              >
+                {salvando ? 'Salvando...' : 'Confirmar'}
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/*
       {sucesso && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
@@ -396,6 +705,7 @@ export default function ProjetoEditPage() {
           </div>
         </div>
       )}
+      */}
     </div>
   );
 }

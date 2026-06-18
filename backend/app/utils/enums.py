@@ -30,6 +30,13 @@ class TipoJustificativaSolicitacao(str, Enum):
     REJEICAO = "REJEICAO"
 
 
+class TipoDocumentoProjeto(str, Enum):
+    """Tipos de documentos anexados ao projeto."""
+    ACORDO_PARCEIRA = "ACORDO_PARCEIRA"
+    PLANO_TRABALHO = "PLANO_TRABALHO"
+    DIARIO_OFICIAL = "DIARIO_OFICIAL"
+
+
 class StatusSolicitacao(str, Enum):
     """Status da solicitação"""
     EM_EDICAO = "EM_EDICAO"
