@@ -181,7 +181,11 @@ class MembroService:
             )
 
         pode_editar = (
-            current_user.perfil in (PerfilUsuario.ADMINISTRADOR, PerfilUsuario.APOIO_COORDENADOR)
+            current_user.perfil in (
+                PerfilUsuario.ADMINISTRADOR,
+                PerfilUsuario.GESTOR_POLO,
+                PerfilUsuario.APOIO_COORDENADOR,
+            )
             or (
                 current_user.perfil == PerfilUsuario.COORDENADOR
                 and projeto.coordenador_id == current_user.id

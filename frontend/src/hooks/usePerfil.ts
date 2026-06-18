@@ -19,12 +19,25 @@ export function usePerfil() {
     isGestorPolo: perfil === PerfilUsuario.GESTOR_POLO,
     isApoioCoordenador: perfil === PerfilUsuario.APOIO_COORDENADOR,
 
-    podeCriarProjeto: is(PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR),
-    podeEditarProjeto: is(PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR),
-    podeAprovarSolicitacao: is(PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR),
+    podeCriarProjeto: is(
+      PerfilUsuario.COORDENADOR,
+      PerfilUsuario.ADMINISTRADOR,
+      PerfilUsuario.GESTOR_POLO,
+    ),
+    podeEditarProjeto: is(
+      PerfilUsuario.COORDENADOR,
+      PerfilUsuario.ADMINISTRADOR,
+      PerfilUsuario.GESTOR_POLO,
+    ),
+    podeAprovarSolicitacao: is(
+      PerfilUsuario.COORDENADOR,
+      PerfilUsuario.ADMINISTRADOR,
+      PerfilUsuario.GESTOR_POLO,
+    ),
     podeEditarMembros: is(
       PerfilUsuario.COORDENADOR,
       PerfilUsuario.ADMINISTRADOR,
+      PerfilUsuario.GESTOR_POLO,
       PerfilUsuario.APOIO_COORDENADOR,
     ),
     podeGerenciarParametros: is(PerfilUsuario.ADMINISTRADOR),

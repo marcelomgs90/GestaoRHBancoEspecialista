@@ -33,7 +33,13 @@ export function AppRoutes() {
           <Route
             path="/projetos/novo"
             element={
-              <RoleRoute allowedRoles={[PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR]}>
+              <RoleRoute
+                allowedRoles={[
+                  PerfilUsuario.COORDENADOR,
+                  PerfilUsuario.ADMINISTRADOR,
+                  PerfilUsuario.GESTOR_POLO,
+                ]}
+              >
                 <ProjetoFormPage />
               </RoleRoute>
             }
@@ -42,7 +48,13 @@ export function AppRoutes() {
           <Route
             path="/projetos/:id_projeto/editar"
             element={
-              <RoleRoute allowedRoles={[PerfilUsuario.COORDENADOR, PerfilUsuario.ADMINISTRADOR]}>
+              <RoleRoute
+                allowedRoles={[
+                  PerfilUsuario.COORDENADOR,
+                  PerfilUsuario.ADMINISTRADOR,
+                  PerfilUsuario.GESTOR_POLO,
+                ]}
+              >
                 <ProjetoEditPage />
               </RoleRoute>
             }

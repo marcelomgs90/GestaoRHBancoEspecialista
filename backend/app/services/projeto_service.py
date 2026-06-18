@@ -236,7 +236,7 @@ class ProjetoService:
             pass
 
     def _validar_permissao_edicao(self, projeto: Projeto, current_user: Usuario) -> None:
-        if current_user.perfil == PerfilUsuario.ADMINISTRADOR:
+        if current_user.perfil in (PerfilUsuario.ADMINISTRADOR, PerfilUsuario.GESTOR_POLO):
             return
 
         if (
@@ -247,5 +247,5 @@ class ProjetoService:
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas o coordenador responsavel ou administrador pode editar o projeto",
+            detail="Apenas administrador, gestor do polo ou coordenador responsavel pode editar o projeto",
         )
