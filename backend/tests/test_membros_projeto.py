@@ -154,25 +154,25 @@ def test_projeto_service_atualiza_dados_sem_alterar_codigo_ou_fontes(
     assert atualizado.fontes_financiamento[0].fonte == FonteFinanciamento.EMPRESA
 
 
-def test_projeto_service_bloqueia_edicao_para_gestor(db, projeto, gestor):
-    """Gestor pode consultar fluxos, mas nao edita cadastro do projeto."""
+def test_projeto_service_permite_edicao_para_gestor(db, projeto, gestor):
+    """Gestor edita cadastro de qualquer projeto, sem assumir a coordenacao."""
     hoje = date.today()
     service = ProjetoService(db)
 
-    with pytest.raises(HTTPException) as exc_info:
-        service.atualizar(
-            projeto.id,
-            ProjetoUpdate(
-                titulo="Tentativa Indevida",
-                descricao=None,
-                data_inicio=hoje,
-                data_fim=hoje + timedelta(days=30),
-                status=StatusProjeto.ATIVO,
-            ),
-            gestor,
-        )
+    atualizado = service.atualizar(
+        projeto.id,
+        ProjetoUpdate(
+            titulo="Editado pelo Gestor",
+            descricao=None,
+            data_inicio=hoje,
+            data_fim=hoje + timedelta(days=30),
+            status=StatusProjeto.ATIVO,
+        ),
+        gestor,
+    )
 
-    assert exc_info.value.status_code == 403
+    assert atualizado.titulo == "Editado pelo Gestor"
+    assert atualizado.coordenador_id == projeto.coordenador_id
 
 
 def test_solicitacao_bloqueia_implantacao_quando_projeto_nao_esta_ativo(

@@ -232,7 +232,11 @@ class SolicitacaoService:
     def _verificar_permissao_edicao(
         self, projeto: Projeto, current_user: Usuario
     ) -> None:
-        if current_user.perfil in (PerfilUsuario.ADMINISTRADOR, PerfilUsuario.APOIO_COORDENADOR):
+        if current_user.perfil in (
+            PerfilUsuario.ADMINISTRADOR,
+            PerfilUsuario.GESTOR_POLO,
+            PerfilUsuario.APOIO_COORDENADOR,
+        ):
             return
 
         if current_user.perfil == PerfilUsuario.COORDENADOR and projeto.coordenador_id == current_user.id:
@@ -551,7 +555,7 @@ class SolicitacaoService:
         self.db.commit()
 
     def _verificar_permissao_aprovacao(self, projeto: Projeto, current_user: Usuario) -> None:
-        if current_user.perfil == PerfilUsuario.ADMINISTRADOR:
+        if current_user.perfil in (PerfilUsuario.ADMINISTRADOR, PerfilUsuario.GESTOR_POLO):
             return
 
         if current_user.perfil == PerfilUsuario.COORDENADOR and projeto.coordenador_id == current_user.id:
@@ -559,7 +563,7 @@ class SolicitacaoService:
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas o coordenador do projeto ou Administrador pode realizar esta acao",
+            detail="Apenas administrador, gestor do polo ou coordenador do projeto pode realizar esta acao",
         )
 
     def aprovar(self, solicitacao_id: int, current_user: Usuario) -> SolicitacaoRH:
