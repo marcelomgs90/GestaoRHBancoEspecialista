@@ -50,10 +50,10 @@ EM_EDICAO --(submeter)--> SUBMETIDA --(aprovar)--> APROVADA --> Adiciona/Remove 
 
 | Operação | Método | Endpoint | Validações |
 |----------|--------|----------|-----------|
-| Incluir | POST | `/solicitacoes/{id}/membros` | Apenas EM_EDICAO + coordenador |
+| Incluir | POST | `/solicitacoes/{id}/membros` | Apenas EM_EDICAO + perfil autorizado a editar RH |
 | Listar | GET | `/solicitacoes/{id}/membros` | - |
-| Atualizar | PUT | `/solicitacoes/{id}/membros/{membro_id}` | Apenas EM_EDICAO + coordenador |
-| Remover | DELETE | `/solicitacoes/{id}/membros/{membro_id}` | Apenas EM_EDICAO + coordenador |
+| Atualizar | PUT | `/solicitacoes/{id}/membros/{membro_id}` | Apenas EM_EDICAO + perfil autorizado a editar RH |
+| Remover | DELETE | `/solicitacoes/{id}/membros/{membro_id}` | Apenas EM_EDICAO + perfil autorizado a editar RH |
 
 ### 3.2 Listagem no Projeto
 
@@ -132,33 +132,36 @@ O endpoint `GET /projetos/{id}/pesquisadores` retorna os pesquisadores da versã
 
 ## 5. Regras de Permissão
 
-| Ação | Coordenador | Gestor Polo | Administrador |
-|------|------------|------------|---------------|
-| Criar projeto | ✓ | - | ✓ |
-| Criar/edtar/remover membro | ✓ | - | ✓ |
-| Submeter solicitação | ✓ | - | ✓ |
-| Aprovar solicitação | - | ✓ | ✓ |
-| Rejeitar solicitação | - | ✓ | ✓ |
-| Listar projetos | Próprios | Todos | Todos |
+| Ação | Coordenador | Gestor Polo | Administrador | Apoio Coordenador |
+|------|------------|-------------|---------------|-------------------|
+| Criar projeto | ✓ | ✓ | ✓ | - |
+| Editar projeto | Próprios | ✓ | ✓ | - |
+| Listar projetos | Próprios | Todos | Todos | Todos |
+| Criar implantação/alteração de RH | Próprios | - | ✓ | ✓ |
+| Criar/editar/remover membro | Próprios | - | ✓ | ✓ |
+| Submeter solicitação | Próprios | - | ✓ | ✓ |
+| Listar/visualizar solicitações | Próprias | ✓ | ✓ | ✓ |
+| Aprovar solicitação | - | ✓ | ✓ | - |
+| Rejeitar solicitação | - | ✓ | ✓ | - |
 
 ## 6. Validações
 
 ### 6.1 Inclusão de Membro
 
 - Soliciteção deve estar em EM_EDICAO
-- Usuário deve ser coordenador do projeto
+- Usuário deve ser coordenador do projeto, administrador ou apoio coordenador
 - Valor da bolsa calculado automaticamente via Parametro_Regra
 - Validação de carga horária global
 
 ### 6.2 Atualização de Membro
 
 - Soliciteção deve estar em EM_EDICAO
-- Usuário deve ser coordenador do projeto
+- Usuário deve ser coordenador do projeto, administrador ou apoio coordenador
 
 ### 6.3 Remoção de Membro
 
 - Soliciteção deve estar em EM_EDICAO
-- Usuário deve ser coordenador do projeto
+- Usuário deve ser coordenador do projeto, administrador ou apoio coordenador
 - Deleção física (não retorna na lista)
 
 ### 6.4 Aprovação

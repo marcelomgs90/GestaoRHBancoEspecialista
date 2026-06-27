@@ -77,6 +77,8 @@ Armazena os dados cadastrais do projeto.
 |--------|------|-----------|
 | ref_projeto | INT (PK) | Identificador único |
 | coordenador_id | INT (FK) | FK para Usuario_Perfil |
+| codigo | VARCHAR(50) | Código manual do projeto; opcional e único quando informado |
+| sigla | VARCHAR(20) | Sigla obrigatória do projeto; alfanumérica, mínimo 5 e máximo 20 caracteres |
 | titulo | VARCHAR(255) | Nome do projeto |
 | status | VARCHAR(50) | Status atual do projeto |
 | data_inicio | DATE | Início do projeto |

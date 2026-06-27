@@ -26,14 +26,10 @@ class ProjetoService:
     def criar(self, dados: ProjetoCreate, current_user: Usuario) -> Projeto:
         payload = dados.model_dump(mode="json")
         fontes = payload.pop("fontes_financiamento")
-        payload["codigo"] = payload.get("codigo") or self._gerar_codigo()
+        codigo = payload.get("codigo")
+        payload["codigo"] = codigo.strip() if isinstance(codigo, str) else None
 
-        existente = self.db.query(Projeto).filter(Projeto.codigo == payload["codigo"]).first()
-        if existente:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Já existe um projeto com este código",
-            )
+        self._validar_codigo_unico(payload["codigo"])
         projeto = Projeto(
             **payload,
             coordenador_id=current_user.id,
@@ -49,15 +45,6 @@ class ProjetoService:
         self.db.commit()
         self.db.refresh(projeto)
         return projeto
-
-    def _gerar_codigo(self) -> str:
-        base = f"PROJ-{datetime.utcnow():%Y%m%d%H%M%S}"
-        codigo = base
-        sufixo = 1
-        while self.db.query(Projeto.id).filter(Projeto.codigo == codigo).first():
-            sufixo += 1
-            codigo = f"{base}-{sufixo}"
-        return codigo
 
     def listar(self, current_user: Usuario, status_filtro: Optional[StatusProjeto] = None) -> List[Projeto]:
         query = self.db.query(Projeto).options(
@@ -106,6 +93,11 @@ class ProjetoService:
         projeto = self.obter_por_id(projeto_id, current_user)
         self._validar_permissao_edicao(projeto, current_user)
 
+        codigo = dados.codigo.strip() if isinstance(dados.codigo, str) else None
+        self._validar_codigo_unico(codigo, projeto_id_excluir=projeto.id)
+
+        projeto.codigo = codigo
+        projeto.sigla = dados.sigla
         projeto.titulo = dados.titulo
         projeto.descricao = dados.descricao
         projeto.data_inicio = dados.data_inicio
@@ -115,6 +107,24 @@ class ProjetoService:
         self.db.commit()
         self.db.refresh(projeto)
         return self.obter_por_id(projeto.id, current_user)
+
+    def _validar_codigo_unico(
+        self,
+        codigo: Optional[str],
+        projeto_id_excluir: Optional[int] = None,
+    ) -> None:
+        if not codigo:
+            return
+
+        query = self.db.query(Projeto).filter(Projeto.codigo == codigo)
+        if projeto_id_excluir is not None:
+            query = query.filter(Projeto.id != projeto_id_excluir)
+
+        if query.first():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Já existe um projeto com este código",
+            )
 
     def listar_anexos(self, projeto_id: int, current_user: Usuario) -> List[ProjetoAnexo]:
         self.obter_por_id(projeto_id, current_user)

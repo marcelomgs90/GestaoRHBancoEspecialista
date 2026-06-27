@@ -44,9 +44,20 @@ O sistema deve controlar a alocação de pesquisadores por 3 fontes de financiam
 
 ---
 
-## 3. Fluxo de Solicitações de RH
+## 3. Cadastro e Identificação de Projetos
 
-### 3.1 Implantação Inicial
+- Todo projeto deve possuir uma sigla obrigatória, alfanumérica, com mínimo de 5 e máximo de 20 caracteres
+- A sigla é usada como identificação principal nas telas de listagem, detalhamento e edição
+- O código do projeto é opcional e deve ser informado manualmente pelo usuário quando existir
+- O sistema não gera código de projeto automaticamente
+- Quando o código for informado, o sistema deve validar unicidade e impedir duplicidade entre projetos
+- Na grade de informações do detalhamento, o código só deve ser exibido quando estiver cadastrado
+
+---
+
+## 4. Fluxo de Solicitações de RH
+
+### 4.1 Implantação Inicial
 
 Disponível apenas se o projeto **não** possui versão `VIGENTE`.
 
@@ -62,7 +73,7 @@ Disponível apenas se o projeto **não** possui versão `VIGENTE`.
 
 > **Idempotência:** se já existe uma `IMPLANTACAO` em `EM_EDICAO` para o projeto, o sistema reutiliza essa solicitação em vez de criar duplicata.
 
-### 3.2 Alteração de RH
+### 4.2 Alteração de RH
 
 Disponível apenas se o projeto **possui** versão `VIGENTE`. No máximo uma `ALTERACAO` em `EM_EDICAO` pode existir por projeto a qualquer momento.
 
@@ -84,7 +95,7 @@ Disponível apenas se o projeto **possui** versão `VIGENTE`. No máximo uma `AL
 
 > **Idempotência:** se já existe uma `ALTERACAO` em `EM_EDICAO` para o projeto, o sistema reutiliza essa solicitação em vez de criar duplicata.
 
-### 3.3 Pagamento de RH
+### 4.3 Pagamento de RH
 
 1. Coordenador cria solicitação para mês/ano específico
 2. Sistema lista pesquisadores ativos no período
@@ -93,7 +104,7 @@ Disponível apenas se o projeto **possui** versão `VIGENTE`. No máximo uma `AL
 
 ---
 
-## 4. Fluxo de Transferência entre Projetos
+## 5. Fluxo de Transferência entre Projetos
 
 1. Coordenador do projeto destino solicita transferência de pesquisador
 2. Informa: pesquisador, projeto de origem, justificativa, carga horária
@@ -106,9 +117,9 @@ Disponível apenas se o projeto **possui** versão `VIGENTE`. No máximo uma `AL
 
 ---
 
-## 5. Versionamento de RH
+## 6. Versionamento de RH
 
-### 5.1 Ciclo de Vida das Versões
+### 6.1 Ciclo de Vida das Versões
 
 Cada solicitação de implantação ou alteração gera exatamente uma `Versao_RH_Projeto`. As versões seguem o ciclo:
 
@@ -126,7 +137,7 @@ Invariantes:
 - Cada projeto tem no máximo **uma** versão `PROPOSTA` ativa a qualquer momento (associada à solicitação `EM_EDICAO` ou `SUBMETIDA` em aberto)
 - Versões `HISTORICO` são imutáveis e usadas para auditoria
 
-### 5.2 Comparação Antes vs. Depois
+### 6.2 Comparação Antes vs. Depois
 
 A comparação Antes/Depois é feita entre a `PROPOSTA` da solicitação e a versão com `numero_versao - 1` do mesmo projeto:
 
@@ -134,15 +145,15 @@ A comparação Antes/Depois é feita entre a `PROPOSTA` da solicitação e a ver
 - Em `ALTERACAO`: o Antes é a versão anterior (a última `VIGENTE` antes da submissão, ou ainda `VIGENTE` se a solicitação não foi submetida)
 - Diferenças calculadas: `inclusoes` (refs presentes só no Depois), `encerramentos` (refs presentes só no Antes), `alteracoes` (refs comuns com mudança em categoria, fonte ou carga horária)
 
-### 5.3 Pesquisador em Múltiplos Períodos
+### 6.3 Pesquisador em Múltiplos Períodos
 
 O mesmo pesquisador pode atuar mais de uma vez no mesmo projeto em períodos distintos (registros diferentes em `Pesquisador_Projeto` ligados a versões diferentes). Dentro de uma mesma versão, porém, um `ref_pesquisador` só pode aparecer uma vez.
 
 ---
 
-## 6. Geração de Documentos PDF
+## 7. Geração de Documentos PDF
 
-### 6.1 PDF de Implantação Inicial
+### 7.1 PDF de Implantação Inicial
 
 - Cabeçalho institucional
 - Número da solicitação
@@ -152,7 +163,7 @@ O mesmo pesquisador pode atuar mais de uma vez no mesmo projeto em períodos dis
 - Somatório financeiro
 - Data de emissão
 
-### 6.2 PDF de Alteração de RH
+### 7.2 PDF de Alteração de RH
 
 - Cabeçalho institucional
 - Número da solicitação
@@ -164,7 +175,7 @@ O mesmo pesquisador pode atuar mais de uma vez no mesmo projeto em períodos dis
 - Histórico de alterações
 - Data de emissão
 
-### 6.3 PDF de Folha de Pagamento
+### 7.3 PDF de Folha de Pagamento
 
 - Projeto e mês/ano de referência
 - Número da solicitação
@@ -173,27 +184,28 @@ O mesmo pesquisador pode atuar mais de uma vez no mesmo projeto em períodos dis
 
 ---
 
-## 7. Controle de Acesso por Perfil
+## 8. Controle de Acesso por Perfil
 
 | Funcionalidade | Admin | Coordenador | Gestor Polo | Apoio Coord. |
 |----------------|-------|-------------|-------------|--------------|
 | Gestão de usuários/perfis | X | | | |
 | Parametrização (CH, bolsas, tipos) | X | | | |
-| Gestão de projetos | X | X (seus projetos) | X (consulta) | X (apoio) |
-| Solicitações de RH | X | X (seus projetos) | X (consulta) | X (apoio) |
+| Gestão de projetos | X | X (seus projetos) | X (cadastrar, editar e consultar) | X (apoio) |
+| Solicitações de RH | X | X (criar, editar, submeter e consultar seus projetos) | X (listar, visualizar, aprovar e rejeitar) | X (criar, editar e submeter como apoio) |
+| Implantação/alteração de RH | X | X (seus projetos) | | X (apoio) |
 | Transferências | X | X (como cedente ou destino) | X (consulta) | |
 | Monitoramento multi-projeto | X | | X | |
 | Emissão de PDFs | X | X (seus projetos) | X | X (apoio) |
 
 ---
 
-## 8. Nota Técnica 03/2020
+## 9. Nota Técnica 03/2020
 
 O sistema também deve respeitar as diretrizes da Nota Técnica 03/2020 no que se refere a limites e regras de alocação de pesquisadores.
 
 ---
 
-## 9. Premissas
+## 10. Premissas
 
 - As diretrizes da Resolução 11/2022 permanecerão em vigor durante o desenvolvimento
 - Os modelos de ofícios em PDF exigidos pelo Polo permanecerão os mesmos
