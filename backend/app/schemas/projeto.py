@@ -20,6 +20,7 @@ class ProjetoCreate(BaseModel):
     data_inicio: date
     data_fim: date
     status: StatusProjeto = StatusProjeto.ATIVO
+    coordenador_ref_pesquisador: Optional[str] = None
 
     @field_validator("codigo", mode="before")
     @classmethod

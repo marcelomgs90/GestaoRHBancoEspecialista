@@ -27,6 +27,7 @@ import {
   TIPO_DOCUMENTO_PROJETO_LABELS,
 } from '@/types/enums';
 import type { ProjetoAnexo } from '@/types/projeto';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 const schema = z
   .object({
@@ -61,25 +62,6 @@ const formatFileSize = (bytes?: number | null) => {
   if (!bytes) return '';
   if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
-
-const getApiErrorMessage = (err: unknown, fallback: string) => {
-  const ax = err as AxiosError<{ detail?: unknown }>;
-  const detail = ax.response?.data?.detail;
-  if (typeof detail === 'string') return detail;
-  if (Array.isArray(detail)) {
-    return detail
-      .map((item) => {
-        if (typeof item === 'string') return item;
-        if (item && typeof item === 'object' && 'msg' in item) {
-          return String((item as { msg: unknown }).msg);
-        }
-        return null;
-      })
-      .filter(Boolean)
-      .join(' ');
-  }
-  return fallback;
 };
 
 export default function ProjetoEditPage() {

@@ -239,3 +239,5 @@ Dados mantidos pelo sistema externo "Banco de Especialistas". O sistema Gestão 
 | situacao | VARCHAR(30) | Ativo/Inativo |
 
 **Nota:** Os dados do pesquisador NÃO são mantidos pela aplicação Gestão RH. O relacionamento Pesquisador-Projeto é mantido internamente na tabela Pesquisador_Projeto.
+
+**Mapeamento no Gestão RH:** o tipo de pesquisador é obtido via INNER JOIN entre `public.users.specialist_type_id` e `public.users_specialist_types.id` (mapeado em `backend/app/models/especialista_externo.py` como `UsersSpecialistType`). O endpoint `GET /especialistas/pesquisadores/` aplica `ILIKE` sobre `users_specialist_types.name` quando o filtro `tipo` é informado. Usuários sem `specialist_type_id` populado são excluídos da resposta (INNER JOIN).

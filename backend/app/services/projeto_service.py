@@ -24,8 +24,22 @@ class ProjetoService:
         self.settings = get_settings()
 
     def criar(self, dados: ProjetoCreate, current_user: Usuario) -> Projeto:
+        """Cria um projeto.
+
+        Regra RBAC + bridge Pesquisador<->Usuario:
+          - Perfis sem permissao (ex.: APOIO_COORDENADOR) sao rejeitados (403).
+          - COORDENADOR: campo `coordenador_ref_pesquisador` e IGNORADO; o
+            coordenador e sempre o proprio `current_user`.
+          - ADMINISTRADOR / GESTOR_POLO: campo `coordenador_ref_pesquisador`
+            e OBRIGATORIO; o sistema resolve o `Usuario` interno cuja
+            coluna `ref_usuario` seja igual a referencia enviada. Se nao
+            houver `Usuario` correspondente, retorna 400.
+        """
+        self._validar_permissao_criacao(current_user)
+
         payload = dados.model_dump(mode="json")
         fontes = payload.pop("fontes_financiamento")
+        coordenador_ref = payload.pop("coordenador_ref_pesquisador", None)
         payload["codigo"] = payload.get("codigo") or self._gerar_codigo()
 
         existente = self.db.query(Projeto).filter(Projeto.codigo == payload["codigo"]).first()
@@ -34,9 +48,15 @@ class ProjetoService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Já existe um projeto com este código",
             )
+
+        coordenador_id = self._resolver_coordenador_id(
+            current_user=current_user,
+            coordenador_ref_pesquisador=coordenador_ref,
+        )
+
         projeto = Projeto(
             **payload,
-            coordenador_id=current_user.id,
+            coordenador_id=coordenador_id,
         )
         projeto.fontes_financiamento = [
             ProjetoFonteFinanciamento(
@@ -49,6 +69,59 @@ class ProjetoService:
         self.db.commit()
         self.db.refresh(projeto)
         return projeto
+
+    def _validar_permissao_criacao(self, current_user: Usuario) -> None:
+        """Apenas ADMINISTRADOR, GESTOR_POLO e COORDENADOR podem criar projetos."""
+        if current_user.perfil in (
+            PerfilUsuario.ADMINISTRADOR,
+            PerfilUsuario.GESTOR_POLO,
+            PerfilUsuario.COORDENADOR,
+        ):
+            return
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas administrador, gestor do polo ou coordenador podem criar projetos",
+        )
+
+    def _resolver_coordenador_id(
+        self,
+        current_user: Usuario,
+        coordenador_ref_pesquisador: Optional[str],
+    ) -> int:
+        """Resolve o `coordenador_id` conforme o perfil e a referencia enviada.
+
+        - COORDENADOR: ignora a referencia e usa `current_user.id`.
+        - ADMINISTRADOR / GESTOR_POLO: exige a referencia; busca o `Usuario`
+          interno cuja `ref_usuario` seja igual a referencia enviada.
+        """
+        if current_user.perfil == PerfilUsuario.COORDENADOR:
+            return current_user.id
+
+        if not coordenador_ref_pesquisador or not coordenador_ref_pesquisador.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Para o seu perfil, e obrigatorio informar o coordenador "
+                    "do projeto (selecione um pesquisador-servidor no campo Coordenador)"
+                ),
+            )
+
+        ref_normalizada = coordenador_ref_pesquisador.strip()
+        usuario = (
+            self.db.query(Usuario)
+            .filter(Usuario.ref_usuario == ref_normalizada)
+            .first()
+        )
+        if not usuario:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Pesquisador selecionado nao possui cadastro no Gestao RH "
+                    "(ref_usuario nao encontrado). Realize o cadastro previo."
+                ),
+            )
+
+        return usuario.id
 
     def _gerar_codigo(self) -> str:
         base = f"PROJ-{datetime.utcnow():%Y%m%d%H%M%S}"

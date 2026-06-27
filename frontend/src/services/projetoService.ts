@@ -1,16 +1,9 @@
 import { api } from './api'
 import { TipoDocumentoProjeto } from '../types/enums'
-import { Projeto, ProjetoAnexo, ProjetoCreate, ProjetoUpdate, VersaoRHProjeto } from '../types/projeto'
+import { Projeto, ProjetoAnexo, ProjetoCreate, ProjetoUpdate, VersaoRHProjeto, Paginated } from '../types/projeto'
 import { Membro } from '../types/solicitacao'
 
-export interface Paginated<T> {
-  items: T[]
-  total: number
-  page: number
-  per_page: number
-  pages: number
-  is_rascunho?: boolean
-}
+export type { Paginated }
 
 export const projetoService = {
   async criar(dados: ProjetoCreate): Promise<Projeto> {
