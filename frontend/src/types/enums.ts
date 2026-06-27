@@ -20,6 +20,7 @@ export enum TipoDocumentoProjeto {
   ACORDO_PARCEIRA = 'ACORDO_PARCEIRA',
   PLANO_TRABALHO = 'PLANO_TRABALHO',
   DIARIO_OFICIAL = 'DIARIO_OFICIAL',
+  DOCUMENTO_COMPLEMENTAR = 'DOCUMENTO_COMPLEMENTAR',
 }
 
 export enum StatusSolicitacao {
@@ -85,4 +86,5 @@ export const TIPO_DOCUMENTO_PROJETO_LABELS: Record<TipoDocumentoProjeto, string>
   [TipoDocumentoProjeto.ACORDO_PARCEIRA]: 'Acordo de Parceria',
   [TipoDocumentoProjeto.PLANO_TRABALHO]: 'Plano de Trabalho',
   [TipoDocumentoProjeto.DIARIO_OFICIAL]: 'Diário Oficial',
+  [TipoDocumentoProjeto.DOCUMENTO_COMPLEMENTAR]: 'Documento Complementar',
 }

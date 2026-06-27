@@ -13,7 +13,6 @@ import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { parametroService } from '@/services/parametroService';
 import type {
   AlocacaoConcorrente,
-  Membro,
   ResumoPesquisador,
 } from '@/types/solicitacao';
 import type { MembroCreate } from '@/types/solicitacao';

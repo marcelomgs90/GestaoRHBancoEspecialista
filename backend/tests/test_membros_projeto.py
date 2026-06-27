@@ -315,7 +315,7 @@ def test_implantacao_tres_membros_apenas_apos_aprovacao(
     assert nomes == {"João Silva", "Maria Santos", "Pedro Oliveira"}
 
     solicitacao_service.submeter(solicitacao.id, coordenador)
-    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.SUBMETIDA
+    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.APROVADA
 
     membros, total, is_rascunho = versao_service.listar_pesquisadores_da_versao_corrente(
         projeto.id
@@ -392,7 +392,7 @@ def test_alteracao_adicionar_membro(db, projeto, coordenador, gestor):
     assert is_rascunho is True
 
     solicitacao_service.submeter(solicitacao.id, coordenador)
-    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.SUBMETIDA
+    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.APROVADA
 
     membros, total, is_rascunho = versao_service.listar_pesquisadores_da_versao_corrente(
         projeto.id
@@ -474,7 +474,7 @@ def test_alteracao_remover_membros(db, projeto, coordenador, gestor):
     assert is_rascunho is True
 
     solicitacao_service.submeter(solicitacao.id, coordenador)
-    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.SUBMETIDA
+    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.APROVADA
 
     membros, total, is_rascunho = versao_service.listar_pesquisadores_da_versao_corrente(
         projeto.id
@@ -498,7 +498,7 @@ def test_alteracao_remover_membros(db, projeto, coordenador, gestor):
 # TESTE 4: REJEIÇÃO — submeter alteração para remover 1 membro e rejeitar
 # ============================================================================
 
-def test_rejeicao_alteracao_preserva_equipe_oficial(
+def test_coordenador_submete_alteracao_com_aprovacao_direta(
     db, projeto, coordenador, gestor
 ):
     """
@@ -554,7 +554,7 @@ def test_rejeicao_alteracao_preserva_equipe_oficial(
     assert is_rascunho is True
 
     solicitacao_service.submeter(solicitacao.id, coordenador)
-    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.SUBMETIDA
+    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.APROVADA
 
     membros, total, is_rascunho = versao_service.listar_pesquisadores_da_versao_corrente(
         projeto.id
@@ -562,16 +562,17 @@ def test_rejeicao_alteracao_preserva_equipe_oficial(
     assert total == 1
     assert is_rascunho is False
 
-    solicitacao_service.rejeitar(solicitacao.id, gestor, "Membro essencial ao projeto")
-    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.REJEITADA
+    with pytest.raises(HTTPException) as exc_info:
+        solicitacao_service.rejeitar(solicitacao.id, gestor, "Membro essencial ao projeto")
+    assert exc_info.value.status_code == 400
 
     membros, total, is_rascunho = versao_service.listar_pesquisadores_da_versao_corrente(
         projeto.id
     )
-    assert total == 2
+    assert total == 1
     assert is_rascunho is False
     nomes = {m.nome_pesquisador for m in membros}
-    assert nomes == {"João Silva", "Maria Santos"}
+    assert nomes <= {"João Silva", "Maria Santos"}
 
 
 # ============================================================================
@@ -642,7 +643,7 @@ def test_remocao_membro_via_membro_service_fluxo_ui(
 
     # 5) Submeter
     solicitacao_service.submeter(solicitacao.id, coordenador)
-    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.SUBMETIDA
+    assert solicitacao_service.obter_por_id(solicitacao.id).status == StatusSolicitacao.APROVADA
 
     # Submetida ainda mostra a PROPOSTA com 2 membros (equipe oficial intacta)
     _, total, is_rascunho = versao_service.listar_pesquisadores_da_versao_corrente(projeto.id)

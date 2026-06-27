@@ -308,11 +308,26 @@ class SolicitacaoService:
         self._validar_membros_obrigatorios(solicitacao)
         self._validar_orcamento_fontes(solicitacao)
 
-        solicitacao.status = StatusSolicitacao.SUBMETIDA
+        if self._deve_aprovar_diretamente(projeto, solicitacao, current_user):
+            self._aprovar_solicitacao_validada(solicitacao)
+        else:
+            solicitacao.status = StatusSolicitacao.SUBMETIDA
 
         self.db.commit()
         self.db.refresh(solicitacao)
         return solicitacao
+
+    def _deve_aprovar_diretamente(
+        self,
+        projeto: Projeto,
+        solicitacao: SolicitacaoRH,
+        current_user: Usuario,
+    ) -> bool:
+        return (
+            solicitacao.tipo in (TipoSolicitacao.IMPLANTACAO, TipoSolicitacao.ALTERACAO)
+            and current_user.perfil == PerfilUsuario.COORDENADOR
+            and projeto.coordenador_id == current_user.id
+        )
 
     def _validar_justificativa_obrigatoria(self, solicitacao: SolicitacaoRH) -> None:
         if solicitacao.tipo not in (TipoSolicitacao.IMPLANTACAO, TipoSolicitacao.ALTERACAO):
@@ -570,15 +585,24 @@ class SolicitacaoService:
         projeto = self._buscar_projeto(solicitacao.projeto_id)
         self._verificar_permissao_aprovacao(projeto, current_user)
 
+        if solicitacao.status == StatusSolicitacao.APROVADA:
+            return solicitacao
+
         if solicitacao.status != StatusSolicitacao.SUBMETIDA:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Apenas solicitações com status SUBMETIDA podem ser aprovadas",
             )
 
+        self._aprovar_solicitacao_validada(solicitacao)
+        self.db.commit()
+        self.db.refresh(solicitacao)
+        return solicitacao
+
+    def _aprovar_solicitacao_validada(self, solicitacao: SolicitacaoRH) -> None:
         versao = (
             self.db.query(VersaoRHProjeto)
-            .filter(VersaoRHProjeto.solicitacao_id == solicitacao_id)
+            .filter(VersaoRHProjeto.solicitacao_id == solicitacao.id)
             .first()
         )
         if versao and versao.status == StatusVersaoRH.PROPOSTA:
@@ -596,9 +620,6 @@ class SolicitacaoService:
             versao.status = StatusVersaoRH.VIGENTE
 
         solicitacao.status = StatusSolicitacao.APROVADA
-        self.db.commit()
-        self.db.refresh(solicitacao)
-        return solicitacao
 
     def rejeitar(
         self, solicitacao_id: int, current_user: Usuario, justificativa: Optional[str] = None
