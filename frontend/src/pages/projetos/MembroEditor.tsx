@@ -1,8 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { Trash2, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  Trash2,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  CircleDollarSign,
+} from 'lucide-react';
 import { CategoriaBolsa, FonteFinanciamento } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { parametroService } from '@/services/parametroService';
+import type {
+  AlocacaoConcorrente,
+  Membro,
+  ResumoPesquisador,
+} from '@/types/solicitacao';
 import type { MembroCreate } from '@/types/solicitacao';
 import { cn } from '@/lib/cn';
 
@@ -25,20 +38,36 @@ interface Props {
   onValorPreviewChange?: (valor: number | null) => void;
 }
 
+interface PreviewBolsa {
+  valor_mensal: number | null;
+  valor_periodo: number | null;
+  valor_hora: number | null;
+  erro?: string;
+}
+
+interface PreviewCh {
+  valido: boolean;
+  chTotal: number;
+  chOutros: number;
+  limite: number;
+  alocacoes: AlocacaoConcorrente[];
+  mensagem?: string;
+}
+
 interface PreviewState {
-  valorBolsa: number | null;
-  validacaoCh: {
-    valido: boolean;
-    chTotal: number;
-    chOutros: number;
-    limite: number;
-    mensagem?: string;
-  } | null;
+  bolsa: PreviewBolsa;
+  validacaoCh: PreviewCh | null;
   loading: boolean;
-  erroBolsa?: string;
 }
 
 const DEBOUNCE_MS = 400;
+
+const formatCurrencyBRL = (value: number): string =>
+  value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+  });
 
 export function MembroEditor({
   membro,
@@ -51,23 +80,37 @@ export function MembroEditor({
   onValorPreviewChange,
 }: Props) {
   const [preview, setPreview] = useState<PreviewState>({
-    valorBolsa: null,
+    bolsa: { valor_mensal: null, valor_periodo: null, valor_hora: null },
     validacaoCh: null,
     loading: false,
   });
+  const [resumoExpanded, setResumoExpanded] = useState(false);
+  const [resumo, setResumo] = useState<ResumoPesquisador | null>(null);
+  const [resumoLoading, setResumoLoading] = useState(false);
+  const [resumoErro, setResumoErro] = useState<string | null>(null);
+  const [chExpanded, setChExpanded] = useState(false);
 
-  // Debounce para não bombardear a API a cada tecla
   const timerRef = useRef<number | null>(null);
+  const resumoLoadedRef = useRef<string | null>(null);
+
+  const dataInicioValida = !!membro.data_inicio;
+  const dataFimValida = !!membro.data_fim;
+  const chValida = !!membro.carga_horaria_semanal;
+  const podeCalcular = dataInicioValida && chValida;
 
   useEffect(() => {
-    if (!membro.data_inicio || !membro.carga_horaria_semanal) {
-      setPreview((p) => ({ ...p, valorBolsa: null, validacaoCh: null }));
+    if (!podeCalcular) {
+      setPreview((p) => ({
+        ...p,
+        bolsa: { valor_mensal: null, valor_periodo: null, valor_hora: null },
+        validacaoCh: null,
+      }));
       return;
     }
 
     if (timerRef.current) window.clearTimeout(timerRef.current);
 
-    setPreview((p) => ({ ...p, loading: true, erroBolsa: undefined }));
+    setPreview((p) => ({ ...p, loading: true, bolsa: { ...p.bolsa, erro: undefined } }));
 
     timerRef.current = window.setTimeout(async () => {
       try {
@@ -77,12 +120,16 @@ export function MembroEditor({
               categoria: membro.categoria_bolsa,
               carga_horaria_semanal: membro.carga_horaria_semanal,
               data_referencia: membro.data_inicio,
+              data_fim: membro.data_fim,
             })
             .catch((err) => {
               const msg =
                 err?.response?.data?.detail ??
                 'Não foi possível calcular a bolsa para esta categoria/data.';
-              setPreview((p) => ({ ...p, erroBolsa: msg }));
+              setPreview((p) => ({
+                ...p,
+                bolsa: { valor_mensal: null, valor_periodo: null, valor_hora: null, erro: msg },
+              }));
               return null;
             }),
           parametroService
@@ -97,13 +144,25 @@ export function MembroEditor({
         ]);
 
         setPreview({
-          valorBolsa: bolsa?.valor ?? null,
+          bolsa: bolsa
+            ? {
+                valor_mensal: bolsa.valor_mensal,
+                valor_periodo: dataFimValida ? bolsa.valor_periodo : null,
+                valor_hora: bolsa.valor_hora,
+              }
+            : {
+                valor_mensal: null,
+                valor_periodo: null,
+                valor_hora: null,
+                erro: preview.bolsa.erro,
+              },
           validacaoCh: validacao
             ? {
                 valido: validacao.valido,
                 chTotal: validacao.ch_total,
                 chOutros: validacao.ch_alocada_em_outros_projetos,
                 limite: validacao.limite_semanal,
+                alocacoes: validacao.alocacoes_concorrentes ?? [],
                 mensagem: validacao.mensagem,
               }
             : null,
@@ -124,32 +183,43 @@ export function MembroEditor({
     membro.data_fim,
     membro.ref_pesquisador,
     projetoId,
+    podeCalcular,
+    dataFimValida,
   ]);
 
   useEffect(() => {
-    // IMPORTANTE: NÃO propagar `valor_bolsa` para o estado do pai a cada
-    // recálculo. O cálculo é executado sempre que `categoria_bolsa`,
-    // `carga_horaria_semanal`, `data_inicio`, `data_fim` ou `ref_pesquisador`
-    // mudam — e também na montagem inicial. Se propagarmos o resultado, o
-    // estado local do pai sempre divergirá do clone persistido no backend, o
-    // que faz o `persistirMudancas` disparar um PUT parasita em TODOS os
-    // membros com `id` (mesmo quando o usuário não mexeu em nada).
-    //
-    // O `valor_bolsa` é um campo derivado (calculado pelo `ParametroService`
-    // do backend no momento de `incluirMembro`/`atualizarMembro`). Não há
-    // razão para a UI replicar esse estado — o backend é a fonte da verdade.
-    //
-    // Quando o usuário realmente EDITA a categoria, carga horária ou data de
-    // início, o `onChange` dos inputs (`MembroEditor.tsx` abaixo) já propaga
-    // essas mudanças para o pai via `onChange({ categoria_bolsa, ... })`, e
-    // o `membroMudou()` no `AlteracaoPage` detecta a divergência e dispara
-    // o PUT. O backend recalcula o `valor_bolsa` automaticamente.
-    return;
-  }, [preview.valorBolsa]);
+    onValorPreviewChange?.(preview.bolsa.valor_mensal);
+  }, [onValorPreviewChange, preview.bolsa.valor_mensal]);
 
-  useEffect(() => {
-    onValorPreviewChange?.(preview.valorBolsa);
-  }, [onValorPreviewChange, preview.valorBolsa]);
+  const carregarResumo = async () => {
+    if (!membro.ref_pesquisador) return;
+    setResumoLoading(true);
+    setResumoErro(null);
+    try {
+      const r = await parametroService.resumoPesquisador({
+        ref_pesquisador: membro.ref_pesquisador,
+        data_inicio: membro.data_inicio || undefined,
+        data_fim: membro.data_fim || undefined,
+      });
+      setResumo(r);
+    } catch (err) {
+      const e = err as { response?: { data?: { detail?: string } } };
+      setResumoErro(
+        e?.response?.data?.detail ?? 'Não foi possível carregar o resumo do pesquisador.',
+      );
+    } finally {
+      setResumoLoading(false);
+    }
+  };
+
+  const toggleResumo = () => {
+    const prox = !resumoExpanded;
+    setResumoExpanded(prox);
+    if (prox && resumoLoadedRef.current !== membro.ref_pesquisador) {
+      resumoLoadedRef.current = membro.ref_pesquisador;
+      void carregarResumo();
+    }
+  };
 
   const validacao = preview.validacaoCh;
   const chInvalida = validacao && !validacao.valido;
@@ -177,12 +247,13 @@ export function MembroEditor({
           <button
             onClick={onRemove}
             className="p-2 text-slate-300 hover:text-red-600 transition-colors cursor-pointer"
+            aria-label="Remover membro"
           >
             <Trash2 size={18} />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="space-y-1">
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               Categoria
@@ -253,77 +324,258 @@ export function MembroEditor({
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-bold outline-none focus:border-slate-900"
             />
           </div>
+
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              Fim
+            </label>
+            <input
+              type="date"
+              value={membro.data_fim ?? ''}
+              min={membro.data_inicio || projetoDataInicio}
+              max={projetoDataFim}
+              onChange={(e) => onChange({ data_fim: e.target.value || undefined })}
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-bold outline-none focus:border-slate-900"
+            />
+          </div>
         </div>
 
-        {/* Feedback de validação em tempo real */}
+        {/* Trio de cards: Valor (mensal + período + hora) + CH Global */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-          {/* Card: Valor da bolsa calculado */}
+          {/* Card: Valor da bolsa calculado — trio */}
           <div
             className={cn(
-              'p-3 rounded border flex items-center justify-between text-xs',
-              preview.erroBolsa
+              'p-3 rounded border text-xs',
+              preview.bolsa.erro
                 ? 'bg-amber-50 border-amber-200 text-amber-800'
                 : 'bg-emerald-50 border-emerald-100 text-emerald-800',
             )}
           >
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
               {preview.loading ? (
                 <Loader2 size={14} className="animate-spin shrink-0" />
-              ) : preview.erroBolsa ? (
+              ) : preview.bolsa.erro ? (
                 <AlertTriangle size={14} className="shrink-0" />
               ) : (
                 <CheckCircle2 size={14} className="shrink-0" />
               )}
               <span className="font-bold uppercase tracking-wider text-[10px]">
-                {preview.erroBolsa ? 'Bolsa' : 'Valor calculado'}
+                Valor calculado
               </span>
             </div>
-            <span className="font-bold text-sm whitespace-nowrap">
-              {preview.loading
-                ? '...'
-                : preview.erroBolsa
-                  ? 'Indisponível'
-                  : preview.valorBolsa !== null
-                    ? `R$ ${preview.valorBolsa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                  por hora
+                </p>
+                <p className="font-bold text-sm">
+                  {preview.bolsa.valor_hora !== null
+                    ? formatCurrencyBRL(preview.bolsa.valor_hora)
                     : '—'}
-            </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                  por mês
+                </p>
+                <p className="font-bold text-sm">
+                  {preview.bolsa.valor_mensal !== null
+                    ? formatCurrencyBRL(preview.bolsa.valor_mensal)
+                    : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                  no período
+                </p>
+                <p className="font-bold text-sm">
+                  {dataFimValida && preview.bolsa.valor_periodo !== null
+                    ? formatCurrencyBRL(preview.bolsa.valor_periodo)
+                    : '—'}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Card: Validação de CH global */}
           {validacao && (
             <div
               className={cn(
-                'p-3 rounded border flex items-center justify-between text-xs',
+                'p-3 rounded border text-xs',
                 validacao.valido
                   ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
                   : 'bg-red-50 border-red-200 text-red-800',
               )}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                {validacao.valido ? (
-                  <CheckCircle2 size={14} className="shrink-0" />
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {validacao.valido ? (
+                    <CheckCircle2 size={14} className="shrink-0" />
+                  ) : (
+                    <AlertTriangle size={14} className="shrink-0" />
+                  )}
+                  <span className="font-bold uppercase tracking-wider text-[10px] truncate">
+                    CH Global: {validacao.chTotal}h
+                    {validacao.limite > 0 ? ` / ${validacao.limite}h` : ''}
+                  </span>
+                </div>
+                {!validacao.valido ? (
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-widest"
+                    title={validacao.mensagem}
+                  >
+                    excede
+                  </span>
                 ) : (
-                  <AlertTriangle size={14} className="shrink-0" />
+                  <span className="text-[10px] font-bold">
+                    +{validacao.chOutros}h em {validacao.alocacoes.length} outro(s)
+                  </span>
                 )}
-                <span className="font-bold uppercase tracking-wider text-[10px] truncate">
-                  CH Global: {validacao.chTotal}h
-                  {validacao.limite > 0 ? ` / ${validacao.limite}h` : ''}
-                </span>
               </div>
-              {!validacao.valido && validacao.mensagem ? (
-                <span className="text-[10px] font-medium truncate" title={validacao.mensagem}>
-                  excede
-                </span>
-              ) : (
-                <span className="text-[10px] font-medium">
-                  +{validacao.chOutros}h em outros projetos
-                </span>
+              {validacao.alocacoes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setChExpanded((e) => !e)}
+                  className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest hover:underline"
+                >
+                  {chExpanded ? 'Ocultar detalhes' : 'Ver detalhes'}
+                  {chExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                </button>
+              )}
+              {chExpanded && validacao.alocacoes.length > 0 && (
+                <ul className="mt-2 space-y-1 text-[10px]">
+                  {validacao.alocacoes.map((a, idx) => (
+                    <li
+                      key={`${a.projeto_id}-${idx}`}
+                      className="flex items-center justify-between gap-2 border-t border-current/20 pt-1"
+                    >
+                      <span className="font-bold truncate">
+                        {a.projeto_codigo || '(sem código)'}
+                      </span>
+                      <span className="font-medium tabular-nums">
+                        {a.carga_horaria_semanal}h × {formatCurrencyBRL(a.valor_hora_medio)}/h
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {!validacao.valido && validacao.mensagem && (
+                <p className="mt-2 text-[10px] italic">{validacao.mensagem}</p>
               )}
             </div>
           )}
 
-          {preview.erroBolsa && (
-            <p className="text-[10px] text-amber-700 col-span-full italic">{preview.erroBolsa}</p>
+          {preview.bolsa.erro && (
+            <p className="text-[10px] text-amber-700 col-span-full italic">{preview.bolsa.erro}</p>
+          )}
+        </div>
+
+        {/* Seção colapsável: Resumo do Pesquisador */}
+        <div className="pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={toggleResumo}
+            className="flex items-center gap-2 text-[10px] font-bold text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
+          >
+            <CircleDollarSign size={12} className="text-slate-400" />
+            Resumo do Pesquisador
+            {resumoExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
+
+          {resumoExpanded && (
+            <div className="mt-3 rounded border border-slate-200 bg-slate-50/50 p-3">
+              {resumoLoading && (
+                <div className="flex items-center gap-2 text-[10px] text-slate-500 py-2">
+                  <Loader2 size={12} className="animate-spin" />
+                  Carregando resumo consolidado...
+                </div>
+              )}
+              {resumoErro && (
+                <p className="text-[10px] text-red-700 italic">{resumoErro}</p>
+              )}
+              {resumo && !resumoLoading && !resumoErro && (
+                <>
+                  {resumo.alocacoes.length === 0 ? (
+                    <p className="text-[10px] text-slate-500 italic">
+                      Sem alocações vigentes para este pesquisador.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-[10px]">
+                          <thead>
+                            <tr className="text-slate-500 uppercase tracking-widest border-b border-slate-200">
+                              <th className="pb-2">Projeto</th>
+                              <th className="pb-2">Fonte</th>
+                              <th className="pb-2 text-center">CH</th>
+                              <th className="pb-2 text-right">Valor/h</th>
+                              <th className="pb-2 text-right">Valor/mês</th>
+                              <th className="pb-2">Período</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {resumo.alocacoes.map((a, idx) => (
+                              <tr key={`${a.projeto_id}-${idx}`}>
+                                <td className="py-1.5 font-bold text-slate-900 truncate max-w-[140px]">
+                                  {a.projeto_codigo || '—'}
+                                </td>
+                                <td className="py-1.5">{a.fonte_financiamento}</td>
+                                <td className="py-1.5 text-center tabular-nums">
+                                  {a.carga_horaria_semanal}h
+                                </td>
+                                <td className="py-1.5 text-right tabular-nums">
+                                  {formatCurrencyBRL(a.valor_hora_medio)}
+                                </td>
+                                <td className="py-1.5 text-right tabular-nums">
+                                  {formatCurrencyBRL(a.valor_bolsa_mensal)}
+                                </td>
+                                <td className="py-1.5 text-slate-500">
+                                  {a.data_inicio}
+                                  {' — '}
+                                  {a.data_fim ?? 'em aberto'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                            Custo total/mês
+                          </p>
+                          <p className="font-bold text-sm text-slate-900">
+                            {formatCurrencyBRL(resumo.custo_total_mensal)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                            CH total
+                          </p>
+                          <p className="font-bold text-sm text-slate-900">{resumo.ch_total}h</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                            Valor/h médio
+                          </p>
+                          <p className="font-bold text-sm text-slate-900">
+                            {formatCurrencyBRL(resumo.valor_hora_medio_ponderado)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                            Projetos / fontes
+                          </p>
+                          <p className="font-bold text-sm text-slate-900">
+                            {resumo.total_projetos} / {resumo.total_fontes}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>
