@@ -18,6 +18,7 @@ import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao } from '@/types/enu
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { cn } from '@/lib/cn';
 import { MembroEditor, type MembroLocalProps } from './MembroEditor';
+import { KpiFontesBolas } from '@/components/orcamento/KpiFontesBolsas';
 import type { Projeto } from '@/types/projeto';
 
 // Mock temporário para Candidatos (Processo Seletivo) - aguardando endpoint AIE
@@ -428,7 +429,12 @@ export default function ImplantacaoPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-end p-8 bg-slate-100 border border-slate-200 rounded-lg">
+      <div className="flex items-center justify-between p-6 bg-slate-100 border border-slate-200 rounded-lg gap-4">
+        <KpiFontesBolas
+          totalFontes={totalFontes}
+          totalBolsas={totalBolsas}
+          className="flex-1"
+        />
         <button
           onClick={() => setShowConfirmModal(true)}
           disabled={!temMembrosDesignacao || finalizando || excedeOrcamento || !justificativa.trim()}

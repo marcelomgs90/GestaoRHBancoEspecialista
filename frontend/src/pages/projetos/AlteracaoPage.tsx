@@ -20,6 +20,7 @@ import { especialistaService, type Especialista } from '@/services/especialistaS
 import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao, FONTE_LABELS } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { MembroEditor, type MembroLocalProps } from './MembroEditor';
+import { KpiFontesBolas } from '@/components/orcamento/KpiFontesBolsas';
 import { cn } from '@/lib/cn';
 import type { Projeto, VersaoRHProjeto } from '@/types/projeto';
 import type { Membro } from '@/types/solicitacao';
@@ -786,7 +787,7 @@ export default function AlteracaoPage() {
       </section>
 
       {/* Ações */}
-      <div className="flex items-center justify-between p-6 bg-slate-100 border border-slate-200 rounded-lg">
+      <div className="flex items-center justify-between p-6 bg-slate-100 border border-slate-200 rounded-lg gap-4">
         {solicitacaoId ? (
           <Link
             to={`/solicitacoes/${solicitacaoId}/comparacao`}
@@ -800,34 +801,11 @@ export default function AlteracaoPage() {
             Salve o rascunho para ver a comparação
           </span>
         )}
-        <div
-          className={cn(
-            'flex-1 mx-6 rounded-lg border px-4 py-3',
-            excedeOrcamento
-              ? 'bg-red-50 border-red-200 text-red-800'
-              : 'bg-white border-slate-200 text-slate-700',
-          )}
-        >
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest">Fontes</p>
-              <p className="text-sm font-bold">{formatCurrencyBRL(totalFontes)}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest">Bolsas</p>
-              <p className="text-sm font-bold">{formatCurrencyBRL(totalEquipeProposta)}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest">Saldo</p>
-              <p className="text-sm font-bold">{formatCurrencyBRL(saldoFontes)}</p>
-            </div>
-          </div>
-          {excedeOrcamento && (
-            <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest">
-              Total de bolsas excede o orçamento das fontes do projeto
-            </p>
-          )}
-        </div>
+        <KpiFontesBolas
+          totalFontes={totalFontes}
+          totalBolsas={totalEquipeProposta}
+          className="flex-1 mx-6"
+        />
         <div className="flex items-center gap-3">
           <button
             onClick={handleSalvar}

@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.versao_rh_projeto import VersaoRHProjeto
+from app.schemas.membro import MembroResponse
 from app.schemas.versao import ComparacaoResponse
+from app.services.membro_response_builder import build_membro_response
 from app.utils.enums import FonteFinanciamento, StatusSolicitacao, StatusVersaoRH
 
 _FONTES_VAZIAS = {
@@ -30,10 +32,14 @@ class VersaoService:
 
     def listar_pesquisadores_vigentes(
         self, projeto_id: int, page: int = 1, per_page: int = 20
-    ) -> tuple[List[PesquisadorProjeto], int]:
+    ) -> tuple[List[MembroResponse], int]:
         """
         Lista paginada dos pesquisadores da versão VIGENTE do projeto.
         Retorna (itens, total). Se não houver versão vigente, retorna ([], 0).
+
+        Os itens são serializados via `build_membro_response` para garantir
+        que `valor_bolsa_mensal`, `valor_bolsa_periodo` e `valor_hora_medio`
+        sejam preenchidos antes de chegar ao router.
         """
         page = max(page, 1)
         per_page = max(min(per_page, 100), 1)
@@ -53,17 +59,18 @@ class VersaoService:
             PesquisadorProjeto.versao_rh_id == versao_vigente.id
         )
         total = base_query.count()
-        itens = (
+        membros_orm = (
             base_query.order_by(PesquisadorProjeto.nome_pesquisador.asc())
             .offset((page - 1) * per_page)
             .limit(per_page)
             .all()
         )
+        itens = [build_membro_response(m, self.db) for m in membros_orm]
         return itens, total
 
     def listar_pesquisadores_da_versao_corrente(
         self, projeto_id: int, page: int = 1, per_page: int = 20
-    ) -> tuple[List[PesquisadorProjeto], int, bool]:
+    ) -> tuple[List[MembroResponse], int, bool]:
         """
         Lista paginada dos pesquisadores da versão corrente do projeto.
         Retorna (itens, total, is_rascunho).
@@ -79,6 +86,9 @@ class VersaoService:
           A VIGENTE nunca foi alterada durante a submissão, então as mudanças foram
           descartadas e a equipe oficial permanece como antes.
         - Caso contrário, retorna a VIGENTE atual (is_rascunho=False).
+
+        Os itens são serializados via `build_membro_response` para garantir
+        que os campos derivados sejam preenchidos.
         """
         page = max(page, 1)
         per_page = max(min(per_page, 100), 1)
@@ -125,12 +135,13 @@ class VersaoService:
             PesquisadorProjeto.versao_rh_id == versao.id
         )
         total = base_query.count()
-        itens = (
+        membros_orm = (
             base_query.order_by(PesquisadorProjeto.nome_pesquisador.asc())
             .offset((page - 1) * per_page)
             .limit(per_page)
             .all()
         )
+        itens = [build_membro_response(m, self.db) for m in membros_orm]
         return itens, total, is_rascunho
 
     def listar(self, solicitacao_id: int) -> List[VersaoRHProjeto]:

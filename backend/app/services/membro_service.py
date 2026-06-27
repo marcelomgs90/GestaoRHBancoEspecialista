@@ -10,8 +10,9 @@ from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.usuario_perfil import Usuario
 from app.models.versao_rh_projeto import VersaoRHProjeto
-from app.schemas.membro import MembroCreate, MembroUpdate
-from app.services.parametro_service import ParametroService
+from app.schemas.membro import MembroCreate, MembroResponse, MembroUpdate
+from app.services.membro_response_builder import build_membro_response
+from app.services.parametro_service import ParametroService, _periodos_sobrepoem
 from app.utils.enums import PerfilUsuario, StatusSolicitacao
 
 
@@ -22,7 +23,7 @@ class MembroService:
 
     def incluir(
         self, solicitacao_id: int, dados: MembroCreate, current_user: Union[Usuario, int]
-    ) -> PesquisadorProjeto:
+    ) -> MembroResponse:
         solicitacao = self._buscar_solicitacao_editavel(solicitacao_id, current_user)
         versao = self._buscar_versao(solicitacao.id)
         self._validar_data_inicio_no_periodo_do_projeto(
@@ -43,6 +44,23 @@ class MembroService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"O pesquisador {dados.nome_pesquisador} ja esta incluido nesta versao",
             )
+
+        if dados.data_fim is not None and dados.data_fim < dados.data_inicio:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"data_fim ({dados.data_fim.isoformat()}) deve ser maior ou igual a "
+                    f"data_inicio ({dados.data_inicio.isoformat()})."
+                ),
+            )
+
+        self._validar_conflito_mesma_fonte(
+            projeto_id=solicitacao.projeto_id,
+            ref_pesquisador=dados.ref_pesquisador,
+            fonte=dados.fonte_financiamento,
+            data_inicio=dados.data_inicio,
+            data_fim=dados.data_fim,
+        )
 
         self.parametros.validar_carga_horaria_global(
             ref_pesquisador=dados.ref_pesquisador,
@@ -78,9 +96,9 @@ class MembroService:
         self.db.add(membro)
         self.db.commit()
         self.db.refresh(membro)
-        return membro
+        return build_membro_response(membro, self.db)
 
-    def listar(self, solicitacao_id: int) -> List[PesquisadorProjeto]:
+    def listar(self, solicitacao_id: int) -> List[MembroResponse]:
         versao = (
             self.db.query(VersaoRHProjeto)
             .filter(VersaoRHProjeto.solicitacao_id == solicitacao_id)
@@ -89,11 +107,15 @@ class MembroService:
         if not versao:
             return []
 
-        return (
+        membros = (
             self.db.query(PesquisadorProjeto)
             .filter(PesquisadorProjeto.versao_rh_id == versao.id)
             .all()
         )
+        return [build_membro_response(m, self.db) for m in membros]
+
+
+
 
     def atualizar(
         self,
@@ -101,7 +123,7 @@ class MembroService:
         membro_id: int,
         dados: MembroUpdate,
         current_user: Union[Usuario, int],
-    ) -> PesquisadorProjeto:
+    ) -> MembroResponse:
         solicitacao = self._buscar_solicitacao_editavel(solicitacao_id, current_user)
         membro = self._buscar_membro_da_solicitacao(solicitacao_id, membro_id)
 
@@ -115,6 +137,15 @@ class MembroService:
                 membro.data_inicio,
             )
 
+        if membro.data_fim is not None and membro.data_fim < membro.data_inicio:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"data_fim ({membro.data_fim.isoformat()}) deve ser maior ou igual a "
+                    f"data_inicio ({membro.data_inicio.isoformat()})."
+                ),
+            )
+
         if campos_alterados.keys() & {"carga_horaria_semanal", "data_inicio", "data_fim"}:
             self.parametros.validar_carga_horaria_global(
                 ref_pesquisador=membro.ref_pesquisador,
@@ -123,6 +154,16 @@ class MembroService:
                 data_fim_novo=membro.data_fim,
                 membro_id_excluir=membro.id,
                 projeto_id_excluir=solicitacao.projeto_id,
+            )
+
+        if campos_alterados.keys() & {"fonte_financiamento", "data_inicio", "data_fim"}:
+            self._validar_conflito_mesma_fonte(
+                projeto_id=solicitacao.projeto_id,
+                ref_pesquisador=membro.ref_pesquisador,
+                fonte=membro.fonte_financiamento,
+                data_inicio=membro.data_inicio,
+                data_fim=membro.data_fim,
+                membro_id_excluir=membro.id,
             )
 
         if campos_alterados.keys() & {"carga_horaria_semanal", "categoria_bolsa", "data_inicio"}:
@@ -142,7 +183,7 @@ class MembroService:
 
         self.db.commit()
         self.db.refresh(membro)
-        return membro
+        return build_membro_response(membro, self.db)
 
     def remover(self, solicitacao_id: int, membro_id: int, current_user: Union[Usuario, int]) -> None:
         self._buscar_solicitacao_editavel(solicitacao_id, current_user)
@@ -150,6 +191,49 @@ class MembroService:
 
         self.db.delete(membro)
         self.db.commit()
+
+    def _validar_conflito_mesma_fonte(
+        self,
+        projeto_id: int,
+        ref_pesquisador: str,
+        fonte,
+        data_inicio,
+        data_fim,
+        membro_id_excluir: int | None = None,
+    ) -> None:
+        """
+        Bloqueia o mesmo pesquisador na mesma fonte pagadora em períodos
+        sobrepostos no mesmo projeto.
+
+        Permite livremente quando:
+        - a fonte for diferente, OU
+        - os períodos forem disjuntos, OU
+        - for o próprio membro sendo atualizado (`membro_id_excluir`).
+        """
+        query = (
+            self.db.query(PesquisadorProjeto)
+            .join(VersaoRHProjeto, PesquisadorProjeto.versao_rh_id == VersaoRHProjeto.id)
+            .filter(
+                VersaoRHProjeto.projeto_id == projeto_id,
+                PesquisadorProjeto.ref_pesquisador == ref_pesquisador,
+                PesquisadorProjeto.fonte_financiamento == fonte,
+            )
+        )
+        if membro_id_excluir is not None:
+            query = query.filter(PesquisadorProjeto.id != membro_id_excluir)
+
+        for candidato in query.all():
+            if _periodos_sobrepoem(candidato.data_inicio, candidato.data_fim, data_inicio, data_fim):
+                periodo_inicio = candidato.data_inicio.isoformat()
+                periodo_fim = candidato.data_fim.isoformat() if candidato.data_fim else "em aberto"
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"O pesquisador {ref_pesquisador} ja possui alocacao na fonte "
+                        f"{fonte.value} neste projeto no periodo {periodo_inicio} a {periodo_fim} "
+                        f"(membro id={candidato.id})"
+                    ),
+                )
 
     def _buscar_solicitacao_editavel(
         self, solicitacao_id: int, current_user: Union[Usuario, int]
