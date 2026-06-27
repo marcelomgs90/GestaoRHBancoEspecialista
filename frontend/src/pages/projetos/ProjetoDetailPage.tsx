@@ -166,10 +166,7 @@ export default function ProjetoDetailPage() {
             <div className="flex flex-col gap-4 mb-8">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded uppercase tracking-wider border border-slate-200">
-                    ID: {projeto.id}
-                  </span>
-                  <span className="text-slate-700 font-bold text-lg">{projeto.codigo}</span>
+                  <span className="text-slate-700 font-bold text-lg">{projeto.sigla}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {podeEditarProjeto && (
@@ -193,10 +190,12 @@ export default function ProjetoDetailPage() {
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 py-6 border-y border-slate-100">
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Código</p>
-                <p className="font-bold text-slate-900 text-sm">{projeto.codigo}</p>
-              </div>
+              {projeto.codigo && (
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Código</p>
+                  <p className="font-bold text-slate-900 text-sm">{projeto.codigo}</p>
+                </div>
+              )}
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Início</p>
                 <div className="flex items-center gap-1 font-bold text-slate-900 text-sm">

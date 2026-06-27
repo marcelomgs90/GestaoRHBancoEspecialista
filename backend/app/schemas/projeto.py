@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+import re
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -14,6 +15,7 @@ class ProjetoFonteFinanciamento(BaseModel):
 
 class ProjetoCreate(BaseModel):
     codigo: Optional[str] = None
+    sigla: str = Field(min_length=5, max_length=20)
     titulo: str
     descricao: Optional[str] = None
     fontes_financiamento: list[ProjetoFonteFinanciamento] = Field(min_length=1, max_length=3)
@@ -29,6 +31,14 @@ class ProjetoCreate(BaseModel):
             return None
         codigo_normalizado = str(codigo).strip()
         return codigo_normalizado or None
+
+    @field_validator("sigla", mode="before")
+    @classmethod
+    def validar_sigla(cls, sigla: str):
+        sigla_normalizada = str(sigla).strip()
+        if not re.fullmatch(r"[A-Za-z0-9]{5,20}", sigla_normalizada):
+            raise ValueError("Sigla deve ser alfanumerica e ter entre 5 e 20 caracteres")
+        return sigla_normalizada
 
     @field_validator("fontes_financiamento")
     @classmethod
@@ -48,11 +58,29 @@ class ProjetoCreate(BaseModel):
 
 
 class ProjetoUpdate(BaseModel):
+    codigo: Optional[str] = None
+    sigla: str = Field(min_length=5, max_length=20)
     titulo: str
     descricao: Optional[str] = None
     data_inicio: date
     data_fim: date
     status: StatusProjeto = StatusProjeto.ATIVO
+
+    @field_validator("codigo", mode="before")
+    @classmethod
+    def normalizar_codigo(cls, codigo: Optional[str]):
+        if codigo is None:
+            return None
+        codigo_normalizado = str(codigo).strip()
+        return codigo_normalizado or None
+
+    @field_validator("sigla", mode="before")
+    @classmethod
+    def validar_sigla(cls, sigla: str):
+        sigla_normalizada = str(sigla).strip()
+        if not re.fullmatch(r"[A-Za-z0-9]{5,20}", sigla_normalizada):
+            raise ValueError("Sigla deve ser alfanumerica e ter entre 5 e 20 caracteres")
+        return sigla_normalizada
 
     @model_validator(mode="after")
     def validar_datas(self):
@@ -63,7 +91,8 @@ class ProjetoUpdate(BaseModel):
 
 class ProjetoResponse(BaseModel):
     id: int
-    codigo: str
+    codigo: Optional[str] = None
+    sigla: str
     titulo: str
     descricao: Optional[str]
     fontes_financiamento: list[ProjetoFonteFinanciamento]

@@ -274,7 +274,7 @@ export default function SolicitacoesListPage() {
                         </span>
                       </div>
 
-                      {sol.status === StatusSolicitacao.EM_EDICAO && (
+                      {podeEditarMembros && sol.status === StatusSolicitacao.EM_EDICAO && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

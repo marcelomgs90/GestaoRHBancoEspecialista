@@ -37,7 +37,6 @@ export function usePerfil() {
     podeEditarMembros: is(
       PerfilUsuario.COORDENADOR,
       PerfilUsuario.ADMINISTRADOR,
-      PerfilUsuario.GESTOR_POLO,
       PerfilUsuario.APOIO_COORDENADOR,
     ),
     podeGerenciarParametros: is(PerfilUsuario.ADMINISTRADOR),

@@ -106,6 +106,7 @@ def projeto(db, coordenador):
     hoje = date.today()
     projeto = Projeto(
         codigo="PROJ-TESTE",
+        sigla="PROJTESTE",
         titulo="Projeto de Teste",
         coordenador_id=coordenador.id,
         status=StatusProjeto.ATIVO,
@@ -129,13 +130,15 @@ def projeto(db, coordenador):
 def test_projeto_service_atualiza_dados_sem_alterar_codigo_ou_fontes(
     db, projeto, coordenador
 ):
-    """Edicao cadastral do projeto nao altera codigo, coordenador ou fontes."""
+    """Edicao cadastral do projeto preserva coordenador e fontes."""
     hoje = date.today()
     service = ProjetoService(db)
 
     atualizado = service.atualizar(
         projeto.id,
         ProjetoUpdate(
+            codigo=projeto.codigo,
+            sigla=projeto.sigla,
             titulo="Projeto Atualizado",
             descricao="Descricao ajustada",
             data_inicio=hoje + timedelta(days=1),
@@ -162,6 +165,8 @@ def test_projeto_service_permite_edicao_para_gestor(db, projeto, gestor):
     atualizado = service.atualizar(
         projeto.id,
         ProjetoUpdate(
+            codigo=projeto.codigo,
+            sigla=projeto.sigla,
             titulo="Editado pelo Gestor",
             descricao=None,
             data_inicio=hoje,
@@ -831,6 +836,7 @@ def test_backend_rejeita_fonte_pagadora_ifpb():
     with pytest.raises(ValidationError):
         ProjetoCreate(
             codigo="PROJ-IFPB",
+            sigla="PROJIFPB",
             titulo="Projeto com fonte removida",
             descricao=None,
             fontes_financiamento=[
@@ -1163,6 +1169,7 @@ def _criar_usuario_e_projeto_via_api(client, db_session, perfil=PerfilUsuario.CO
         hoje = date.today()
         proj = Projeto(
             codigo=f"PROJ-{suffix}",
+            sigla=f"PJ{suffix}",
             titulo="Projeto de Teste",
             coordenador_id=user.id,
             status=StatusProjeto.ATIVO,

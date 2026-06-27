@@ -35,7 +35,16 @@ const requiredCurrency = (message: string) =>
 
 const baseSchema = z
   .object({
-    codigo: z.string().trim().optional(),
+    codigo: z.preprocess(
+      (value) => (value === '' || value === undefined || value === null ? undefined : value),
+      z.string().trim().optional(),
+    ),
+    sigla: z
+      .string()
+      .trim()
+      .min(5, 'Sigla deve ter no mínimo 5 caracteres')
+      .max(20, 'Sigla deve ter no máximo 20 caracteres')
+      .regex(/^[A-Za-z0-9]+$/, 'Sigla deve conter apenas letras e números'),
     titulo: z.string().min(3, 'Título deve ter pelo menos 3 caracteres'),
     descricao: z.string().optional(),
     valor_empresa: requiredCurrency('Informe o valor da fonte Empresa'),
@@ -94,7 +103,6 @@ export default function ProjetoFormPage() {
   const { isCoordenador } = usePerfil();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
-  const [codigoCriado, setCodigoCriado] = useState('');
   const [projetoCriadoId, setProjetoCriadoId] = useState<number | null>(null);
 
   const [pesquisadorTermo, setPesquisadorTermo] = useState('');
@@ -113,6 +121,8 @@ export default function ProjetoFormPage() {
   } = useForm<FormData>({
     resolver: zodResolver(baseSchema),
     defaultValues: {
+      codigo: '',
+      sigla: '',
       fonte_embrapii: false,
       fonte_sebrae: false,
       coordenador_ref_pesquisador: '',
@@ -185,28 +195,16 @@ export default function ProjetoFormPage() {
           ? [{ fonte: FonteFinanciamento.SEBRAE, valor: data.valor_sebrae }]
           : []),
       ];
-
-      const payload: Record<string, unknown> = {
-        ...(data.codigo ? { codigo: data.codigo } : {}),
+      const projeto = await projetoService.criar({
+        codigo: data.codigo?.trim() || undefined,
+        sigla: data.sigla,
         titulo: data.titulo,
         descricao: data.descricao,
         data_inicio: data.data_inicio,
         data_fim: data.data_fim,
         fontes_financiamento,
-      };
-
-      if (!isCoordenador) {
-        if (!data.coordenador_ref_pesquisador || data.coordenador_ref_pesquisador.trim() === '') {
-          setSubmitError('Selecione o coordenador do projeto.');
-          return;
-        }
-        payload.coordenador_ref_pesquisador = data.coordenador_ref_pesquisador.trim();
-      }
-
-      const projeto = await projetoService.criar(
-        payload as unknown as Parameters<typeof projetoService.criar>[0],
-      );
-      setCodigoCriado(projeto.codigo);
+        coordenador_ref_pesquisador: data.coordenador_ref_pesquisador?.trim() || undefined,
+      });
       setProjetoCriadoId(projeto.id);
       setSucesso(true);
     } catch (err) {
@@ -250,7 +248,7 @@ export default function ProjetoFormPage() {
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
             <div className="md:col-span-3 space-y-1.5">
               <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">
                 Título do Projeto
@@ -268,13 +266,29 @@ export default function ProjetoFormPage() {
 
             <div className="space-y-1.5">
               <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                Código (opcional)
+                Sigla do Projeto
+              </label>
+              <input
+                type="text"
+                maxLength={20}
+                {...register('sigla')}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-black text-sm uppercase tracking-wider text-slate-900"
+                placeholder="Ex: INOV2026"
+              />
+              {errors.sigla && (
+                <p className="text-xs text-red-600">{errors.sigla.message}</p>
+              )}
+            </div>
+
+            <div className="md:col-span-2 space-y-1.5">
+              <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                Código do Projeto
               </label>
               <input
                 type="text"
                 {...register('codigo')}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-black text-sm uppercase tracking-wider text-slate-900"
-                placeholder="Gerado automaticamente"
+                placeholder="Ex: PRJ-001"
               />
               {errors.codigo && (
                 <p className="text-xs text-red-600">{errors.codigo.message}</p>
@@ -605,7 +619,7 @@ export default function ProjetoFormPage() {
               <div className="text-left min-w-0">
                 <h3 className="text-base font-bold text-slate-900">Projeto criado</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  O projeto <span className="text-blue-600 font-bold">{codigoCriado}</span> foi cadastrado com sucesso.
+                  O projeto <span className="text-blue-600 font-bold">{watch('codigo') || 'Sem código'}</span> foi cadastrado com sucesso.
                 </p>
               </div>
             </div>

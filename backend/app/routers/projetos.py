@@ -53,7 +53,7 @@ def atualizar_projeto(
     service: ProjetoService = Depends(get_projeto_service),
     current_user: Usuario = Depends(get_current_user),
 ):
-    """Atualizar dados cadastrais do projeto sem alterar codigo, coordenador ou fontes."""
+    """Atualizar dados cadastrais do projeto sem alterar coordenador ou fontes."""
     return service.atualizar(projeto_id, dados, current_user)
 
 

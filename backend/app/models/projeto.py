@@ -10,7 +10,8 @@ class Projeto(Base, TimestampMixin):
     __tablename__ = "projeto"
 
     id = Column(Integer, primary_key=True, index=True)
-    codigo = Column(String(50), unique=True, nullable=False, index=True)
+    codigo = Column(String(50), unique=True, nullable=True, index=True)
+    sigla = Column(String(20), nullable=False)
     titulo = Column(String(500), nullable=False)
     descricao = Column(Text, nullable=True)
 

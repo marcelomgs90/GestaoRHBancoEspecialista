@@ -39,21 +39,15 @@ class ProjetoService:
 
         payload = dados.model_dump(mode="json")
         fontes = payload.pop("fontes_financiamento")
-        coordenador_ref = payload.pop("coordenador_ref_pesquisador", None)
-        payload["codigo"] = payload.get("codigo") or self._gerar_codigo()
-
-        existente = self.db.query(Projeto).filter(Projeto.codigo == payload["codigo"]).first()
-        if existente:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Já existe um projeto com este código",
-            )
+        coordenador_ref_pesquisador = payload.pop("coordenador_ref_pesquisador", None)
+        codigo = payload.get("codigo")
+        payload["codigo"] = codigo.strip() if isinstance(codigo, str) else None
 
         coordenador_id = self._resolver_coordenador_id(
-            current_user=current_user,
-            coordenador_ref_pesquisador=coordenador_ref,
+            current_user,
+            coordenador_ref_pesquisador,
         )
-
+        self._validar_codigo_unico(payload["codigo"])
         projeto = Projeto(
             **payload,
             coordenador_id=coordenador_id,
@@ -71,16 +65,16 @@ class ProjetoService:
         return projeto
 
     def _validar_permissao_criacao(self, current_user: Usuario) -> None:
-        """Apenas ADMINISTRADOR, GESTOR_POLO e COORDENADOR podem criar projetos."""
         if current_user.perfil in (
             PerfilUsuario.ADMINISTRADOR,
-            PerfilUsuario.GESTOR_POLO,
             PerfilUsuario.COORDENADOR,
+            PerfilUsuario.GESTOR_POLO,
         ):
             return
+
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas administrador, gestor do polo ou coordenador podem criar projetos",
+            detail="Apenas administrador, gestor do polo ou coordenador pode criar projeto",
         )
 
     def _resolver_coordenador_id(
@@ -88,49 +82,32 @@ class ProjetoService:
         current_user: Usuario,
         coordenador_ref_pesquisador: Optional[str],
     ) -> int:
-        """Resolve o `coordenador_id` conforme o perfil e a referencia enviada.
-
-        - COORDENADOR: ignora a referencia e usa `current_user.id`.
-        - ADMINISTRADOR / GESTOR_POLO: exige a referencia; busca o `Usuario`
-          interno cuja `ref_usuario` seja igual a referencia enviada.
-        """
         if current_user.perfil == PerfilUsuario.COORDENADOR:
             return current_user.id
 
-        if not coordenador_ref_pesquisador or not coordenador_ref_pesquisador.strip():
+        ref = coordenador_ref_pesquisador.strip() if coordenador_ref_pesquisador else None
+        if not ref:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    "Para o seu perfil, e obrigatorio informar o coordenador "
-                    "do projeto (selecione um pesquisador-servidor no campo Coordenador)"
-                ),
+                detail="Coordenador do projeto e obrigatorio",
             )
 
-        ref_normalizada = coordenador_ref_pesquisador.strip()
-        usuario = (
+        coordenador = (
             self.db.query(Usuario)
-            .filter(Usuario.ref_usuario == ref_normalizada)
+            .filter(
+                Usuario.ref_usuario == ref,
+                Usuario.perfil == PerfilUsuario.COORDENADOR,
+                Usuario.ativo.is_(True),
+            )
             .first()
         )
-        if not usuario:
+        if not coordenador:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    "Pesquisador selecionado nao possui cadastro no Gestao RH "
-                    "(ref_usuario nao encontrado). Realize o cadastro previo."
-                ),
+                detail="Coordenador nao encontrado no cadastro interno por ref_usuario",
             )
 
-        return usuario.id
-
-    def _gerar_codigo(self) -> str:
-        base = f"PROJ-{datetime.utcnow():%Y%m%d%H%M%S}"
-        codigo = base
-        sufixo = 1
-        while self.db.query(Projeto.id).filter(Projeto.codigo == codigo).first():
-            sufixo += 1
-            codigo = f"{base}-{sufixo}"
-        return codigo
+        return coordenador.id
 
     def listar(self, current_user: Usuario, status_filtro: Optional[StatusProjeto] = None) -> List[Projeto]:
         query = self.db.query(Projeto).options(
@@ -179,6 +156,11 @@ class ProjetoService:
         projeto = self.obter_por_id(projeto_id, current_user)
         self._validar_permissao_edicao(projeto, current_user)
 
+        codigo = dados.codigo.strip() if isinstance(dados.codigo, str) else None
+        self._validar_codigo_unico(codigo, projeto_id_excluir=projeto.id)
+
+        projeto.codigo = codigo
+        projeto.sigla = dados.sigla
         projeto.titulo = dados.titulo
         projeto.descricao = dados.descricao
         projeto.data_inicio = dados.data_inicio
@@ -188,6 +170,24 @@ class ProjetoService:
         self.db.commit()
         self.db.refresh(projeto)
         return self.obter_por_id(projeto.id, current_user)
+
+    def _validar_codigo_unico(
+        self,
+        codigo: Optional[str],
+        projeto_id_excluir: Optional[int] = None,
+    ) -> None:
+        if not codigo:
+            return
+
+        query = self.db.query(Projeto).filter(Projeto.codigo == codigo)
+        if projeto_id_excluir is not None:
+            query = query.filter(Projeto.id != projeto_id_excluir)
+
+        if query.first():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Já existe um projeto com este código",
+            )
 
     def listar_anexos(self, projeto_id: int, current_user: Usuario) -> List[ProjetoAnexo]:
         self.obter_por_id(projeto_id, current_user)

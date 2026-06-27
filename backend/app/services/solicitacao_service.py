@@ -234,7 +234,6 @@ class SolicitacaoService:
     ) -> None:
         if current_user.perfil in (
             PerfilUsuario.ADMINISTRADOR,
-            PerfilUsuario.GESTOR_POLO,
             PerfilUsuario.APOIO_COORDENADOR,
         ):
             return

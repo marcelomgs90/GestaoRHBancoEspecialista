@@ -40,7 +40,10 @@
 
 - **Gestão de Projetos**
   - Consulta, inclusão e alteração de dados básicos
-  - Campos: título, resumo, coordenador, status, datas (início/fim), fonte principal, observação
+  - Campos: título, sigla do projeto, código do projeto, resumo, coordenador, status, datas (início/fim), fonte principal, observação
+  - A sigla do projeto é obrigatória, alfanumérica, com mínimo de 5 e máximo de 20 caracteres
+  - O código do projeto é opcional; quando informado, deve ser único entre os projetos cadastrados
+  - O código do projeto é digitado pelo usuário e não é gerado automaticamente pelo sistema
 
 - **Upload/Anexo de Documentos do Projeto**
   - Múltiplos arquivos por projeto
@@ -123,12 +126,14 @@ Regras:
   - Composição inicial da equipe do projeto (primeira versão do RH)
   - Lista de pesquisadores com fonte, carga horária, valor de bolsa, categoria
   - Disponível apenas se o projeto **não** possui versão `VIGENTE`
+  - Perfis permitidos: Coordenador do projeto, Administrador e Apoio Coordenador. Gestor do Polo não realiza implantação.
 
 - **Solicitação de Alteração de RH**
   - Modificação da composição da equipe a partir da versão `VIGENTE`
   - Inclusões, alterações e encerramentos de participação
   - Justificativa e mês/ano de referência
   - Disponível apenas se o projeto possui versão `VIGENTE`
+  - Perfis permitidos: Coordenador do projeto, Administrador e Apoio Coordenador. Gestor do Polo não realiza alteração de RH.
 
 - **Solicitação de Pagamento de RH**
   - Referente a um mês/ano específico

@@ -15,7 +15,6 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import type { AxiosError } from 'axios';
 import { projetoService } from '@/services/projetoService';
 import { formatCurrency, formatDate } from '@/types/projeto';
 import type { Projeto } from '@/types/projeto';
@@ -31,6 +30,16 @@ import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 const schema = z
   .object({
+    codigo: z.preprocess(
+      (value) => (value === '' || value === undefined || value === null ? undefined : value),
+      z.string().trim().optional(),
+    ),
+    sigla: z
+      .string()
+      .trim()
+      .min(5, 'Sigla deve ter no mínimo 5 caracteres')
+      .max(20, 'Sigla deve ter no máximo 20 caracteres')
+      .regex(/^[A-Za-z0-9]+$/, 'Sigla deve conter apenas letras e números'),
     titulo: z.string().trim().min(3, 'Título deve ter pelo menos 3 caracteres'),
     descricao: z.string().optional(),
     data_inicio: z.string().min(1, 'Informe a data de início'),
@@ -88,6 +97,8 @@ export default function ProjetoEditPage() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      codigo: '',
+      sigla: '',
       titulo: '',
       descricao: '',
       data_inicio: '',
@@ -108,6 +119,8 @@ export default function ProjetoEditPage() {
         setProjeto(data);
         setAnexos(anexosData);
         reset({
+          codigo: data.codigo ?? '',
+          sigla: data.sigla,
           titulo: data.titulo,
           descricao: data.descricao ?? '',
           data_inicio: data.data_inicio.split('T')[0],
@@ -154,6 +167,8 @@ export default function ProjetoEditPage() {
 
     try {
       const atualizado = await projetoService.atualizar(projetoId, {
+        codigo: data.codigo?.trim() || undefined,
+        sigla: data.sigla,
         titulo: data.titulo,
         descricao: data.descricao?.trim() || undefined,
         data_inicio: data.data_inicio,
@@ -177,6 +192,8 @@ export default function ProjetoEditPage() {
       setAnexosPendentes({});
       setAnexosRemovidos([]);
       reset({
+        codigo: atualizado.codigo ?? '',
+        sigla: atualizado.sigla,
         titulo: atualizado.titulo,
         descricao: atualizado.descricao ?? '',
         data_inicio: atualizado.data_inicio.split('T')[0],
@@ -186,7 +203,9 @@ export default function ProjetoEditPage() {
       setConfirmacaoSalvar(null);
       navigate(`/projetos/${atualizado.id}`);
     } catch (err) {
+      setConfirmacaoSalvar(null);
       setSubmitError(getApiErrorMessage(err, 'Erro ao atualizar projeto. Tente novamente.'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSalvando(false);
     }
@@ -279,9 +298,6 @@ export default function ProjetoEditPage() {
             <ArrowLeft size={14} /> Voltar ao projeto
           </button>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-              {projeto.codigo}
-            </p>
             <h2 className="text-3xl font-black tracking-tight text-slate-950">
               Editar projeto
             </h2>
@@ -317,9 +333,6 @@ export default function ProjetoEditPage() {
                 Ajuste apenas as informações editáveis do projeto.
               </p>
             </div>
-            <span className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
-              ID {projeto.id}
-            </span>
           </div>
 
           <div className="space-y-5">
@@ -333,6 +346,38 @@ export default function ProjetoEditPage() {
                 className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500"
               />
               {errors.titulo && <p className="text-xs text-red-600">{errors.titulo.message}</p>}
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600">
+                  Código do Projeto
+                </label>
+                <input
+                  type="text"
+                  {...register('codigo')}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                  placeholder="Opcional"
+                />
+                {errors.codigo && (
+                  <p className="text-xs text-red-600">{errors.codigo.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600">
+                  Sigla do Projeto
+                </label>
+                <input
+                  type="text"
+                  maxLength={20}
+                  {...register('sigla')}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold uppercase tracking-wider text-slate-900 outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                />
+                {errors.sigla && (
+                  <p className="text-xs text-red-600">{errors.sigla.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -535,18 +580,12 @@ export default function ProjetoEditPage() {
                   Campos bloqueados
                 </h3>
                 <p className="mt-1 text-xs font-medium text-slate-500">
-                  Código, coordenador e fontes não são alterados nesta tela.
+                  Coordenador e fontes não são alterados nesta tela.
                 </p>
               </div>
             </div>
 
             <div className="space-y-3 border-t border-slate-100 pt-4">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
-                  Código
-                </p>
-                <p className="mt-1 text-sm font-black text-slate-900">{projeto.codigo}</p>
-              </div>
 
               <div>
                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
@@ -621,7 +660,7 @@ export default function ProjetoEditPage() {
               <div className="min-w-0 text-left">
                 <h3 className="text-base font-bold text-slate-900">Salvar alterações?</h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  Confirme para gravar as alterações do projeto {projeto.codigo}.
+                  Confirme para gravar as alterações do projeto {projeto.sigla}.
                 </p>
               </div>
             </div>
@@ -663,7 +702,7 @@ export default function ProjetoEditPage() {
               <div className="min-w-0 text-left">
                 <h3 className="text-base font-bold text-slate-900">Projeto atualizado</h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  As alterações foram salvas para o projeto {projeto.codigo}.
+                  As alterações foram salvas para o projeto {projeto.sigla}.
                 </p>
               </div>
             </div>

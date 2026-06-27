@@ -59,8 +59,34 @@ export function AppRoutes() {
               </RoleRoute>
             }
           />
-          <Route path="/projetos/:id_projeto/implantacao" element={<ImplantacaoPage />} />
-          <Route path="/projetos/:id_projeto/alteracao" element={<AlteracaoPage />} />
+          <Route
+            path="/projetos/:id_projeto/implantacao"
+            element={
+              <RoleRoute
+                allowedRoles={[
+                  PerfilUsuario.COORDENADOR,
+                  PerfilUsuario.ADMINISTRADOR,
+                  PerfilUsuario.APOIO_COORDENADOR,
+                ]}
+              >
+                <ImplantacaoPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/projetos/:id_projeto/alteracao"
+            element={
+              <RoleRoute
+                allowedRoles={[
+                  PerfilUsuario.COORDENADOR,
+                  PerfilUsuario.ADMINISTRADOR,
+                  PerfilUsuario.APOIO_COORDENADOR,
+                ]}
+              >
+                <AlteracaoPage />
+              </RoleRoute>
+            }
+          />
 
           <Route path="/solicitacoes" element={<SolicitacoesListPage />} />
           <Route

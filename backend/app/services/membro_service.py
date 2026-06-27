@@ -267,7 +267,6 @@ class MembroService:
         pode_editar = (
             current_user.perfil in (
                 PerfilUsuario.ADMINISTRADOR,
-                PerfilUsuario.GESTOR_POLO,
                 PerfilUsuario.APOIO_COORDENADOR,
             )
             or (

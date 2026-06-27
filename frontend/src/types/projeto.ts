@@ -23,6 +23,7 @@ export interface ProjetoFonteFinanciamento {
 
 export interface ProjetoCreate {
   codigo?: string
+  sigla: string
   titulo: string
   descricao?: string
   fontes_financiamento: ProjetoFonteFinanciamento[]
@@ -33,6 +34,8 @@ export interface ProjetoCreate {
 }
 
 export interface ProjetoUpdate {
+  codigo?: string
+  sigla: string
   titulo: string
   descricao?: string
   data_inicio: string
@@ -51,7 +54,8 @@ export interface VersaoRHProjeto {
 
 export interface Projeto {
   id: number
-  codigo: string
+  codigo: string | null
+  sigla: string
   titulo: string
   descricao: string | null
   fontes_financiamento: ProjetoFonteFinanciamento[]

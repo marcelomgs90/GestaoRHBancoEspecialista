@@ -121,6 +121,7 @@ def _auth(user: Usuario) -> dict:
 def _payload_basico() -> dict:
     hoje = date.today()
     return {
+        "sigla": "PROJTESTE",
         "titulo": "Projeto Teste",
         "data_inicio": hoje.isoformat(),
         "data_fim": (hoje + timedelta(days=365)).isoformat(),
