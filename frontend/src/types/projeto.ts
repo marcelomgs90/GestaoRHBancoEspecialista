@@ -1,5 +1,21 @@
 import { CategoriaBolsa, FonteFinanciamento, StatusProjeto, TipoDocumentoProjeto } from './enums'
 
+export interface Pesquisador {
+  id: number
+  nome: string
+  matricula: string
+  tipo_vinculo: string | null
+}
+
+export interface Paginated<T> {
+  items: T[]
+  total: number
+  page: number
+  per_page: number
+  pages: number
+  is_rascunho?: boolean
+}
+
 export interface ProjetoFonteFinanciamento {
   fonte: FonteFinanciamento
   valor: number | string
@@ -14,6 +30,7 @@ export interface ProjetoCreate {
   data_inicio: string
   data_fim: string
   status?: StatusProjeto
+  coordenador_ref_pesquisador?: string | null
 }
 
 export interface ProjetoUpdate {

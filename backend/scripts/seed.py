@@ -56,28 +56,28 @@ def run_seed():
         if usuarios_existentes == 0:
             usuarios_seed = [
                 {
-                    "ref_usuario": "ADMIN-001",
+                    "ref_usuario": "000.000.000-01",
                     "nome": "Administrador do Sistema",
                     "email": "admin@ifpb.edu.br",
                     "senha": "admin123",
                     "perfil": PerfilUsuario.ADMINISTRADOR,
                 },
                 {
-                    "ref_usuario": "COORD-001",
+                    "ref_usuario": "888.888.888-88",
                     "nome": "Ana Coordenadora",
                     "email": "ana.coord@ifpb.edu.br",
                     "senha": "coord123",
                     "perfil": PerfilUsuario.COORDENADOR,
                 },
                 {
-                    "ref_usuario": "GESTOR-001",
+                    "ref_usuario": "222.222.222-22",
                     "nome": "Carlos Gestor",
                     "email": "carlos.gestor@ifpb.edu.br",
                     "senha": "gestor123",
                     "perfil": PerfilUsuario.GESTOR_POLO,
                 },
                 {
-                    "ref_usuario": "APOIO-001",
+                    "ref_usuario": "333.333.333-33",
                     "nome": "Beatriz Apoio",
                     "email": "beatriz.apoio@ifpb.edu.br",
                     "senha": "apoio123",

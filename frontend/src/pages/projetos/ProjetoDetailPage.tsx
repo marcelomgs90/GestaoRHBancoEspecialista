@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
+  UserCog,
 } from 'lucide-react';
 import { usePerfil } from '@/hooks/usePerfil';
 import { projetoService } from '@/services/projetoService';
@@ -207,6 +208,15 @@ export default function ProjetoDetailPage() {
                 <div className="flex items-center gap-1 font-bold text-slate-900 text-sm">
                   <Calendar size={12} className="text-slate-400" />
                   {formatDate(projeto.data_fim)}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Coordenador(a)</p>
+                <div className="flex items-center gap-1 font-bold text-slate-900 text-sm">
+                  <UserCog size={12} className="text-slate-400" />
+                  <span className="truncate">
+                    {projeto.coordenador_nome ?? projeto.usuario_nome ?? `Usuário #${projeto.coordenador_id}`}
+                  </span>
                 </div>
               </div>
             </div>

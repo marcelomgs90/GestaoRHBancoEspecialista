@@ -369,6 +369,7 @@ EP-00 Aplicacao Web - Gestao RH Banco de Especialistas
 
 **Feature:** F-PR-03 - Vinculação de coordenador/especialista ao projeto (EP-03)
 **Prioridade:** Alta
+**Status:** contemplada pela mudança OpenSpec `projeto-coordenador-banco-especialista`
 
 **Descrição:** Como gestor do Polo, quero vincular o coordenador/especialista responsável para identificar o responsável pelo projeto.
 

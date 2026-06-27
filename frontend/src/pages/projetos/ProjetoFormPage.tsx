@@ -1,12 +1,26 @@
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, X, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import {
+  Save,
+  X,
+  AlertCircle,
+  CheckCircle2,
+  ArrowRight,
+  Search,
+  Loader2,
+  User,
+} from 'lucide-react';
+import { useEffect } from 'react';
 import { projetoService } from '@/services/projetoService';
+import { especialistaService } from '@/services/especialistaService';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePerfil } from '@/hooks/usePerfil';
 import { FonteFinanciamento } from '@/types/enums';
-import type { AxiosError } from 'axios';
+import type { Pesquisador } from '@/types/projeto';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 const optionalCurrency = z.preprocess(
   (value) => (value === '' || value === undefined || value === null ? undefined : Number(value)),
@@ -19,7 +33,7 @@ const requiredCurrency = (message: string) =>
     z.number().positive(message),
   );
 
-const schema = z
+const baseSchema = z
   .object({
     codigo: z.preprocess(
       (value) => (value === '' || value === undefined || value === null ? undefined : value),
@@ -40,6 +54,7 @@ const schema = z
     valor_sebrae: optionalCurrency,
     data_inicio: z.string().min(1, 'Informe a data de início'),
     data_fim: z.string().min(1, 'Informe a data de encerramento'),
+    coordenador_ref_pesquisador: z.string().optional(),
   })
   .superRefine((d, ctx) => {
     if (d.fonte_embrapii && !d.valor_embrapii) {
@@ -62,7 +77,7 @@ const schema = z
     path: ['data_fim'],
   });
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<typeof baseSchema>;
 
 const parseCurrencyBRL = (value: string) => {
   const digits = value.replace(/\D/g, '');
@@ -80,25 +95,37 @@ const formatCurrencyBRL = (value: unknown) => {
   });
 };
 
+const PESQUISADOR_DEBOUNCE_MS = 300;
+
 export default function ProjetoFormPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isCoordenador } = usePerfil();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
   const [projetoCriadoId, setProjetoCriadoId] = useState<number | null>(null);
+
+  const [pesquisadorTermo, setPesquisadorTermo] = useState('');
+  const [pesquisadores, setPesquisadores] = useState<Pesquisador[]>([]);
+  const [pesquisadorSelecionado, setPesquisadorSelecionado] = useState<Pesquisador | null>(null);
+  const [buscandoPesquisadores, setBuscandoPesquisadores] = useState(false);
+  const [pesquisadorErro, setPesquisadorErro] = useState<string | null>(null);
 
   const {
     register,
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(baseSchema),
     defaultValues: {
       codigo: '',
       sigla: '',
       fonte_embrapii: false,
       fonte_sebrae: false,
+      coordenador_ref_pesquisador: '',
     },
   });
 
@@ -116,6 +143,45 @@ export default function ProjetoFormPage() {
     ];
     return valores.reduce((total, valor) => total + valor, 0);
   }, [fonteEmbrapii, fonteSebrae, valorEmpresa, valorEmbrapii, valorSebrae]);
+
+  // Tipoahead de pesquisadores-servidor (somente para ADMIN/GESTOR_POLO).
+  useEffect(() => {
+    if (isCoordenador) return;
+
+    const timer = window.setTimeout(async () => {
+      setBuscandoPesquisadores(true);
+      setPesquisadorErro(null);
+      try {
+        const resultado = await especialistaService.listarPesquisadores({
+          tipo: 'Servidor',
+          q: pesquisadorTermo || undefined,
+          per_page: 50,
+        });
+        setPesquisadores(resultado.items);
+      } catch (err) {
+        setPesquisadorErro(
+          getApiErrorMessage(err, 'Falha ao listar pesquisadores do Banco Especialista.'),
+        );
+        setPesquisadores([]);
+      } finally {
+        setBuscandoPesquisadores(false);
+      }
+    }, PESQUISADOR_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [isCoordenador, pesquisadorTermo]);
+
+  const selecionarPesquisador = (p: Pesquisador) => {
+    setPesquisadorSelecionado(p);
+    setValue('coordenador_ref_pesquisador', p.matricula, { shouldValidate: true });
+    setPesquisadorTermo('');
+    setPesquisadores([]);
+  };
+
+  const limparPesquisadorSelecionado = () => {
+    setPesquisadorSelecionado(null);
+    setValue('coordenador_ref_pesquisador', '', { shouldValidate: true });
+  };
 
   const onSubmit = async (data: FormData) => {
     setSubmitError(null);
@@ -137,12 +203,17 @@ export default function ProjetoFormPage() {
         data_inicio: data.data_inicio,
         data_fim: data.data_fim,
         fontes_financiamento,
+        coordenador_ref_pesquisador: data.coordenador_ref_pesquisador?.trim() || undefined,
       });
       setProjetoCriadoId(projeto.id);
       setSucesso(true);
     } catch (err) {
-      const ax = err as AxiosError<{ detail: string }>;
-      setSubmitError(ax.response?.data?.detail ?? 'Erro ao criar projeto. Tente novamente.');
+      setSubmitError(
+        getApiErrorMessage(
+          err,
+          'Erro ao criar projeto. Tente novamente.',
+        ),
+      );
     }
   };
 
@@ -267,6 +338,131 @@ export default function ProjetoFormPage() {
             </div>
           </div>
         </section>
+
+        {!isCoordenador && (
+          <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-purple-600 rounded-full"></div>
+              <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">
+                Coordenador
+              </h3>
+            </div>
+
+            <p className="text-xs text-slate-500 font-medium">
+              Selecione um pesquisador-servidor do Banco Especialista para ser o
+              responsável pelo projeto.
+            </p>
+
+            {pesquisadorSelecionado ? (
+              <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black shrink-0">
+                    <User size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-emerald-900 truncate">
+                      {pesquisadorSelecionado.nome}
+                    </p>
+                    <p className="text-xs font-medium text-emerald-700">
+                      Matrícula: {pesquisadorSelecionado.matricula}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={limparPesquisadorSelecionado}
+                  className="text-xs font-black uppercase tracking-widest text-emerald-700 hover:text-emerald-900 cursor-pointer"
+                >
+                  Trocar
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="relative">
+                  <Search
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    type="text"
+                    value={pesquisadorTermo}
+                    onChange={(e) => setPesquisadorTermo(e.target.value)}
+                    placeholder="Buscar pesquisador por nome ou matrícula..."
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium text-sm text-slate-900"
+                  />
+                  {buscandoPesquisadores && (
+                    <Loader2
+                      size={16}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin"
+                    />
+                  )}
+                </div>
+
+                {pesquisadorErro && (
+                  <p className="text-xs text-red-600">{pesquisadorErro}</p>
+                )}
+
+                {!buscandoPesquisadores && pesquisadores.length === 0 && (
+                  <p className="text-xs text-slate-500">
+                    Nenhum pesquisador-servidor encontrado.
+                  </p>
+                )}
+
+                {pesquisadores.length > 0 && (
+                  <ul className="max-h-64 overflow-y-auto rounded-2xl border border-slate-200 divide-y divide-slate-100 bg-white">
+                    {pesquisadores.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          onClick={() => selecionarPesquisador(p)}
+                          className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 cursor-pointer"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-black text-xs shrink-0">
+                            {p.nome
+                              .split(' ')
+                              .slice(0, 2)
+                              .map((n) => n[0])
+                              .join('')
+                              .toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-900 truncate">
+                              {p.nome}
+                            </p>
+                            <p className="text-xs font-medium text-slate-500">
+                              {p.matricula}
+                            </p>
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {errors.coordenador_ref_pesquisador && (
+                  <p className="text-xs text-red-600">
+                    {errors.coordenador_ref_pesquisador.message}
+                  </p>
+                )}
+              </>
+            )}
+          </section>
+        )}
+
+        {isCoordenador && (
+          <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-purple-600 rounded-full"></div>
+              <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">
+                Coordenador
+              </h3>
+            </div>
+            <p className="mt-3 text-sm font-medium text-slate-700">
+              Você será o coordenador deste projeto.
+              {user?.nome ? ` Responsável: ${user.nome}.` : ''}
+            </p>
+          </section>
+        )}
 
         <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
           <div className="flex items-center gap-3">
