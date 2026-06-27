@@ -86,8 +86,9 @@ def submeter_solicitacao(
 ):
     """
     Submeter solicitação de RH.
-    Muda status EM_EDICAO -> SUBMETIDA e promove versão PROPOSTA -> VIGENTE.
-    Para ALTERAÇÃO, a versão anterior VIGENTE passa a HISTÓRICO.
+    Para coordenador responsável pelo projeto, aprova diretamente:
+    EM_EDICAO -> APROVADA e PROPOSTA -> VIGENTE.
+    Para demais perfis autorizados, mantém o fluxo EM_EDICAO -> SUBMETIDA.
     """
     return service.submeter(solicitacao_id, current_user)
 
@@ -114,7 +115,7 @@ def aprobar_solicitacao(
 ):
     """
     Aprovar solicitação de RH.
-    Requer perfil GESTOR_POLO ou ADMINISTRADOR.
+    Requer perfil GESTOR_POLO, ADMINISTRADOR ou coordenador do projeto.
     Muda status SUBMETIDA -> APROVADA.
     """
     return service.aprovar(solicitacao_id, current_user)

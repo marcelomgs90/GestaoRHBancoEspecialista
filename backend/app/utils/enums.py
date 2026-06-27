@@ -35,6 +35,7 @@ class TipoDocumentoProjeto(str, Enum):
     ACORDO_PARCEIRA = "ACORDO_PARCEIRA"
     PLANO_TRABALHO = "PLANO_TRABALHO"
     DIARIO_OFICIAL = "DIARIO_OFICIAL"
+    DOCUMENTO_COMPLEMENTAR = "DOCUMENTO_COMPLEMENTAR"
 
 
 class StatusSolicitacao(str, Enum):

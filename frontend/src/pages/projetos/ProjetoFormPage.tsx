@@ -248,8 +248,8 @@ export default function ProjetoFormPage() {
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
-            <div className="md:col-span-3 space-y-1.5">
+          <div className="grid grid-cols-1 md:grid-cols-8 gap-6">
+            <div className="md:col-span-4 space-y-1.5">
               <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">
                 Título do Projeto
               </label>
@@ -264,7 +264,7 @@ export default function ProjetoFormPage() {
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="md:col-span-2 space-y-1.5">
               <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">
                 Sigla do Projeto
               </label>

@@ -103,8 +103,8 @@ export default function AlteracaoPage() {
   const [salvando, setSalvando] = useState(false);
   const [submetendo, setSubmetendo] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showSubmetidaModal, setShowSubmetidaModal] = useState(false);
-  const [submetidaSolicitacaoId, setSubmetidaSolicitacaoId] = useState<number | null>(null);
+  const [showAprovadaModal, setShowAprovadaModal] = useState(false);
+  const [aprovadaSolicitacaoId, setAprovadaSolicitacaoId] = useState<number | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [modalErro, setModalErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -264,7 +264,6 @@ export default function AlteracaoPage() {
     (acc, fonte) => acc + Number(fonte.valor),
     0,
   );
-  const saldoFontes = totalFontes - totalEquipeProposta;
   const excedeOrcamento = totalEquipeProposta > totalFontes;
   const fontesDoProjeto = (projeto?.fontes_financiamento ?? []).map((fonte) => fonte.fonte);
   const temMembrosProposta = equipeProposta.length > 0;
@@ -475,8 +474,8 @@ export default function AlteracaoPage() {
         await garantirSolicitacao();
       await persistirMudancas(id, membrosMapeados, refsRemovidos, mapaRefParaIdClonado, estadoOriginalClones);
       await solicitacaoService.submeter(id);
-      setSubmetidaSolicitacaoId(id);
-      setShowSubmetidaModal(true);
+      setAprovadaSolicitacaoId(id);
+      setShowAprovadaModal(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       setErro(
@@ -539,17 +538,16 @@ export default function AlteracaoPage() {
         </div>
       </div>
 
-      {/* Banner: alterações só passam a valer após aprovação do Gestor do Polo */}
-      <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      {/* Banner: coordenador aprova diretamente ao submeter */}
+      <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
         <AlertCircle size={18} className="mt-0.5 shrink-0" />
         <div>
           <p className="font-bold uppercase tracking-wider text-[10px]">
-            Mudanças só valem após aprovação
+            Aprovação direta pelo coordenador
           </p>
           <p className="text-xs mt-1">
-            Equipe oficial (VIGENTE) permanece <strong>intacta</strong> até que o
-            Gestor do Polo aprove esta solicitação. Inclusões, alterações e encerramentos
-            só serão aplicados ao projeto após a aprovação.
+            Ao submeter, inclusões, alterações e encerramentos serão aplicados
+            diretamente à versão vigente do projeto.
           </p>
         </div>
       </div>
@@ -984,7 +982,7 @@ export default function AlteracaoPage() {
       )}
 
       {/* Modal de submissão final */}
-      {showSubmetidaModal && (
+      {showAprovadaModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
           <motion.div
@@ -997,15 +995,15 @@ export default function AlteracaoPage() {
                 <FileCheck size={20} />
               </div>
               <div className="text-left min-w-0">
-                <h3 className="text-base font-bold text-slate-900">Alteração submetida</h3>
+                <h3 className="text-base font-bold text-slate-900">Alteração aprovada</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Solicitação #{submetidaSolicitacaoId}. A equipe oficial permanece intacta até a aprovação.
+                  Solicitação #{aprovadaSolicitacaoId}. A equipe proposta já está vigente no projeto.
                 </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 mt-5">
               <Link
-                to={`/solicitacoes/${submetidaSolicitacaoId}/comparacao`}
+                to={`/solicitacoes/${aprovadaSolicitacaoId}/comparacao`}
                 className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
               >
                 <GitCompare size={14} />

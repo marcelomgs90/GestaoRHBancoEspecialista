@@ -85,6 +85,7 @@ export default function ProjetoEditPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [anexoError, setAnexoError] = useState<string | null>(null);
   const [anexosPendentes, setAnexosPendentes] = useState<AnexosPendentes>({});
+  const [anexosComplementaresPendentes, setAnexosComplementaresPendentes] = useState<File[]>([]);
   const [anexosRemovidos, setAnexosRemovidos] = useState<number[]>([]);
   const [confirmacaoSalvar, setConfirmacaoSalvar] = useState<FormData | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -186,10 +187,19 @@ export default function ProjetoEditPage() {
         }
       }
 
+      for (const arquivo of anexosComplementaresPendentes) {
+        await projetoService.enviarAnexo(
+          projetoId,
+          TipoDocumentoProjeto.DOCUMENTO_COMPLEMENTAR,
+          arquivo,
+        );
+      }
+
       const anexosAtualizados = await projetoService.listarAnexos(projetoId);
       setProjeto(atualizado);
       setAnexos(anexosAtualizados);
       setAnexosPendentes({});
+      setAnexosComplementaresPendentes([]);
       setAnexosRemovidos([]);
       reset({
         codigo: atualizado.codigo ?? '',
@@ -214,21 +224,36 @@ export default function ProjetoEditPage() {
   const getAnexoPorTipo = (tipo: TipoDocumentoProjeto) =>
     anexos.find((anexo) => anexo.tipo_documento === tipo);
 
-  const handleUploadAnexo = (tipo: TipoDocumentoProjeto, file?: File) => {
-    if (!file) return;
-    setAnexoError(null);
-
+  const validarArquivo = (file: File) => {
     const extensao = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
     if (!extensoesPermitidas.includes(extensao)) {
       setAnexoError('Formato de arquivo nao permitido. Use apenas PDF, DOC ou DOCX.');
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleUploadAnexo = (tipo: TipoDocumentoProjeto, file?: File) => {
+    if (!file) return;
+    setAnexoError(null);
+    if (!validarArquivo(file)) return;
 
     const anexoAtual = getAnexoPorTipo(tipo);
     setAnexosPendentes((atuais) => ({ ...atuais, [tipo]: file }));
     if (anexoAtual) {
       setAnexosRemovidos((atuais) => atuais.filter((id) => id !== anexoAtual.id));
     }
+  };
+
+  const handleUploadAnexosComplementares = (files: FileList | null) => {
+    if (!files?.length) return;
+    setAnexoError(null);
+
+    const arquivos = Array.from(files);
+    const todosValidos = arquivos.every((file) => validarArquivo(file));
+    if (!todosValidos) return;
+
+    setAnexosComplementaresPendentes((atuais) => [...atuais, ...arquivos]);
   };
 
   const handleBaixarAnexo = async (anexo: ProjetoAnexo) => {
@@ -264,6 +289,17 @@ export default function ProjetoEditPage() {
       );
     }
   };
+
+  const anexosComplementares = anexos.filter(
+    (anexo) =>
+      anexo.tipo_documento === TipoDocumentoProjeto.DOCUMENTO_COMPLEMENTAR
+      && !anexosRemovidos.includes(anexo.id),
+  );
+  const anexosComplementaresRemovidos = anexos.filter(
+    (anexo) =>
+      anexo.tipo_documento === TipoDocumentoProjeto.DOCUMENTO_COMPLEMENTAR
+      && anexosRemovidos.includes(anexo.id),
+  );
 
   if (isLoading) {
     return (
@@ -348,7 +384,7 @@ export default function ProjetoEditPage() {
               {errors.titulo && <p className="text-xs text-red-600">{errors.titulo.message}</p>}
             </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600">
                   Código do Projeto
@@ -364,7 +400,7 @@ export default function ProjetoEditPage() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 md:col-span-2">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600">
                   Sigla do Projeto
                 </label>
@@ -566,6 +602,156 @@ export default function ProjetoEditPage() {
                 );
               })}
             </div>
+          </div>
+
+          <div className="mt-8 border-t border-slate-100 pt-6">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">
+                  Documentos complementares
+                </h3>
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  Anexe arquivos adicionais relacionados ao projeto.
+                </p>
+              </div>
+              <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-slate-800">
+                <Upload size={13} />
+                Anexar arquivos
+                <input
+                  type="file"
+                  className="hidden"
+                  multiple
+                  accept=".pdf,.doc,.docx"
+                  disabled={salvando}
+                  onChange={(event) => {
+                    handleUploadAnexosComplementares(event.target.files);
+                    event.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
+
+            {anexosComplementares.length === 0
+              && anexosComplementaresRemovidos.length === 0
+              && anexosComplementaresPendentes.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Nenhum documento complementar anexado
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {anexosComplementares.map((anexo) => (
+                  <div
+                    key={anexo.id}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500">
+                          <FileText size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-slate-800">
+                            {anexo.nome_arquivo_original}
+                          </p>
+                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                            {formatFileSize(anexo.tamanho_bytes)} · {formatDate(anexo.data_upload)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleBaixarAnexo(anexo)}
+                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 transition-all hover:bg-slate-100 cursor-pointer"
+                        >
+                          <Download size={13} />
+                          Baixar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAnexosRemovidos((atuais) =>
+                              atuais.includes(anexo.id) ? atuais : [...atuais, anexo.id],
+                            )
+                          }
+                          className="flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-600 transition-all hover:bg-red-50 cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                          Remover
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {anexosComplementaresRemovidos.map((anexo) => (
+                  <div
+                    key={anexo.id}
+                    className="rounded-lg border border-red-100 bg-red-50 p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-red-800">
+                          {anexo.nome_arquivo_original}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-red-500">
+                          Remoção pendente
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAnexosRemovidos((atuais) =>
+                            atuais.filter((id) => id !== anexo.id),
+                          )
+                        }
+                        className="rounded-lg border border-red-100 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-700 transition-all hover:bg-red-50 cursor-pointer"
+                      >
+                        Desfazer
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {anexosComplementaresPendentes.map((arquivo, index) => (
+                  <div
+                    key={`${arquivo.name}-${arquivo.size}-${index}`}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500">
+                          <FileText size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-slate-800">
+                            {arquivo.name}
+                          </p>
+                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                            {formatFileSize(arquivo.size)} - Pendente
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAnexosComplementaresPendentes((atuais) =>
+                            atuais.filter((_, itemIndex) => itemIndex !== index),
+                          )
+                        }
+                        className="flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-600 transition-all hover:bg-red-50 cursor-pointer"
+                      >
+                        <Trash2 size={13} />
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

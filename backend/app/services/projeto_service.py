@@ -16,6 +16,11 @@ from app.utils.enums import PerfilUsuario, StatusProjeto, TipoDocumentoProjeto
 
 
 ALLOWED_ATTACHMENT_EXTENSIONS = {".pdf", ".doc", ".docx"}
+REPLACEABLE_ATTACHMENT_TYPES = {
+    TipoDocumentoProjeto.ACORDO_PARCEIRA,
+    TipoDocumentoProjeto.PLANO_TRABALHO,
+    TipoDocumentoProjeto.DIARIO_OFICIAL,
+}
 
 
 class ProjetoService:
@@ -248,14 +253,16 @@ class ProjetoService:
                 detail=f"Arquivo excede o limite de {self.settings.MAX_UPLOAD_SIZE_MB} MB",
             )
 
-        anexo_anterior = (
-            self.db.query(ProjetoAnexo)
-            .filter(
-                ProjetoAnexo.projeto_id == projeto_id,
-                ProjetoAnexo.tipo_documento == tipo_documento.value,
+        anexo_anterior = None
+        if tipo_documento in REPLACEABLE_ATTACHMENT_TYPES:
+            anexo_anterior = (
+                self.db.query(ProjetoAnexo)
+                .filter(
+                    ProjetoAnexo.projeto_id == projeto_id,
+                    ProjetoAnexo.tipo_documento == tipo_documento.value,
+                )
+                .first()
             )
-            .first()
-        )
 
         diretorio_relativo = Path("projetos") / str(projeto_id) / tipo_documento.value.lower()
         diretorio = Path(self.settings.UPLOAD_DIR) / diretorio_relativo

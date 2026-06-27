@@ -220,7 +220,7 @@ export default function ImplantacaoPage() {
         void backendId;
         await solicitacaoService.incluirMembro(id, dados);
       }
-      // Submete a solicitação: EM_EDICAO → SUBMETIDA e PROPOSTA → VIGENTE
+      // Submete e aprova diretamente quando o usuário logado é o coordenador do projeto.
       await solicitacaoService.submeter(id);
       setShowSuccessModal(true);
     } catch (err: unknown) {
@@ -578,7 +578,7 @@ export default function ImplantacaoPage() {
                 <div className="text-left min-w-0">
                   <h3 className="text-base font-bold text-slate-900">Cadastrar implantação</h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    A solicitação será criada e submetida para aprovação com os membros informados.
+                    A solicitação será criada e aprovada diretamente com os membros informados.
                   </p>
                 </div>
               </div>
@@ -635,9 +635,9 @@ export default function ImplantacaoPage() {
                   <FileCheck size={20} />
                 </div>
                 <div className="text-left min-w-0">
-                  <h3 className="text-base font-bold text-slate-900">Implantação submetida</h3>
+                  <h3 className="text-base font-bold text-slate-900">Implantação aprovada</h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Solicitação #{solicitacaoId}. A equipe oficial permanece intacta até a aprovação.
+                    Solicitação #{solicitacaoId}. A equipe informada já está vigente no projeto.
                   </p>
                 </div>
               </div>
