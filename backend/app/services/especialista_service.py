@@ -41,7 +41,8 @@ class EspecialistaService:
             EspecialistaResponse(
                 id=r.id,
                 nome=r.usuario.full_name,
-                matricula=r.usuario.cpf
+                matricula=r.usuario.cpf,
+                email=r.usuario.email,
             ) for r in resultados
         ]
 
@@ -69,7 +70,7 @@ class EspecialistaService:
         Retorna (items, total). O total e calculado antes da paginacao.
         """
         select_columns = (
-            "users.id, users.cpf AS matricula, users.full_name AS nome, "
+            "users.id, users.cpf AS matricula, users.full_name AS nome, users.email AS email, "
             "ust.name AS tipo_vinculo"
         )
 
@@ -115,6 +116,7 @@ class EspecialistaService:
                 id=row.id,
                 nome=row.nome,
                 matricula=row.matricula,
+                email=row.email,
                 tipo_vinculo=row.tipo_vinculo,
             )
             for row in rows

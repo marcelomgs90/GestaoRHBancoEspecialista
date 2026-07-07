@@ -11,7 +11,7 @@ class Projeto(Base, TimestampMixin):
 
     id = Column(Integer, primary_key=True, index=True)
     codigo = Column(String(50), unique=True, nullable=True, index=True)
-    sigla = Column(String(20), nullable=False)
+    sigla = Column(String(20), unique=True, nullable=False, index=True)
     titulo = Column(String(500), nullable=False)
     descricao = Column(Text, nullable=True)
 
@@ -21,12 +21,22 @@ class Projeto(Base, TimestampMixin):
 
     # Coordenador
     coordenador_id = Column(Integer, ForeignKey("usuario.id"), nullable=False)
+    criado_por_id = Column(Integer, ForeignKey("usuario.id"), nullable=True, index=True)
 
     # Status
     status = Column(SQLEnum(StatusProjeto), default=StatusProjeto.ATIVO, nullable=False)
 
     # Relacionamentos
-    coordenador = relationship("Usuario", back_populates="projetos_coordenados")
+    coordenador = relationship(
+        "Usuario",
+        back_populates="projetos_coordenados",
+        foreign_keys=[coordenador_id],
+    )
+    criado_por_usuario = relationship(
+        "Usuario",
+        back_populates="projetos_criados",
+        foreign_keys=[criado_por_id],
+    )
     fontes_financiamento = relationship(
         "ProjetoFonteFinanciamento",
         back_populates="projeto",

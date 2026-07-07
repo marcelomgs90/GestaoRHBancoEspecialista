@@ -28,6 +28,7 @@ class UsuarioExterno(ExternalBase):
     id = Column(Integer, primary_key=True)
     cpf = Column(String(14), unique=True, nullable=False, index=True)
     full_name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=True)
     specialist_type_id = Column(
         Integer,
         ForeignKey("public.users_specialist_types.id"),

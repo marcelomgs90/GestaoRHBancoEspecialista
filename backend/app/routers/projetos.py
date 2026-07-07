@@ -128,7 +128,7 @@ def listar_versoes_projeto(
     Listar versoes de RH de um projeto, ordenadas pela mais recente primeiro.
     Retorna todos os campos da tabela versao_rh_projeto.
     """
-    projeto_service.obter_por_id(projeto_id, current_user)
+    projeto_service.obter_para_operacao(projeto_id, current_user)
     return versao_service.listar_por_projeto(projeto_id)
 
 
@@ -149,7 +149,7 @@ def listar_pesquisadores_projeto(
     Se houver solicitação EM_EDICAO, retorna versão PROPOSTA.
     Caso contrário, retorna versão VIGENTE.
     """
-    projeto_service.obter_por_id(projeto_id, current_user)
+    projeto_service.obter_para_operacao(projeto_id, current_user)
     itens, total, is_rascunho = versao_service.listar_pesquisadores_da_versao_corrente(
         projeto_id, page=page, per_page=per_page
     )
@@ -182,7 +182,7 @@ def listar_pesquisadores_vigentes_projeto(
 
     Usado por telas que precisam do "antes" real (ex.: AlteracaoPage).
     """
-    projeto_service.obter_por_id(projeto_id, current_user)
+    projeto_service.obter_para_operacao(projeto_id, current_user)
     itens, total = versao_service.listar_pesquisadores_vigentes(
         projeto_id, page=page, per_page=per_page
     )

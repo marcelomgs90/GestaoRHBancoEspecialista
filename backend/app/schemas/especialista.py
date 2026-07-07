@@ -8,6 +8,7 @@ class EspecialistaResponse(BaseModel):
     id: int
     nome: str
     matricula: str
+    email: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -22,6 +23,7 @@ class PesquisadorResponse(BaseModel):
     id: int
     nome: str
     matricula: str
+    email: Optional[str] = None
     tipo_vinculo: Optional[str] = None
 
     class Config:

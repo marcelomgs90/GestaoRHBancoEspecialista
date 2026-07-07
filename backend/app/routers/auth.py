@@ -4,7 +4,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.models.usuario_perfil import Usuario
 from app.services.auth_service import AuthService
-from app.schemas.auth import TokenResponse, UsuarioResponse
+from app.schemas.auth import (
+    ConvitePrimeiroAcessoResponse,
+    DefinirSenhaRequest,
+    DefinirSenhaResponse,
+    TokenResponse,
+    UsuarioResponse,
+)
 
 router = APIRouter()
 
@@ -18,6 +24,30 @@ def login(
     access_token = auth_service.gerar_token(user)
 
     return TokenResponse(access_token=access_token)
+
+
+@router.get("/convites/{token}", response_model=ConvitePrimeiroAcessoResponse)
+def validar_convite_primeiro_acesso(
+    token: str,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    usuario = auth_service.validar_convite(token)
+    return ConvitePrimeiroAcessoResponse(
+        valido=True,
+        nome=usuario.nome,
+        email=usuario.email,
+        expira_em=usuario.convite_expira_em,
+    )
+
+
+@router.post("/convites/{token}/definir-senha", response_model=DefinirSenhaResponse)
+def definir_senha_primeiro_acesso(
+    token: str,
+    dados: DefinirSenhaRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    auth_service.definir_senha_por_convite(token, dados.senha)
+    return DefinirSenhaResponse(message="Senha definida com sucesso")
 
 
 @router.post("/logout")

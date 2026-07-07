@@ -5,6 +5,7 @@ export interface Especialista {
   id: number
   nome: string
   matricula: string
+  email: string | null
 }
 
 export interface ListarPesquisadoresParams {

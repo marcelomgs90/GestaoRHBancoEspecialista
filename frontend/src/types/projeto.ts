@@ -4,6 +4,7 @@ export interface Pesquisador {
   id: number
   nome: string
   matricula: string
+  email: string | null
   tipo_vinculo: string | null
 }
 
@@ -31,6 +32,8 @@ export interface ProjetoCreate {
   data_fim: string
   status?: StatusProjeto
   coordenador_ref_pesquisador?: string | null
+  coordenador_nome_pesquisador?: string | null
+  coordenador_email_pesquisador?: string | null
 }
 
 export interface ProjetoUpdate {
@@ -65,6 +68,9 @@ export interface Projeto {
   coordenador_id: number
   coordenador_nome?: string | null
   usuario_nome?: string | null
+  convite_primeiro_acesso_token?: string | null
+  convite_primeiro_acesso_url?: string | null
+  convite_primeiro_acesso_email?: string | null
   criado_em: string
   atualizado_em: string
 }

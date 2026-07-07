@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, TimestampMixin
@@ -16,9 +16,21 @@ class Usuario(Base, TimestampMixin):
     senha_hash = Column(String(255), nullable=False)
     perfil = Column(SQLEnum(PerfilUsuario), nullable=False)
     ativo = Column(Boolean, default=True, nullable=False)
+    senha_definida = Column(Boolean, default=True, nullable=False)
+    convite_token_hash = Column(String(255), nullable=True)
+    convite_expira_em = Column(DateTime, nullable=True)
 
     # Relacionamentos
-    projetos_coordenados = relationship("Projeto", back_populates="coordenador")
+    projetos_coordenados = relationship(
+        "Projeto",
+        back_populates="coordenador",
+        foreign_keys="Projeto.coordenador_id",
+    )
+    projetos_criados = relationship(
+        "Projeto",
+        back_populates="criado_por_usuario",
+        foreign_keys="Projeto.criado_por_id",
+    )
     solicitacoes = relationship("SolicitacaoRH", back_populates="criado_por_usuario")
 
 

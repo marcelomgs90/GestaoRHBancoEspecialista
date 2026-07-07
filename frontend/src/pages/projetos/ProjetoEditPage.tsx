@@ -27,6 +27,7 @@ import {
 } from '@/types/enums';
 import type { ProjetoAnexo } from '@/types/projeto';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
+import { FeedbackModal } from '@/components/FeedbackModal';
 
 const schema = z
   .object({
@@ -350,13 +351,6 @@ export default function ProjetoEditPage() {
           </p>
         </div>
       </div>
-
-      {submitError && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-          <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <span>{submitError}</span>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
@@ -871,6 +865,14 @@ export default function ProjetoEditPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {submitError && (
+        <FeedbackModal
+          title="Não foi possível salvar"
+          message={submitError}
+          onClose={() => setSubmitError(null)}
+        />
       )}
 
       {/*
