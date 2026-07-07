@@ -5,6 +5,7 @@ import { PerfilUsuario } from '@/types/auth';
 import { AppShell } from '@/components/layout/AppShell';
 
 import LoginPage from '@/pages/auth/LoginPage';
+import DefinirSenhaPage from '@/pages/auth/DefinirSenhaPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import ProjetosListPage from '@/pages/projetos/ProjetosListPage';
 import ProjetoFormPage from '@/pages/projetos/ProjetoFormPage';
@@ -22,6 +23,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/definir-senha/:token" element={<DefinirSenhaPage />} />
 
       <Route element={<PrivateRoute />}>
         <Route element={<AppShell />}>

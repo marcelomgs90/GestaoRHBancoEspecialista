@@ -146,6 +146,12 @@ class SolicitacaoService:
             )
         return solicitacao
 
+    def obter_por_id_autorizado(self, solicitacao_id: int, current_user: Usuario) -> SolicitacaoRH:
+        solicitacao = self.obter_por_id(solicitacao_id)
+        projeto = self._buscar_projeto(solicitacao.projeto_id)
+        self._verificar_permissao_visualizacao(projeto, current_user)
+        return solicitacao
+
     def atualizar_justificativa(
         self, solicitacao_id: int, justificativa: str, current_user: Usuario
     ) -> SolicitacaoRH:
@@ -244,6 +250,24 @@ class SolicitacaoService:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuario nao tem permissao para editar solicitacoes deste projeto",
+        )
+
+    def _verificar_permissao_visualizacao(
+        self, projeto: Projeto, current_user: Usuario
+    ) -> None:
+        if current_user.perfil in (
+            PerfilUsuario.ADMINISTRADOR,
+            PerfilUsuario.GESTOR_POLO,
+            PerfilUsuario.APOIO_COORDENADOR,
+        ):
+            return
+
+        if current_user.perfil == PerfilUsuario.COORDENADOR and projeto.coordenador_id == current_user.id:
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario nao tem permissao para visualizar solicitacoes deste projeto",
         )
 
     def _criar_versao_implantacao(self, projeto_id: int, solicitacao_id: int) -> None:
@@ -373,8 +397,12 @@ class SolicitacaoService:
             ),
         )
 
-    def comparar(self, solicitacao_id: int) -> Dict[str, Any]:
-        solicitacao = self.obter_por_id(solicitacao_id)
+    def comparar(self, solicitacao_id: int, current_user: Optional[Usuario] = None) -> Dict[str, Any]:
+        solicitacao = (
+            self.obter_por_id_autorizado(solicitacao_id, current_user)
+            if current_user
+            else self.obter_por_id(solicitacao_id)
+        )
 
         versao_proposta = (
             self.db.query(VersaoRHProjeto)

@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.core.database import EspecialistasSessionLocal, SessionLocal
+from app.core import database
 from app.core.security import decode_access_token
 from app.models.usuario_perfil import Usuario
 from app.services.auth_service import AuthService
@@ -20,7 +20,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 def get_db() -> Generator[Session, None, None]:
     """Dependency para obter sessao do banco de dados."""
-    db = SessionLocal()
+    db = database.SessionLocal()
     try:
         yield db
     finally:
@@ -29,7 +29,7 @@ def get_db() -> Generator[Session, None, None]:
 
 def get_especialistas_db() -> Generator[Session, None, None]:
     """Dependency para obter sessao do banco de especialistas externo."""
-    if EspecialistasSessionLocal is None:
+    if database.EspecialistasSessionLocal is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
@@ -39,7 +39,7 @@ def get_especialistas_db() -> Generator[Session, None, None]:
             ),
         )
 
-    db = EspecialistasSessionLocal()
+    db = database.EspecialistasSessionLocal()
     try:
         yield db
     finally:

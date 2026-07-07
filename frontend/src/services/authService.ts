@@ -1,5 +1,5 @@
 import { api } from './api'
-import { LoginCredentials, TokenResponse, Usuario } from '../types/auth'
+import { ConvitePrimeiroAcesso, LoginCredentials, TokenResponse, Usuario } from '../types/auth'
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<TokenResponse> {
@@ -22,5 +22,17 @@ export const authService = {
   async getCurrentUser(): Promise<Usuario> {
     const response = await api.get<Usuario>('/auth/usuario-logado')
     return response.data
+  },
+
+  async validarConvite(token: string): Promise<ConvitePrimeiroAcesso> {
+    const response = await api.get<ConvitePrimeiroAcesso>(`/auth/convites/${token}`)
+    return response.data
+  },
+
+  async definirSenhaConvite(
+    token: string,
+    dados: { senha: string; confirmar_senha: string },
+  ): Promise<void> {
+    await api.post(`/auth/convites/${token}/definir-senha`, dados)
   },
 }

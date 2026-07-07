@@ -24,6 +24,13 @@ export interface TokenResponse {
   token_type: string
 }
 
+export interface ConvitePrimeiroAcesso {
+  valido: boolean
+  nome: string
+  email: string
+  expira_em: string
+}
+
 export interface AuthState {
   user: Usuario | null
   token: string | null

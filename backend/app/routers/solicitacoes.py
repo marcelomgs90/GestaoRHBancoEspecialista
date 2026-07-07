@@ -57,10 +57,10 @@ def listar_solicitacoes(
 def obter_solicitacao(
     solicitacao_id: int,
     service: SolicitacaoService = Depends(get_solicitacao_service),
-    _: Usuario = Depends(get_current_user),
+    current_user: Usuario = Depends(get_current_user),
 ):
     """Obter detalhes de uma solicitação."""
-    return service.obter_por_id(solicitacao_id)
+    return service.obter_por_id_autorizado(solicitacao_id, current_user)
 
 
 @router.patch("/{solicitacao_id}/justificativa", response_model=SolicitacaoResponse)
@@ -97,14 +97,14 @@ def submeter_solicitacao(
 def comparar_solicitacao(
     solicitacao_id: int,
     service: SolicitacaoService = Depends(get_solicitacao_service),
-    _: Usuario = Depends(get_current_user),
+    current_user: Usuario = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Retorna comparação Antes/Depois da solicitação.
     Para IMPLANTAÇÃO: antes vazio, depois = equipe proposta.
     Para ALTERAÇÃO: antes = versão vigente, depois = versão proposta.
     """
-    return service.comparar(solicitacao_id)
+    return service.comparar(solicitacao_id, current_user)
 
 
 @router.post("/{solicitacao_id}/aprovar", response_model=SolicitacaoResponse)

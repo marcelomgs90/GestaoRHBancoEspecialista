@@ -14,6 +14,7 @@ import {
   UserCog,
 } from 'lucide-react';
 import { usePerfil } from '@/hooks/usePerfil';
+import { useAuth } from '@/contexts/AuthContext';
 import { projetoService } from '@/services/projetoService';
 import type { Paginated } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
@@ -28,6 +29,7 @@ import {
 } from '@/types/enums';
 import type { Projeto, VersaoRHProjeto } from '@/types/projeto';
 import type { Membro, Solicitacao } from '@/types/solicitacao';
+import { PerfilUsuario } from '@/types/auth';
 
 const STATUS_COLORS: Record<StatusSolicitacao, string> = {
   [StatusSolicitacao.EM_EDICAO]: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
@@ -39,7 +41,8 @@ const STATUS_COLORS: Record<StatusSolicitacao, string> = {
 export default function ProjetoDetailPage() {
   const { id_projeto } = useParams<{ id_projeto: string }>();
   const navigate = useNavigate();
-  const { podeEditarMembros, podeEditarProjeto } = usePerfil();
+  const { user } = useAuth();
+  const { podeEditarMembros, isAdministrador, isGestorPolo, isApoioCoordenador } = usePerfil();
 
   const [projeto, setProjeto] = useState<Projeto | null>(null);
   const [versoes, setVersoes] = useState<VersaoRHProjeto[]>([]);
@@ -58,20 +61,19 @@ export default function ProjetoDetailPage() {
 
   const projetoId = Number(id_projeto);
   const PER_PAGE = 5;
+  const isCoordenadorResponsavel =
+    user?.perfil === PerfilUsuario.COORDENADOR && projeto?.coordenador_id === user.id;
+  const podeVerOperacional =
+    isAdministrador || isGestorPolo || isApoioCoordenador || isCoordenadorResponsavel;
+  const podeEditarDadosProjeto = isAdministrador || isGestorPolo || isCoordenadorResponsavel;
 
   useEffect(() => {
     if (!projetoId) return;
 
     async function load() {
       try {
-        const [p, v, s] = await Promise.all([
-          projetoService.obter(projetoId),
-          projetoService.listarVersoes(projetoId),
-          solicitacaoService.listar(projetoId),
-        ]);
+        const p = await projetoService.obter(projetoId);
         setProjeto(p);
-        setVersoes(v);
-        setSolicitacoes(s);
       } catch {
         setErro('Não foi possível carregar os dados do projeto.');
       } finally {
@@ -82,7 +84,43 @@ export default function ProjetoDetailPage() {
   }, [projetoId]);
 
   useEffect(() => {
-    if (!projetoId) return;
+    if (!projetoId || !podeVerOperacional) {
+      setVersoes([]);
+      setSolicitacoes([]);
+      return;
+    }
+    let cancelado = false;
+
+    async function loadOperacional() {
+      try {
+        const [v, s] = await Promise.all([
+          projetoService.listarVersoes(projetoId),
+          solicitacaoService.listar(projetoId),
+        ]);
+        if (!cancelado) {
+          setVersoes(v);
+          setSolicitacoes(s);
+        }
+      } catch {
+        if (!cancelado) {
+          setVersoes([]);
+          setSolicitacoes([]);
+        }
+      }
+    }
+
+    void loadOperacional();
+    return () => {
+      cancelado = true;
+    };
+  }, [projetoId, podeVerOperacional]);
+
+  useEffect(() => {
+    if (!projetoId || !podeVerOperacional) {
+      setMembrosPag({ items: [], total: 0, page: 1, per_page: PER_PAGE, pages: 0 });
+      setIsLoadingMembros(false);
+      return;
+    }
     let cancelado = false;
     setIsLoadingMembros(true);
     // Sempre usar a VIGENTE oficial para a tabela de RH do projeto.
@@ -107,11 +145,11 @@ export default function ProjetoDetailPage() {
     return () => {
       cancelado = true;
     };
-  }, [projetoId, page]);
+  }, [projetoId, page, podeVerOperacional]);
 
   const membros = membrosPag.items;
 
-  const podeEditar = podeEditarMembros;
+  const podeEditar = podeVerOperacional && podeEditarMembros;
   const projetoAtivo = projeto?.status === StatusProjeto.ATIVO;
 
   const versaoVigente = versoes.find((v) => v.status === 'VIGENTE');
@@ -169,7 +207,7 @@ export default function ProjetoDetailPage() {
                   <span className="text-slate-700 font-bold text-lg">{projeto.sigla}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {podeEditarProjeto && (
+                  {podeEditarDadosProjeto && (
                     <Link
                       to={`/projetos/${projeto.id}/editar`}
                       className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-50"
@@ -239,7 +277,7 @@ export default function ProjetoDetailPage() {
             </div>
           </section>
 
-          {/* Quadro de RH */}
+          {podeVerOperacional && (
           <section className="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
@@ -386,9 +424,11 @@ export default function ProjetoDetailPage() {
               </>
             )}
           </section>
+          )}
         </div>
 
         {/* Painel lateral */}
+        {podeVerOperacional && (
         <div className="space-y-4">
           {/* Versoes RH */}
           <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
@@ -480,6 +520,7 @@ export default function ProjetoDetailPage() {
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

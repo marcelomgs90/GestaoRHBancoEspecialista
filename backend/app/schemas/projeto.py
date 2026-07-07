@@ -23,6 +23,8 @@ class ProjetoCreate(BaseModel):
     data_fim: date
     status: StatusProjeto = StatusProjeto.ATIVO
     coordenador_ref_pesquisador: Optional[str] = None
+    coordenador_nome_pesquisador: Optional[str] = None
+    coordenador_email_pesquisador: Optional[str] = None
 
     @field_validator("codigo", mode="before")
     @classmethod
@@ -102,6 +104,9 @@ class ProjetoResponse(BaseModel):
     coordenador_id: int
     coordenador_nome: Optional[str] = None
     usuario_nome: Optional[str] = None
+    convite_primeiro_acesso_token: Optional[str] = None
+    convite_primeiro_acesso_url: Optional[str] = None
+    convite_primeiro_acesso_email: Optional[str] = None
     criado_em: datetime
     atualizado_em: datetime
 

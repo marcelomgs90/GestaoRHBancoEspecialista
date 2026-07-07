@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import hashlib
+import secrets
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -19,6 +21,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     """Gera hash bcrypt da senha."""
     return pwd_context.hash(password)
+
+
+def create_invite_token() -> str:
+    """Gera token opaco para convite de primeiro acesso."""
+    return secrets.token_urlsafe(32)
+
+
+def hash_invite_token(token: str) -> str:
+    """Gera hash deterministico para armazenar token de convite."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

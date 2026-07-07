@@ -6,21 +6,22 @@ import { z } from 'zod';
 import {
   Save,
   X,
-  AlertCircle,
   CheckCircle2,
   ArrowRight,
   Search,
   Loader2,
   User,
+  UserCheck,
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { projetoService } from '@/services/projetoService';
 import { especialistaService } from '@/services/especialistaService';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePerfil } from '@/hooks/usePerfil';
+import { usuarioService } from '@/services/usuarioService';
 import { FonteFinanciamento } from '@/types/enums';
-import type { Pesquisador } from '@/types/projeto';
+import type { Usuario } from '@/types/auth';
+import type { Pesquisador, ProjetoCreate } from '@/types/projeto';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
+import { FeedbackModal } from '@/components/FeedbackModal';
 
 const optionalCurrency = z.preprocess(
   (value) => (value === '' || value === undefined || value === null ? undefined : Number(value)),
@@ -54,6 +55,7 @@ const baseSchema = z
     valor_sebrae: optionalCurrency,
     data_inicio: z.string().min(1, 'Informe a data de início'),
     data_fim: z.string().min(1, 'Informe a data de encerramento'),
+    modo_coordenador: z.enum(['SISTEMA', 'BANCO']).default('SISTEMA'),
     coordenador_ref_pesquisador: z.string().optional(),
   })
   .superRefine((d, ctx) => {
@@ -99,17 +101,24 @@ const PESQUISADOR_DEBOUNCE_MS = 300;
 
 export default function ProjetoFormPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { isCoordenador } = usePerfil();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
+  const [confirmacaoCriacao, setConfirmacaoCriacao] = useState<ProjetoCreate | null>(null);
+  const [salvando, setSalvando] = useState(false);
   const [projetoCriadoId, setProjetoCriadoId] = useState<number | null>(null);
+  const [convitePrimeiroAcessoUrl, setConvitePrimeiroAcessoUrl] = useState<string | null>(null);
+  const [convitePrimeiroAcessoEmail, setConvitePrimeiroAcessoEmail] = useState<string | null>(null);
 
   const [pesquisadorTermo, setPesquisadorTermo] = useState('');
   const [pesquisadores, setPesquisadores] = useState<Pesquisador[]>([]);
   const [pesquisadorSelecionado, setPesquisadorSelecionado] = useState<Pesquisador | null>(null);
   const [buscandoPesquisadores, setBuscandoPesquisadores] = useState(false);
   const [pesquisadorErro, setPesquisadorErro] = useState<string | null>(null);
+  const [coordenadorSistemaTermo, setCoordenadorSistemaTermo] = useState('');
+  const [coordenadoresSistema, setCoordenadoresSistema] = useState<Usuario[]>([]);
+  const [coordenadorSistemaSelecionado, setCoordenadorSistemaSelecionado] = useState<Usuario | null>(null);
+  const [buscandoCoordenadoresSistema, setBuscandoCoordenadoresSistema] = useState(false);
+  const [coordenadorSistemaErro, setCoordenadorSistemaErro] = useState<string | null>(null);
 
   const {
     register,
@@ -125,6 +134,7 @@ export default function ProjetoFormPage() {
       sigla: '',
       fonte_embrapii: false,
       fonte_sebrae: false,
+      modo_coordenador: 'SISTEMA',
       coordenador_ref_pesquisador: '',
     },
   });
@@ -134,6 +144,9 @@ export default function ProjetoFormPage() {
   const valorEmpresa = watch('valor_empresa');
   const valorEmbrapii = watch('valor_embrapii');
   const valorSebrae = watch('valor_sebrae');
+  const modoCoordenador = watch('modo_coordenador');
+  const usarCoordenadorSistema = modoCoordenador === 'SISTEMA';
+  const usarBancoEspecialista = modoCoordenador === 'BANCO';
 
   const totalFontes = useMemo(() => {
     const valores = [
@@ -144,9 +157,17 @@ export default function ProjetoFormPage() {
     return valores.reduce((total, valor) => total + valor, 0);
   }, [fonteEmbrapii, fonteSebrae, valorEmpresa, valorEmbrapii, valorSebrae]);
 
-  // Tipoahead de pesquisadores-servidor (somente para ADMIN/GESTOR_POLO).
+  // Tipoahead de pesquisadores-servidor.
   useEffect(() => {
-    if (isCoordenador) return;
+    if (!usarBancoEspecialista) {
+      setPesquisadores([]);
+      setPesquisadorTermo('');
+      setPesquisadorErro(null);
+      setBuscandoPesquisadores(false);
+      setPesquisadorSelecionado(null);
+      setValue('coordenador_ref_pesquisador', '', { shouldValidate: true });
+      return;
+    }
 
     const timer = window.setTimeout(async () => {
       setBuscandoPesquisadores(true);
@@ -169,7 +190,39 @@ export default function ProjetoFormPage() {
     }, PESQUISADOR_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
-  }, [isCoordenador, pesquisadorTermo]);
+  }, [pesquisadorTermo, setValue, usarBancoEspecialista]);
+
+  useEffect(() => {
+    if (!usarCoordenadorSistema) {
+      setCoordenadoresSistema([]);
+      setCoordenadorSistemaTermo('');
+      setCoordenadorSistemaErro(null);
+      setBuscandoCoordenadoresSistema(false);
+      setCoordenadorSistemaSelecionado(null);
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      setBuscandoCoordenadoresSistema(true);
+      setCoordenadorSistemaErro(null);
+      try {
+        const resultado = await usuarioService.listarCoordenadores({
+          q: coordenadorSistemaTermo || undefined,
+          per_page: 50,
+        });
+        setCoordenadoresSistema(resultado.items);
+      } catch (err) {
+        setCoordenadorSistemaErro(
+          getApiErrorMessage(err, 'Falha ao listar coordenadores do sistema.'),
+        );
+        setCoordenadoresSistema([]);
+      } finally {
+        setBuscandoCoordenadoresSistema(false);
+      }
+    }, PESQUISADOR_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [coordenadorSistemaTermo, usarCoordenadorSistema]);
 
   const selecionarPesquisador = (p: Pesquisador) => {
     setPesquisadorSelecionado(p);
@@ -183,37 +236,83 @@ export default function ProjetoFormPage() {
     setValue('coordenador_ref_pesquisador', '', { shouldValidate: true });
   };
 
-  const onSubmit = async (data: FormData) => {
+  const selecionarCoordenadorSistema = (coordenador: Usuario) => {
+    setCoordenadorSistemaSelecionado(coordenador);
+    setValue('coordenador_ref_pesquisador', coordenador.ref_usuario, { shouldValidate: true });
+    setCoordenadorSistemaTermo('');
+    setCoordenadoresSistema([]);
+  };
+
+  const limparCoordenadorSistemaSelecionado = () => {
+    setCoordenadorSistemaSelecionado(null);
+    setValue('coordenador_ref_pesquisador', '', { shouldValidate: true });
+  };
+
+  const onSubmit = (data: FormData) => {
     setSubmitError(null);
+    const fontes_financiamento = [
+      { fonte: FonteFinanciamento.EMPRESA, valor: data.valor_empresa },
+      ...(data.fonte_embrapii && data.valor_embrapii
+        ? [{ fonte: FonteFinanciamento.EMBRAPII, valor: data.valor_embrapii }]
+        : []),
+      ...(data.fonte_sebrae && data.valor_sebrae
+        ? [{ fonte: FonteFinanciamento.SEBRAE, valor: data.valor_sebrae }]
+        : []),
+    ];
+    if (usarCoordenadorSistema && !coordenadorSistemaSelecionado) {
+      setSubmitError('Selecione um coordenador do sistema.');
+      return;
+    }
+    if (usarBancoEspecialista && !pesquisadorSelecionado) {
+      setSubmitError('Selecione um coordenador do Banco Especialista.');
+      return;
+    }
+    const coordenadorPayload = usarBancoEspecialista
+      ? {
+          coordenador_ref_pesquisador: data.coordenador_ref_pesquisador?.trim() || undefined,
+          coordenador_nome_pesquisador: pesquisadorSelecionado?.nome?.trim() || undefined,
+          coordenador_email_pesquisador: pesquisadorSelecionado?.email?.trim() || undefined,
+        }
+      : usarCoordenadorSistema
+      ? {
+          coordenador_ref_pesquisador: coordenadorSistemaSelecionado?.ref_usuario,
+        }
+      : {};
+
+    setConfirmacaoCriacao({
+      codigo: data.codigo?.trim() || undefined,
+      sigla: data.sigla,
+      titulo: data.titulo,
+      descricao: data.descricao,
+      data_inicio: data.data_inicio,
+      data_fim: data.data_fim,
+      fontes_financiamento,
+      ...coordenadorPayload,
+    });
+  };
+
+  const confirmarCriacao = async () => {
+    if (!confirmacaoCriacao) return;
+
+    setSubmitError(null);
+    setSalvando(true);
     try {
-      const fontes_financiamento = [
-        { fonte: FonteFinanciamento.EMPRESA, valor: data.valor_empresa },
-        ...(data.fonte_embrapii && data.valor_embrapii
-          ? [{ fonte: FonteFinanciamento.EMBRAPII, valor: data.valor_embrapii }]
-          : []),
-        ...(data.fonte_sebrae && data.valor_sebrae
-          ? [{ fonte: FonteFinanciamento.SEBRAE, valor: data.valor_sebrae }]
-          : []),
-      ];
-      const projeto = await projetoService.criar({
-        codigo: data.codigo?.trim() || undefined,
-        sigla: data.sigla,
-        titulo: data.titulo,
-        descricao: data.descricao,
-        data_inicio: data.data_inicio,
-        data_fim: data.data_fim,
-        fontes_financiamento,
-        coordenador_ref_pesquisador: data.coordenador_ref_pesquisador?.trim() || undefined,
-      });
+      const projeto = await projetoService.criar(confirmacaoCriacao);
       setProjetoCriadoId(projeto.id);
+      setConvitePrimeiroAcessoUrl(projeto.convite_primeiro_acesso_url ?? null);
+      setConvitePrimeiroAcessoEmail(projeto.convite_primeiro_acesso_email ?? null);
+      setConfirmacaoCriacao(null);
       setSucesso(true);
     } catch (err) {
+      setConfirmacaoCriacao(null);
       setSubmitError(
         getApiErrorMessage(
           err,
           'Erro ao criar projeto. Tente novamente.',
         ),
       );
+    } finally {
+      setSalvando(false);
     }
   };
 
@@ -231,13 +330,6 @@ export default function ProjetoFormPage() {
           <X size={24} className="text-slate-400" />
         </button>
       </div>
-
-      {submitError && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-          <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <span>{submitError}</span>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
@@ -339,8 +431,7 @@ export default function ProjetoFormPage() {
           </div>
         </section>
 
-        {!isCoordenador && (
-          <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+        <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-6 bg-purple-600 rounded-full"></div>
               <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">
@@ -349,11 +440,134 @@ export default function ProjetoFormPage() {
             </div>
 
             <p className="text-xs text-slate-500 font-medium">
-              Selecione um pesquisador-servidor do Banco Especialista para ser o
-              responsável pelo projeto.
+              {usarBancoEspecialista
+                ? 'Selecione um Pesquisador/Servidor do Banco Especialista para ser o responsavel pelo projeto.'
+                : 'Selecione um coordenador ja cadastrado no sistema.'}
             </p>
 
-            {pesquisadorSelecionado ? (
+            {true && (
+	              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label
+                  className={`flex items-center gap-3 rounded-2xl border p-4 cursor-pointer transition-all ${
+                    modoCoordenador === 'SISTEMA'
+                      ? 'border-purple-200 bg-purple-50 text-purple-900'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <input type="radio" value="SISTEMA" {...register('modo_coordenador')} className="sr-only" />
+                  <UserCheck size={18} />
+                  <div>
+                    <p className="text-sm font-black">Sistema</p>
+                    <p className="text-xs font-medium">Escolher usuario interno.</p>
+                  </div>
+                </label>
+                <label
+                  className={`flex items-center gap-3 rounded-2xl border p-4 cursor-pointer transition-all ${
+                    modoCoordenador === 'BANCO'
+                      ? 'border-purple-200 bg-purple-50 text-purple-900'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <input type="radio" value="BANCO" {...register('modo_coordenador')} className="sr-only" />
+                  <User size={18} />
+                  <div>
+                    <p className="text-sm font-black">Banco Especialista</p>
+                    <p className="text-xs font-medium">Escolher outro servidor.</p>
+                  </div>
+                </label>
+              </div>
+            )}
+
+            {usarCoordenadorSistema ? (
+              coordenadorSistemaSelecionado ? (
+                <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black shrink-0">
+                      <UserCheck size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-emerald-900 truncate">
+                        {coordenadorSistemaSelecionado.nome}
+                      </p>
+                      <p className="text-xs font-medium text-emerald-700">
+                        {coordenadorSistemaSelecionado.email}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={limparCoordenadorSistemaSelecionado}
+                    className="text-xs font-black uppercase tracking-widest text-emerald-700 hover:text-emerald-900 cursor-pointer"
+                  >
+                    Trocar
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="relative">
+                    <Search
+                      size={16}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="text"
+                      value={coordenadorSistemaTermo}
+                      onChange={(e) => setCoordenadorSistemaTermo(e.target.value)}
+                      placeholder="Buscar coordenador por nome, email ou referencia..."
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium text-sm text-slate-900"
+                    />
+                    {buscandoCoordenadoresSistema && (
+                      <Loader2
+                        size={16}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin"
+                      />
+                    )}
+                  </div>
+
+                  {coordenadorSistemaErro && (
+                    <p className="text-xs text-red-600">{coordenadorSistemaErro}</p>
+                  )}
+
+                  {!buscandoCoordenadoresSistema && coordenadoresSistema.length === 0 && (
+                    <p className="text-xs text-slate-500">
+                      Nenhum coordenador interno encontrado.
+                    </p>
+                  )}
+
+                  {coordenadoresSistema.length > 0 && (
+                    <ul className="max-h-64 overflow-y-auto rounded-2xl border border-slate-200 divide-y divide-slate-100 bg-white">
+                      {coordenadoresSistema.map((coordenador) => (
+                        <li key={coordenador.id}>
+                          <button
+                            type="button"
+                            onClick={() => selecionarCoordenadorSistema(coordenador)}
+                            className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 cursor-pointer"
+                          >
+                            <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-black text-xs shrink-0">
+                              {coordenador.nome
+                                .split(' ')
+                                .slice(0, 2)
+                                .map((n) => n[0])
+                                .join('')
+                                .toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-slate-900 truncate">
+                                {coordenador.nome}
+                              </p>
+                              <p className="text-xs font-medium text-slate-500">
+                                {coordenador.email}
+                              </p>
+                            </div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )
+            ) : usarBancoEspecialista ? (
+            pesquisadorSelecionado ? (
               <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black shrink-0">
@@ -445,11 +659,10 @@ export default function ProjetoFormPage() {
                   </p>
                 )}
               </>
-            )}
-          </section>
-        )}
+            )) : null}
+        </section>
 
-        {isCoordenador && (
+        {false && (
           <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-6 bg-purple-600 rounded-full"></div>
@@ -459,7 +672,6 @@ export default function ProjetoFormPage() {
             </div>
             <p className="mt-3 text-sm font-medium text-slate-700">
               Você será o coordenador deste projeto.
-              {user?.nome ? ` Responsável: ${user.nome}.` : ''}
             </p>
           </section>
         )}
@@ -596,14 +808,57 @@ export default function ProjetoFormPage() {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || salvando}
             className="px-8 py-3.5 bg-blue-600 text-white font-black rounded-xl shadow-xl shadow-blue-100 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center gap-3 uppercase tracking-widest text-xs cursor-pointer"
           >
             <Save size={18} />
-            {isSubmitting ? 'Salvando...' : 'Cadastrar Projeto'}
+            {isSubmitting || salvando ? 'Salvando...' : 'Cadastrar Projeto'}
           </button>
         </div>
       </form>
+
+      {confirmacaoCriacao && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]"
+            onClick={() => {
+              if (!salvando) setConfirmacaoCriacao(null);
+            }}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600">
+                <Save size={20} />
+              </div>
+              <div className="min-w-0 text-left">
+                <h3 className="text-base font-bold text-slate-900">Cadastrar projeto?</h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Confirme para criar o projeto {confirmacaoCriacao.sigla}.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={salvando}
+                onClick={() => setConfirmacaoCriacao(null)}
+                className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={salvando}
+                onClick={() => void confirmarCriacao()}
+                className="py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              >
+                {salvando ? 'Salvando...' : 'Confirmar'}
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {sucesso && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -621,27 +876,43 @@ export default function ProjetoFormPage() {
                 <p className="text-xs text-slate-500 mt-1">
                   O projeto <span className="text-blue-600 font-bold">{watch('codigo') || 'Sem código'}</span> foi cadastrado com sucesso.
                 </p>
+                {convitePrimeiroAcessoUrl && (
+                  <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-800">
+                      Primeiro acesso
+                    </p>
+                    <p className="mt-1 text-xs text-amber-800">
+                      Envie este link para {convitePrimeiroAcessoEmail ?? 'o coordenador'} definir a senha:
+                    </p>
+                    <p className="mt-2 break-all rounded bg-white p-2 text-[11px] font-semibold text-slate-700">
+                      {convitePrimeiroAcessoUrl}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 mt-5">
+            <div className="mt-5 flex justify-end">
               <button
                 type="button"
-                onClick={() => setSucesso(false)}
-                className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px] cursor-pointer"
+                onClick={() => {
+                  setSucesso(false);
+                  if (projetoCriadoId) navigate(`/projetos/${projetoCriadoId}`);
+                }}
+                className="rounded-lg bg-slate-900 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-slate-800 cursor-pointer"
               >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => projetoCriadoId && navigate(`/projetos/${projetoCriadoId}`)}
-                className="py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] cursor-pointer"
-              >
-                Confirmar
-                <ArrowRight size={14} />
+                Fechar
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {submitError && (
+        <FeedbackModal
+          title="Não foi possível salvar"
+          message={submitError}
+          onClose={() => setSubmitError(null)}
+        />
       )}
     </div>
   );
