@@ -24,6 +24,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { usePerfil } from '@/hooks/usePerfil';
 import { projetoService } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
@@ -56,7 +57,13 @@ const chartData = [
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const { podeCriarProjeto } = usePerfil();
+
+  const chartColors = isDark
+    ? { empresa: '#58a6ff', embrapii: '#3fb950', sebrae: '#bc8cff', grid: '#21262d', axis: '#8b949e' }
+    : { empresa: '#0f172a', embrapii: '#1e40af', sebrae: '#94a3b8', grid: '#f1f5f9', axis: '#94a3b8' };
 
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
@@ -192,32 +199,38 @@ export default function DashboardPage() {
                 margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                 barCategoryGap="25%"
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                 <XAxis
                   dataKey="month"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                  tick={{ fontSize: 10, fontWeight: 700, fill: chartColors.axis }}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                  tick={{ fontSize: 10, fontWeight: 700, fill: chartColors.axis }}
                   tickFormatter={(v) => `R$ ${v / 1000}k`}
                 />
                 <Tooltip
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11px' }}
+                  cursor={{ fill: isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc' }}
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: `1px solid ${isDark ? '#30363d' : '#e2e8f0'}`,
+                    backgroundColor: isDark ? '#161b22' : '#fff',
+                    color: isDark ? '#e6edf3' : '#0f172a',
+                    fontSize: '11px',
+                  }}
                   formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`}
                 />
                 <Legend
                   verticalAlign="bottom"
                   wrapperStyle={{ paddingTop: '24px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase' }}
                 />
-                <Bar dataKey="Empresa" stackId="a" fill="#0f172a" />
-                <Bar dataKey="Embrapii" stackId="a" fill="#1e40af" />
-                <Bar dataKey="Sebrae" stackId="a" fill="#94a3b8" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="Empresa" stackId="a" fill={chartColors.empresa} />
+                <Bar dataKey="Embrapii" stackId="a" fill={chartColors.embrapii} />
+                <Bar dataKey="Sebrae" stackId="a" fill={chartColors.sebrae} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
