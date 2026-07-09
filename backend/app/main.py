@@ -11,6 +11,7 @@ from app.routers import (
     versoes,
     parametros,
     especialistas,
+    anexos,
 )
 
 settings = get_settings()
@@ -41,6 +42,7 @@ app.include_router(membros.router, prefix="/solicitacoes", tags=["Membros"])
 app.include_router(versoes.router, prefix="/solicitacoes", tags=["Versões"])
 app.include_router(parametros.router, prefix="/parametros", tags=["Parâmetros"])
 app.include_router(especialistas.router)
+app.include_router(anexos.router)
 
 
 @app.get("/", tags=["Root"])

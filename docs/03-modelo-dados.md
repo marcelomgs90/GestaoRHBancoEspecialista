@@ -95,7 +95,7 @@ Armazena os dados cadastrais do projeto.
 
 ## Tabela: Projeto_Anexo
 
-Armazena os documentos anexados a um projeto (Plano de Trabalho, Acordo de Parceria, extrato DO, aditivos, etc.).
+Armazena os documentos formais anexados a um projeto (Plano de Trabalho, Acordo de Parceria, extrato DO, aditivos, etc.). Substituível por `tipo_documento` e editável apenas na `ProjetoEditPage`.
 
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
@@ -108,6 +108,40 @@ Armazena os documentos anexados a um projeto (Plano de Trabalho, Acordo de Parce
 
 **Relacionamentos:**
 - `(N:1)` com **Projeto** via `projeto_id`
+
+---
+
+## Tabela: Anexo
+
+Armazena anexos amplos do projeto (upload manual pela equipe ou gerados pelo próprio backend). Diferente de `Projeto_Anexo`, que registra apenas documentos formais com `tipo_documento` controlado. Exibidos na seção **ANEXOS** da `ProjetoDetailPage`.
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| id | UUID (PK) | Identificador único |
+| id_projeto | INT (FK) | FK para Projeto |
+| file_type | VARCHAR(100) | MIME type do arquivo (deve ser `application/pdf`) |
+| file_bytes | BYTEA | Conteúdo binário persistido no banco |
+| nome_arquivo | VARCHAR(255) | Nome original do arquivo |
+| tamanho_bytes | INT | Tamanho em bytes |
+| created_at | TIMESTAMP | Data de criação |
+| created_by | INT (FK) | FK para Usuario (autor do upload) ou NULL quando `origem='SISTEMA'` |
+| origem | VARCHAR(20) | `USUARIO` (upload manual) ou `SISTEMA` (gerado pelo backend) |
+
+**Constraints:**
+- `CHECK (origem IN ('USUARIO','SISTEMA'))`
+- `CHECK ((origem = 'SISTEMA' AND created_by IS NULL) OR (origem = 'USUARIO' AND created_by IS NOT NULL))` — enforça consistência entre `origem` e `created_by`
+- Índice composto `(id_projeto, origem, created_at)` para a listagem filtrada e ordenada
+
+**Endpoints:**
+- `GET /projetos/{projeto_id}/anexos-amplos?origem=USUARIO|SISTEMA&page=...&per_page=...`
+- `POST /projetos/{projeto_id}/anexos-amplos` (somente PDF; limite de 4 uploads por projeto contando apenas `origem='USUARIO'`)
+- `GET /projetos/{projeto_id}/anexos-amplos/{anexo_id}/download`
+- `GET /projetos/{projeto_id}/anexos-amplos/{anexo_id}/preview`
+- `DELETE /projetos/{projeto_id}/anexos-amplos/{anexo_id}` (somente `origem='USUARIO'`)
+
+**Relacionamentos:**
+- `(N:1)` com **Projeto** via `id_projeto`
+- `(N:1)` com **Usuario** via `created_by` (opcional)
 
 ---
 

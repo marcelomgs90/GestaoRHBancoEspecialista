@@ -5,6 +5,7 @@ from app.models.parametro_regra import ParametroRegra
 from app.models.projeto import Projeto
 from app.models.projeto_fonte_financiamento import ProjetoFonteFinanciamento
 from app.models.projeto_anexo import ProjetoAnexo
+from app.models.anexo import Anexo
 from app.models.pesquisador_projeto import PesquisadorProjeto
 from app.models.solicitacao_rh import SolicitacaoRH
 from app.models.solicitacao_justificativa import SolicitacaoJustificativa
@@ -20,6 +21,7 @@ __all__ = [
     "Projeto",
     "ProjetoFonteFinanciamento",
     "ProjetoAnexo",
+    "Anexo",
     "PesquisadorProjeto",
     "SolicitacaoRH",
     "SolicitacaoJustificativa",
