@@ -807,7 +807,20 @@ export default function ProjetoFormPage() {
                   {...register('fonte_ifpb')}
                   className="h-5 w-5 rounded border-slate-300 text-emerald-600"
                 />
-                IFPB*
+                <span>IFPB</span>
+                <span
+                  tabIndex={0}
+                  aria-label="Contrapartida econômica do IFPB"
+                  className="group relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700 outline-none ring-offset-2 transition-all hover:bg-emerald-200 focus:ring-2 focus:ring-emerald-500"
+                >
+                  *
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-lg bg-slate-900 px-3 py-2 text-left text-[11px] font-semibold leading-relaxed normal-case tracking-normal text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+                  >
+                    Contrapartida econômica do IFPB, referente ao uso de instalações e estrutura institucional. Não financia bolsas ou RH, mas integra o valor total do projeto.
+                  </span>
+                </span>
               </label>
               <div className="space-y-1">
                 <Controller
@@ -831,9 +844,6 @@ export default function ProjetoFormPage() {
                   <p className="text-xs text-red-600">{errors.valor_ifpb.message}</p>
                 )}
               </div>
-              <p className="md:col-span-2 text-[10px] font-bold uppercase tracking-widest text-emerald-800">
-                * Contrapartida econômica do IFPB, referente ao uso de instalações e estrutura institucional. Não financia bolsas ou RH, mas integra o valor total do projeto.
-              </p>
             </div>
 
             <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4">
