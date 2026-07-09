@@ -92,6 +92,7 @@ export default function DashboardPage() {
       icon: Briefcase,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
+      to: '/projetos?status=ATIVO',
     },
     {
       name: 'Total de Projetos',
@@ -99,6 +100,7 @@ export default function DashboardPage() {
       icon: Users,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
+      to: '/projetos',
     },
     {
       name: 'Solicitações Pendentes',
@@ -106,6 +108,7 @@ export default function DashboardPage() {
       icon: Clock,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
+      to: `/solicitacoes?status=${StatusSolicitacao.SUBMETIDA}`,
     },
     {
       name: 'Aprovadas',
@@ -113,6 +116,7 @@ export default function DashboardPage() {
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
+      to: `/solicitacoes?status=${StatusSolicitacao.APROVADA}`,
     },
   ];
 
@@ -143,19 +147,24 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm flex items-center"
           >
-            <div
-              className={`w-10 h-10 sm:w-12 sm:h-12 rounded flex items-center justify-center ${stat.bg} ${stat.color} mr-3 sm:mr-4 shrink-0`}
+            <Link
+              to={stat.to}
+              aria-label={`Ver ${stat.name.toLowerCase()}`}
+              className="group bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm flex items-center transition-all hover:border-slate-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-900/10"
             >
-              <stat.icon size={22} />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                {stat.name}
-              </p>
-              <p className="text-xl font-bold text-slate-950">{stat.value}</p>
-            </div>
+              <div
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded flex items-center justify-center ${stat.bg} ${stat.color} mr-3 sm:mr-4 shrink-0 transition-transform group-hover:scale-105`}
+              >
+                <stat.icon size={22} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  {stat.name}
+                </p>
+                <p className="text-xl font-bold text-slate-950">{stat.value}</p>
+              </div>
+            </Link>
           </motion.div>
         ))}
       </div>
@@ -232,9 +241,10 @@ export default function DashboardPage() {
             {Object.values(StatusSolicitacao).map((status) => {
               const count = solicitacoes.filter((s) => s.status === status).length;
               return (
-                <div
+                <Link
                   key={status}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100"
+                  to={`/solicitacoes?status=${status}`}
+                  className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100 transition-all hover:border-slate-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 >
                   <span className="text-xs font-bold text-slate-700">
                     {STATUS_SOLICITACAO_LABELS[status]}
@@ -242,7 +252,7 @@ export default function DashboardPage() {
                   <span className="text-xs font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
                     {isLoading ? '—' : count}
                   </span>
-                </div>
+                </Link>
               );
             })}
           </div>
