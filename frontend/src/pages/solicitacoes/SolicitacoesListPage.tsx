@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   ClipboardList,
@@ -42,12 +42,18 @@ const formatarDataHora = (isoString: string) => {
 
 export default function SolicitacoesListPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { podeEditarMembros } = usePerfil();
+
+  const statusParam = searchParams.get('status');
+  const statusInicial = Object.values(StatusSolicitacao).includes(statusParam as StatusSolicitacao)
+    ? (statusParam as StatusSolicitacao)
+    : '';
 
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [filtroTipo, setFiltroTipo] = useState<TipoSolicitacao | ''>('');
-  const [filtroStatus, setFiltroStatus] = useState<StatusSolicitacao | ''>('');
+  const [filtroStatus, setFiltroStatus] = useState<StatusSolicitacao | ''>(statusInicial);
   const [filtroProjeto, setFiltroProjeto] = useState<number | ''>('');
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -76,6 +82,21 @@ export default function SolicitacoesListPage() {
     }
     void load();
   }, []);
+
+  useEffect(() => {
+    setFiltroStatus(statusInicial);
+  }, [statusInicial]);
+
+  const atualizarFiltroStatus = (status: StatusSolicitacao | '') => {
+    setFiltroStatus(status);
+    const proximosParametros = new URLSearchParams(searchParams);
+    if (status) {
+      proximosParametros.set('status', status);
+    } else {
+      proximosParametros.delete('status');
+    }
+    setSearchParams(proximosParametros, { replace: true });
+  };
 
   const filtradas = solicitacoes
     .filter((s) => {
@@ -179,7 +200,7 @@ export default function SolicitacoesListPage() {
         </select>
         <select
           value={filtroStatus}
-          onChange={(e) => setFiltroStatus(e.target.value as StatusSolicitacao | '')}
+          onChange={(e) => atualizarFiltroStatus(e.target.value as StatusSolicitacao | '')}
           className="w-full px-3 py-2 sm:w-auto sm:py-1.5 bg-white border border-slate-200 rounded text-xs font-medium outline-none focus:border-slate-400 transition-all text-slate-700"
         >
           <option value="">Todos os status</option>
@@ -191,7 +212,11 @@ export default function SolicitacoesListPage() {
         </select>
         {(filtroTipo || filtroStatus || filtroProjeto !== '') && (
           <button
-            onClick={() => { setFiltroTipo(''); setFiltroStatus(''); setFiltroProjeto(''); }}
+            onClick={() => {
+              setFiltroTipo('');
+              atualizarFiltroStatus('');
+              setFiltroProjeto('');
+            }}
             className="justify-self-start text-[10px] font-bold text-slate-400 hover:text-slate-700 uppercase tracking-wider cursor-pointer sm:justify-self-auto"
           >
             Limpar filtros

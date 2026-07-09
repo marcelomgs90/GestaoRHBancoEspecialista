@@ -1,18 +1,26 @@
 ﻿import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Search, Filter, Plus, ChevronRight, Calendar } from 'lucide-react';
 import { usePerfil } from '@/hooks/usePerfil';
 import { projetoService } from '@/services/projetoService';
 import { formatDate } from '@/types/projeto';
+import { STATUS_PROJETO_LABELS, StatusProjeto } from '@/types/enums';
 import type { Projeto } from '@/types/projeto';
 
 export default function ProjetosListPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { podeCriarProjeto } = usePerfil();
+
+  const statusParam = searchParams.get('status');
+  const statusInicial = Object.values(StatusProjeto).includes(statusParam as StatusProjeto)
+    ? (statusParam as StatusProjeto)
+    : '';
 
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [filtro, setFiltro] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<StatusProjeto | ''>(statusInicial);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -24,10 +32,26 @@ export default function ProjetosListPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
+  useEffect(() => {
+    setFiltroStatus(statusInicial);
+  }, [statusInicial]);
+
+  const atualizarFiltroStatus = (status: StatusProjeto | '') => {
+    setFiltroStatus(status);
+    const proximosParametros = new URLSearchParams(searchParams);
+    if (status) {
+      proximosParametros.set('status', status);
+    } else {
+      proximosParametros.delete('status');
+    }
+    setSearchParams(proximosParametros, { replace: true });
+  };
+
   const projetosFiltrados = projetos.filter(
     (p) =>
-      p.sigla.toLowerCase().includes(filtro.toLowerCase()) ||
-      p.titulo.toLowerCase().includes(filtro.toLowerCase()),
+      (!filtroStatus || p.status === filtroStatus) &&
+      (p.sigla.toLowerCase().includes(filtro.toLowerCase()) ||
+        p.titulo.toLowerCase().includes(filtro.toLowerCase())),
   );
 
   return (
@@ -56,10 +80,35 @@ export default function ProjetosListPage() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <button className="flex w-full items-center justify-center px-4 py-2 bg-white border border-slate-200 rounded text-slate-600 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm cursor-pointer sm:w-auto">
-            <Filter size={14} className="mr-2" />
-            Filtros
-          </button>
+          <div className="relative">
+            <Filter
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <select
+              value={filtroStatus}
+              onChange={(e) => atualizarFiltroStatus(e.target.value as StatusProjeto | '')}
+              className="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 rounded text-slate-600 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-50 outline-none focus:border-slate-400 transition-all shadow-sm sm:w-auto"
+            >
+              <option value="">Todos os status</option>
+              {Object.values(StatusProjeto).map((status) => (
+                <option key={status} value={status}>
+                  {STATUS_PROJETO_LABELS[status]}
+                </option>
+              ))}
+            </select>
+          </div>
+          {(filtro || filtroStatus) && (
+            <button
+              onClick={() => {
+                setFiltro('');
+                atualizarFiltroStatus('');
+              }}
+              className="self-start text-[10px] font-bold text-slate-400 hover:text-slate-700 uppercase tracking-wider cursor-pointer sm:self-auto"
+            >
+              Limpar filtros
+            </button>
+          )}
           {podeCriarProjeto && (
             <Link
               to="/projetos/novo"
