@@ -147,6 +147,21 @@ def test_coordenador_cria_sem_referencia_coordenador_id_e_self(client, coord):
     assert body["coordenador_id"] == coord.id
 
 
+def test_criar_projeto_aceita_fonte_ifpb_economica_no_total(client, coord):
+    payload = _payload_basico()
+    payload["fontes_financiamento"] = [
+        {"fonte": FonteFinanciamento.EMPRESA.value, "valor": 100000},
+        {"fonte": FonteFinanciamento.IFPB.value, "valor": 50000},
+    ]
+
+    resp = client.post("/projetos/", json=payload, headers=_auth(coord))
+
+    assert resp.status_code == 201, resp.text
+    fontes = {item["fonte"]: item["valor"] for item in resp.json()["fontes_financiamento"]}
+    assert fontes[FonteFinanciamento.EMPRESA.value] == "100000.00"
+    assert fontes[FonteFinanciamento.IFPB.value] == "50000.00"
+
+
 # ----- 5.3: COORDENADOR cria com coordenador_ref — campo eh ignorado -----
 
 

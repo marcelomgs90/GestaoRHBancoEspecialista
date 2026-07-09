@@ -14,7 +14,7 @@ import {
 import { projetoService } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
 import { especialistaService, type Especialista } from '@/services/especialistaService';
-import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao } from '@/types/enums';
+import { CategoriaBolsa, FonteFinanciamento, FONTES_RH_OPERACIONAIS, TipoSolicitacao } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { cn } from '@/lib/cn';
 import { MembroEditor, type MembroLocalProps } from './MembroEditor';
@@ -143,8 +143,7 @@ export default function ImplantacaoPage() {
       ref_pesquisador: ref,
       nome_pesquisador: nome,
       categoria_bolsa: categoria,
-      fonte_financiamento:
-        projeto?.fontes_financiamento[0]?.fonte ?? FonteFinanciamento.EMPRESA,
+      fonte_financiamento: fontesDoProjeto[0] ?? FonteFinanciamento.EMPRESA,
       carga_horaria_semanal: 20,
       data_inicio: projeto?.data_inicio ?? '',
       data_fim: projeto?.data_fim,
@@ -250,7 +249,9 @@ export default function ImplantacaoPage() {
     0,
   );
   const excedeOrcamento = totalBolsas > totalFontes;
-  const fontesDoProjeto = (projeto?.fontes_financiamento ?? []).map((fonte) => fonte.fonte);
+  const fontesDoProjeto = (projeto?.fontes_financiamento ?? [])
+    .map((fonte) => fonte.fonte)
+    .filter((fonte) => FONTES_RH_OPERACIONAIS.includes(fonte));
 
   return (
     <div className="space-y-8 animate-in slide-in-up">

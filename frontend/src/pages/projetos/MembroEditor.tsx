@@ -8,7 +8,7 @@ import {
   ChevronUp,
   CircleDollarSign,
 } from 'lucide-react';
-import { CategoriaBolsa, FonteFinanciamento } from '@/types/enums';
+import { CategoriaBolsa, FonteFinanciamento, FONTES_RH_OPERACIONAIS } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { parametroService } from '@/services/parametroService';
 import type {
@@ -225,7 +225,7 @@ export function MembroEditor({
   const opcoesFonte =
     fontesDisponiveis && fontesDisponiveis.length > 0
       ? fontesDisponiveis
-      : Object.values(FonteFinanciamento);
+      : FONTES_RH_OPERACIONAIS;
 
   return (
     <div className="p-6 flex flex-col lg:flex-row gap-6 items-start lg:items-center">

@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.utils.enums import CategoriaBolsa, FonteFinanciamento
 
@@ -19,6 +19,13 @@ class MembroCreate(BaseModel):
     data_fim: Optional[date] = None
     origem_rh: Optional[str] = None
 
+    @field_validator("fonte_financiamento")
+    @classmethod
+    def validar_fonte_operacional(cls, fonte: FonteFinanciamento):
+        if fonte == FonteFinanciamento.IFPB:
+            raise ValueError("A fonte IFPB e economica/contrapartida e nao pode ser usada em RH")
+        return fonte
+
 
 class MembroUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -28,6 +35,13 @@ class MembroUpdate(BaseModel):
     carga_horaria_semanal: Optional[int] = None
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
+
+    @field_validator("fonte_financiamento")
+    @classmethod
+    def validar_fonte_operacional(cls, fonte: Optional[FonteFinanciamento]):
+        if fonte == FonteFinanciamento.IFPB:
+            raise ValueError("A fonte IFPB e economica/contrapartida e nao pode ser usada em RH")
+        return fonte
 
 
 class MembroResponse(BaseModel):
