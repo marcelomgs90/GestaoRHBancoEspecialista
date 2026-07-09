@@ -10,7 +10,6 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
-  Bell,
   ClipboardList,
   Sun,
   Moon,
@@ -19,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePerfil } from '@/hooks/usePerfil';
 import { cn } from '@/lib/cn';
+import { NotificationsBell } from '@/components/layout/NotificationsBell';
 
 const FEATURE_BOLSAS = import.meta.env.VITE_FEATURE_BOLSAS === 'true';
 
@@ -255,10 +255,7 @@ export function AppShell() {
             >
               {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-            <button className="relative w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-md transition-all cursor-pointer dark:hover:text-slate-300">
-              <Bell size={18} />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-600 rounded-full border-2 border-white dark:border-slate-900"></span>
-            </button>
+            <NotificationsBell />
             <div className="hidden sm:block h-6 w-px bg-slate-200 mx-1 dark:bg-slate-700"></div>
             <div className="flex items-center gap-3 group p-1.5 rounded-lg transition-all">
               <div className="text-right hidden sm:block">
