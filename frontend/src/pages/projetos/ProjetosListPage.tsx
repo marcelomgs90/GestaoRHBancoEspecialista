@@ -31,11 +31,11 @@ export default function ProjetosListPage() {
   );
 
   return (
-    <div className="space-y-8 animate-in slide-in-up">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-up">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-5 sm:pb-6">
         <div className="space-y-4 flex-1">
           <div>
-            <h2 className="text-2xl font-bold text-slate-950">Catálogo de Projetos</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-950">Catálogo de Projetos</h2>
             <p className="text-slate-700 text-sm mt-1">
               Lista completa de ativos institucionais sob gestão do Polo.
             </p>
@@ -55,15 +55,15 @@ export default function ProjetosListPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded text-slate-600 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm cursor-pointer">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button className="flex w-full items-center justify-center px-4 py-2 bg-white border border-slate-200 rounded text-slate-600 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm cursor-pointer sm:w-auto">
             <Filter size={14} className="mr-2" />
             Filtros
           </button>
           {podeCriarProjeto && (
             <Link
               to="/projetos/novo"
-              className="flex items-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm active:scale-95 whitespace-nowrap cursor-pointer"
+              className="flex w-full items-center justify-center px-4 py-2 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm active:scale-95 whitespace-nowrap cursor-pointer sm:w-auto"
             >
               <Plus size={16} className="mr-2" />
               Novo Projeto
@@ -100,7 +100,7 @@ export default function ProjetosListPage() {
               >
                 <div
                   onClick={() => navigate(`/projetos/${projeto.id}`)}
-                  className="group block bg-white border border-slate-200 p-6 rounded-lg hover:border-slate-400 hover:shadow-md transition-all cursor-pointer"
+                  className="group block bg-white border border-slate-200 p-4 sm:p-6 rounded-lg hover:border-slate-400 hover:shadow-md transition-all cursor-pointer"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="flex-1 space-y-2">
@@ -109,19 +109,19 @@ export default function ProjetosListPage() {
                           {projeto.sigla}
                         </span>
                       </div>
-                      <p className="text-slate-500 text-sm font-medium line-clamp-1 leading-none">
+                      <p className="text-slate-500 text-sm font-medium line-clamp-2 sm:line-clamp-1 leading-snug">
                         {projeto.titulo}
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap lg:flex-nowrap items-center gap-8 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-                      <div className="space-y-1">
+                    <div className="flex flex-col gap-4 pt-4 border-t border-slate-100 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6 lg:flex-nowrap lg:pt-0 lg:border-t-0">
+                      <div className="space-y-1 min-w-0">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">
                           Vigência
                         </p>
                         <div className="flex items-center text-slate-700 font-semibold text-sm">
                           <Calendar size={14} className="mr-2 text-slate-400" />
-                          {formatDate(projeto.data_inicio)} — {formatDate(projeto.data_fim)}
+                          <span>{formatDate(projeto.data_inicio)} — {formatDate(projeto.data_fim)}</span>
                         </div>
                       </div>
 
