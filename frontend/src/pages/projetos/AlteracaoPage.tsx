@@ -18,7 +18,7 @@ import { projetoService } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
 import { especialistaService, type Especialista } from '@/services/especialistaService';
 import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao, FONTE_LABELS } from '@/types/enums';
-import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
+import { CATEGORIA_BOLSA_LABELS, formatDate } from '@/types/projeto';
 import { MembroEditor, type MembroLocalProps } from './MembroEditor';
 import { KpiFontesBolas } from '@/components/orcamento/KpiFontesBolsas';
 import { cn } from '@/lib/cn';
@@ -87,10 +87,6 @@ export default function AlteracaoPage() {
   const [versaoVigente, setVersaoVigente] = useState<VersaoRHProjeto | null>(null);
   const [equipeAtual, setEquipeAtual] = useState<Membro[]>([]);
   const [equipeProposta, setEquipeProposta] = useState<MembroLocalProps[]>([]);
-  // refs_pesquisador (e não id!) que foram removidos da equipeProposta.
-  // Usamos `ref_pesquisador` porque ele é estável entre VIGENTE e PROPOSTA
-  // (o clone do backend gera novo `id`, mas mantém o mesmo `ref_pesquisador`).
-  const [refsRemovidos, setRefsRemovidos] = useState<Set<string>>(new Set());
 
   const [showSearch, setShowSearch] = useState<'candidatos' | 'especialistas' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,6 +101,9 @@ export default function AlteracaoPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showAprovadaModal, setShowAprovadaModal] = useState(false);
   const [aprovadaSolicitacaoId, setAprovadaSolicitacaoId] = useState<number | null>(null);
+  const [membroSaidaPendente, setMembroSaidaPendente] = useState<MembroLocalProps | null>(null);
+  const [dataSaida, setDataSaida] = useState('');
+  const [erroDataSaida, setErroDataSaida] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [modalErro, setModalErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -198,12 +197,6 @@ export default function AlteracaoPage() {
       setModalErro(`O pesquisador ${nome} já está na equipe proposta`);
       return;
     }
-    setRefsRemovidos((s) => {
-      if (!s.has(ref)) return s;
-      const prox = new Set(s);
-      prox.delete(ref);
-      return prox;
-    });
     setEquipeProposta((prev) => [
       ...prev,
       {
@@ -226,20 +219,59 @@ export default function AlteracaoPage() {
   const removeMembro = (tempId: string) => {
     const m = equipeProposta.find((x) => x._tempId === tempId);
     if (!m) return;
-    if (m.ref_pesquisador) {
-      setRefsRemovidos((s) => {
-        const prox = new Set(s);
-        prox.add(m.ref_pesquisador);
-        return prox;
-      });
+
+    if (m.id) {
+      setMembroSaidaPendente(m);
+      setDataSaida(m.data_fim ?? '');
+      setErroDataSaida(null);
+      return;
     }
-    log('REMOVE', m.nome_pesquisador, m.id ? 'Marcado para encerramento' : 'Removido da lista');
+
+    log('REMOVE', m.nome_pesquisador, 'Removido da lista');
     setEquipeProposta((prev) => prev.filter((x) => x._tempId !== tempId));
     setValorPreviewPorTempId((prev) => {
       const prox = { ...prev };
       delete prox[tempId];
       return prox;
     });
+  };
+
+  const fecharModalSaida = () => {
+    setMembroSaidaPendente(null);
+    setDataSaida('');
+    setErroDataSaida(null);
+  };
+
+  const confirmarSaidaMembro = () => {
+    if (!membroSaidaPendente) return;
+
+    if (!dataSaida) {
+      setErroDataSaida('Informe a data de saída do projeto.');
+      return;
+    }
+
+    if (membroSaidaPendente.data_inicio && dataSaida < membroSaidaPendente.data_inicio) {
+      setErroDataSaida('A data de saída não pode ser anterior ao início do membro.');
+      return;
+    }
+
+    if (projeto?.data_fim && dataSaida > projeto.data_fim) {
+      setErroDataSaida('A data de saída não pode passar do fim do projeto.');
+      return;
+    }
+
+    setEquipeProposta((prev) =>
+      prev.map((m) =>
+        m._tempId === membroSaidaPendente._tempId ? { ...m, data_fim: dataSaida } : m,
+      ),
+    );
+    setValorPreviewPorTempId((prev) => {
+      const prox = { ...prev };
+      delete prox[membroSaidaPendente._tempId];
+      return prox;
+    });
+    log('REMOVE', membroSaidaPendente.nome_pesquisador, `Saída em ${formatDate(dataSaida)}`);
+    fecharModalSaida();
   };
 
   const updateMembro = (tempId: string, changes: Partial<MembroLocalProps>) => {
@@ -267,6 +299,11 @@ export default function AlteracaoPage() {
   const excedeOrcamento = totalEquipeProposta > totalFontes;
   const fontesDoProjeto = (projeto?.fontes_financiamento ?? []).map((fonte) => fonte.fonte);
   const temMembrosProposta = equipeProposta.length > 0;
+  const encerramentosPlanejados = equipeProposta.filter((m) => {
+    if (!m.id || !m.data_fim) return false;
+    const atual = equipeAtual.find((a) => a.ref_pesquisador === m.ref_pesquisador);
+    return atual ? (atual.data_fim ?? null) !== m.data_fim : false;
+  });
 
   const validarEquipeProposta = () => {
     if (temMembrosProposta) return true;
@@ -283,7 +320,7 @@ export default function AlteracaoPage() {
    *
    * Retorna:
    * - `mapaRefParaIdClonado`: ref_pesquisador → id do clone na PROPOSTA.
-   *   Usado para resolver o `id` correto no DELETE (não o id da VIGENTE).
+   *   Usado para associar membros da preview aos clones criados pelo backend.
    * - `estadoOriginalClones`: id do clone → Membro como estava no clone.
    *   Usado para detectar mudanças reais e evitar PUTs parasitas.
    */
@@ -348,9 +385,8 @@ export default function AlteracaoPage() {
   /**
    * Persiste as mudanças da alteração no backend.
    *
-   * @param refsARemover refs_pesquisador (não ids!) marcados para encerramento.
    * @param mapaRefParaIdClonado mapeia ref_pesquisador → id do clone na PROPOSTA.
-   *   Necessário para que o DELETE use o id do clone, não o da VIGENTE.
+   *   Necessário para que atualizações usem o id do clone, não o da VIGENTE.
    * @param estadoOriginalClones estado original dos clones (id → Membro).
    *   Usado para detectar mudanças reais antes do PUT, evitando atualizações
    *   parasitas disparadas pelo recálculo automático de `valor_bolsa` no
@@ -359,7 +395,6 @@ export default function AlteracaoPage() {
   const persistirMudancas = async (
     id_solicitacao: number,
     membros: MembroLocalProps[],
-    refsARemover: Set<string>,
     mapaRefParaIdClonado: Map<string, number>,
     estadoOriginalClones: Map<number, Membro>,
   ) => {
@@ -368,35 +403,6 @@ export default function AlteracaoPage() {
       const cloneId = mapaRefParaIdClonado.get(m.ref_pesquisador);
       return cloneId ? { ...m, id: cloneId, _tempId: `existente-${cloneId}` } : m;
     });
-
-    const refsNaProposta = new Set(membrosNormalizados.map((m) => m.ref_pesquisador));
-    const encerramentosFalhos: string[] = [];
-    for (const ref of refsARemover) {
-      if (!refsNaProposta.has(ref)) {
-        const idClonado = mapaRefParaIdClonado.get(ref);
-        if (!idClonado) continue;
-        try {
-          await solicitacaoService.encerrarMembro(
-            id_solicitacao,
-            idClonado,
-            'Encerrado na alteracao',
-          );
-        } catch (err) {
-          const e = err as { response?: { status?: number; data?: { detail?: string } } };
-          if (e?.response?.status === 400 || e?.response?.status === 404) {
-            encerramentosFalhos.push(ref);
-          } else {
-            throw err;
-          }
-        }
-      }
-    }
-    if (encerramentosFalhos.length > 0) {
-      throw new Error(
-        `A solicitacao nao esta mais em edicao ou os membros ja foram removidos. ` +
-          `Reabra como nova alteracao para encerrar ${encerramentosFalhos.length} membro(s).`,
-      );
-    }
 
     // 1) Inclusões (membros novos, sem id do clone).
     //    Payload alinhado com o schema `MembroCreate` do backend.
@@ -451,7 +457,7 @@ export default function AlteracaoPage() {
     try {
       const { solicitacaoId: id, membrosMapeados, mapaRefParaIdClonado, estadoOriginalClones } =
         await garantirSolicitacao();
-      await persistirMudancas(id, membrosMapeados, refsRemovidos, mapaRefParaIdClonado, estadoOriginalClones);
+      await persistirMudancas(id, membrosMapeados, mapaRefParaIdClonado, estadoOriginalClones);
       setShowSuccessModal(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
@@ -472,7 +478,7 @@ export default function AlteracaoPage() {
     try {
       const { solicitacaoId: id, membrosMapeados, mapaRefParaIdClonado, estadoOriginalClones } =
         await garantirSolicitacao();
-      await persistirMudancas(id, membrosMapeados, refsRemovidos, mapaRefParaIdClonado, estadoOriginalClones);
+      await persistirMudancas(id, membrosMapeados, mapaRefParaIdClonado, estadoOriginalClones);
       await solicitacaoService.submeter(id);
       setAprovadaSolicitacaoId(id);
       setShowAprovadaModal(true);
@@ -631,9 +637,9 @@ export default function AlteracaoPage() {
             <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
               {equipeProposta.length} membros
             </span>
-            {refsRemovidos.size > 0 && (
+            {encerramentosPlanejados.length > 0 && (
               <span className="text-[10px] font-bold text-red-700 uppercase tracking-widest bg-red-50 px-2 py-1 rounded border border-red-200">
-                {refsRemovidos.size} a encerrar
+                {encerramentosPlanejados.length} com saída
               </span>
             )}
             <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">
@@ -689,6 +695,7 @@ export default function AlteracaoPage() {
                 membro={m}
                 onChange={(changes) => updateMembro(m._tempId, changes)}
                 onRemove={() => removeMembro(m._tempId)}
+                removeLabel={m.id ? 'Informar data de saída do membro' : 'Remover membro'}
                 projetoId={projetoId}
                 projetoDataInicio={projeto?.data_inicio}
                 projetoDataFim={projeto?.data_fim}
@@ -937,6 +944,69 @@ export default function AlteracaoPage() {
                       </button>
                     ))
                   )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal de saída de membro existente */}
+      {membroSaidaPendente && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white w-full max-w-sm p-5 rounded-xl shadow-2xl relative z-10 border border-slate-200"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center border border-red-100 shrink-0">
+                <AlertCircle size={20} />
+              </div>
+              <div className="text-left min-w-0">
+                <h3 className="text-base font-bold text-slate-900">Data de saída</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Informe quando {membroSaidaPendente.nome_pesquisador} deixa o projeto.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-2">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Saída do projeto
+              </label>
+              <input
+                type="date"
+                value={dataSaida}
+                min={membroSaidaPendente.data_inicio}
+                max={projeto?.data_fim}
+                onChange={(event) => {
+                  setDataSaida(event.target.value);
+                  if (erroDataSaida) setErroDataSaida(null);
+                }}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-900 outline-none transition-all focus:border-slate-900 focus:bg-white"
+              />
+              {erroDataSaida && (
+                <p className="text-xs font-medium text-red-600">{erroDataSaida}</p>
+              )}
+              <p className="text-[11px] leading-relaxed text-slate-500">
+                O membro permanece na equipe proposta com a data final ajustada, preservando o
+                histórico na comparação da alteração.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              <button
+                onClick={fecharModalSaida}
+                className="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarSaidaMembro}
+                className="py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all uppercase tracking-widest text-[10px] cursor-pointer"
+              >
+                Confirmar saída
+              </button>
             </div>
           </motion.div>
         </div>

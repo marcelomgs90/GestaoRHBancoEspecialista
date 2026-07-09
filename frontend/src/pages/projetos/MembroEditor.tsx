@@ -30,6 +30,7 @@ interface Props {
   membro: MembroLocalProps;
   onChange: (changes: Partial<MembroLocalProps>) => void;
   onRemove: () => void;
+  removeLabel?: string;
   projetoId?: number;
   projetoDataInicio?: string;
   projetoDataFim?: string;
@@ -72,6 +73,7 @@ export function MembroEditor({
   membro,
   onChange,
   onRemove,
+  removeLabel = 'Remover membro',
   projetoId,
   projetoDataInicio,
   projetoDataFim,
@@ -246,7 +248,8 @@ export function MembroEditor({
           <button
             onClick={onRemove}
             className="p-2 text-slate-300 hover:text-red-600 transition-colors cursor-pointer"
-            aria-label="Remover membro"
+            aria-label={removeLabel}
+            title={removeLabel}
           >
             <Trash2 size={18} />
           </button>
