@@ -8,7 +8,7 @@ import {
   ChevronUp,
   CircleDollarSign,
 } from 'lucide-react';
-import { CategoriaBolsa, FonteFinanciamento } from '@/types/enums';
+import { CategoriaBolsa, FonteFinanciamento, FONTES_RH_OPERACIONAIS } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { parametroService } from '@/services/parametroService';
 import type {
@@ -30,6 +30,7 @@ interface Props {
   membro: MembroLocalProps;
   onChange: (changes: Partial<MembroLocalProps>) => void;
   onRemove: () => void;
+  removeLabel?: string;
   projetoId?: number;
   projetoDataInicio?: string;
   projetoDataFim?: string;
@@ -72,6 +73,7 @@ export function MembroEditor({
   membro,
   onChange,
   onRemove,
+  removeLabel = 'Remover membro',
   projetoId,
   projetoDataInicio,
   projetoDataFim,
@@ -225,7 +227,7 @@ export function MembroEditor({
   const opcoesFonte =
     fontesDisponiveis && fontesDisponiveis.length > 0
       ? fontesDisponiveis
-      : Object.values(FonteFinanciamento);
+      : FONTES_RH_OPERACIONAIS;
 
   return (
     <div className="p-6 flex flex-col lg:flex-row gap-6 items-start lg:items-center">
@@ -246,7 +248,8 @@ export function MembroEditor({
           <button
             onClick={onRemove}
             className="p-2 text-slate-300 hover:text-red-600 transition-colors cursor-pointer"
-            aria-label="Remover membro"
+            aria-label={removeLabel}
+            title={removeLabel}
           >
             <Trash2 size={18} />
           </button>

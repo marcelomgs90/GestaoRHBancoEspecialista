@@ -53,6 +53,8 @@ const baseSchema = z
     valor_embrapii: optionalCurrency,
     fonte_sebrae: z.boolean().default(false),
     valor_sebrae: optionalCurrency,
+    fonte_ifpb: z.boolean().default(false),
+    valor_ifpb: optionalCurrency,
     data_inicio: z.string().min(1, 'Informe a data de início'),
     data_fim: z.string().min(1, 'Informe a data de encerramento'),
     modo_coordenador: z.enum(['SISTEMA', 'BANCO']).default('SISTEMA'),
@@ -71,6 +73,13 @@ const baseSchema = z
         code: 'custom',
         path: ['valor_sebrae'],
         message: 'Informe o valor da fonte SEBRAE',
+      });
+    }
+    if (d.fonte_ifpb && !d.valor_ifpb) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['valor_ifpb'],
+        message: 'Informe o valor econômico/contrapartida IFPB',
       });
     }
   })
@@ -134,6 +143,7 @@ export default function ProjetoFormPage() {
       sigla: '',
       fonte_embrapii: false,
       fonte_sebrae: false,
+      fonte_ifpb: false,
       modo_coordenador: 'SISTEMA',
       coordenador_ref_pesquisador: '',
     },
@@ -141,9 +151,11 @@ export default function ProjetoFormPage() {
 
   const fonteEmbrapii = watch('fonte_embrapii');
   const fonteSebrae = watch('fonte_sebrae');
+  const fonteIfpb = watch('fonte_ifpb');
   const valorEmpresa = watch('valor_empresa');
   const valorEmbrapii = watch('valor_embrapii');
   const valorSebrae = watch('valor_sebrae');
+  const valorIfpb = watch('valor_ifpb');
   const modoCoordenador = watch('modo_coordenador');
   const usarCoordenadorSistema = modoCoordenador === 'SISTEMA';
   const usarBancoEspecialista = modoCoordenador === 'BANCO';
@@ -153,9 +165,10 @@ export default function ProjetoFormPage() {
       Number(valorEmpresa) || 0,
       fonteEmbrapii ? Number(valorEmbrapii) || 0 : 0,
       fonteSebrae ? Number(valorSebrae) || 0 : 0,
+      fonteIfpb ? Number(valorIfpb) || 0 : 0,
     ];
     return valores.reduce((total, valor) => total + valor, 0);
-  }, [fonteEmbrapii, fonteSebrae, valorEmpresa, valorEmbrapii, valorSebrae]);
+  }, [fonteEmbrapii, fonteSebrae, fonteIfpb, valorEmpresa, valorEmbrapii, valorSebrae, valorIfpb]);
 
   // Tipoahead de pesquisadores-servidor.
   useEffect(() => {
@@ -257,6 +270,9 @@ export default function ProjetoFormPage() {
         : []),
       ...(data.fonte_sebrae && data.valor_sebrae
         ? [{ fonte: FonteFinanciamento.SEBRAE, valor: data.valor_sebrae }]
+        : []),
+      ...(data.fonte_ifpb && data.valor_ifpb
+        ? [{ fonte: FonteFinanciamento.IFPB, valor: data.valor_ifpb }]
         : []),
     ];
     if (usarCoordenadorSistema && !coordenadorSistemaSelecionado) {
@@ -693,7 +709,7 @@ export default function ProjetoFormPage() {
                   disabled
                   className="h-5 w-5 rounded border-slate-300 text-blue-600"
                 />
-                Empresa*
+                Empresa (obrigatória)
               </label>
               <div className="space-y-1">
                 <Controller
@@ -780,6 +796,52 @@ export default function ProjetoFormPage() {
                 />
                 {errors.valor_sebrae && (
                   <p className="text-xs text-red-600">{errors.valor_sebrae.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-4 items-start rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+              <label className="flex items-center gap-3 text-sm font-black text-slate-800">
+                <input
+                  type="checkbox"
+                  {...register('fonte_ifpb')}
+                  className="h-5 w-5 rounded border-slate-300 text-emerald-600"
+                />
+                <span>IFPB</span>
+                <span
+                  tabIndex={0}
+                  aria-label="Contrapartida econômica do IFPB"
+                  className="group relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700 outline-none ring-offset-2 transition-all hover:bg-emerald-200 focus:ring-2 focus:ring-emerald-500"
+                >
+                  *
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-lg bg-slate-900 px-3 py-2 text-left text-[11px] font-semibold leading-relaxed normal-case tracking-normal text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+                  >
+                    Contrapartida econômica do IFPB, referente ao uso de instalações e estrutura institucional. Não financia bolsas ou RH, mas integra o valor total do projeto.
+                  </span>
+                </span>
+              </label>
+              <div className="space-y-1">
+                <Controller
+                  name="valor_ifpb"
+                  control={control}
+                  render={({ field }) => (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      disabled={!fonteIfpb}
+                      value={formatCurrencyBRL(field.value)}
+                      onChange={(e) => field.onChange(parseCurrencyBRL(e.target.value))}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      className="w-full px-4 py-3 bg-white border border-emerald-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-bold text-sm text-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
+                      placeholder="R$ 0,00"
+                    />
+                  )}
+                />
+                {errors.valor_ifpb && (
+                  <p className="text-xs text-red-600">{errors.valor_ifpb.message}</p>
                 )}
               </div>
             </div>

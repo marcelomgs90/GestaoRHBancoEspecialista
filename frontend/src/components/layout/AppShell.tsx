@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -49,12 +49,12 @@ export function AppShell() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { podeCriarProjeto, podeGerenciarParametros } = usePerfil();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
+    typeof window === 'undefined' ? true : window.innerWidth >= 1024,
+  );
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({ Projetos: true });
   const location = useLocation();
   const navigate = useNavigate();
-
-  if (!user) return null;
 
   const projetoSubItems = [
     { name: 'Lista de Projetos', icon: Briefcase, path: '/projetos' },
@@ -75,23 +75,44 @@ export function AppShell() {
   const toggleMenu = (name: string) =>
     setExpandedMenus((prev) => ({ ...prev, [name]: !prev[name] }));
 
+  const closeSidebarOnMobile = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login', { replace: true });
   };
 
+  useEffect(() => {
+    closeSidebarOnMobile();
+  }, [location.pathname]);
+
+  if (!user) return null;
+
   const initial = user.nome.trim().charAt(0).toUpperCase() || '?';
   const perfilLabel = PERFIL_LABELS[user.perfil] ?? user.perfil;
 
   return (
-    <div className="h-screen bg-slate-50 flex overflow-hidden font-sans text-slate-800 dark:bg-slate-950">
+    <div className="h-dvh bg-slate-50 flex overflow-hidden font-sans text-slate-800 dark:bg-slate-950">
+      {isSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Fechar menu"
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-[1px] lg:hidden"
+        />
+      )}
+
       <aside
         className={cn(
-          'bg-white border-r border-slate-200 transition-all duration-500 flex flex-col z-50 dark:bg-slate-900 dark:border-slate-800',
-          isSidebarOpen ? 'w-64' : 'w-16',
+          'fixed inset-y-0 left-0 bg-white border-r border-slate-200 transition-all duration-300 flex flex-col z-50 dark:bg-slate-900 dark:border-slate-800 lg:static lg:translate-x-0',
+          isSidebarOpen ? 'w-72 translate-x-0 lg:w-64' : 'w-72 -translate-x-full lg:w-16',
         )}
       >
-        <div className="p-6 flex items-center justify-between border-b border-slate-50 dark:border-slate-800">
+        <div className="p-4 sm:p-6 flex items-center justify-between border-b border-slate-50 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-slate-900 rounded flex items-center justify-center text-white font-bold shrink-0 shadow-sm text-xs dark:bg-slate-700">
               G
@@ -117,6 +138,7 @@ export function AppShell() {
                 <Link
                   key={item.name}
                   to={item.path}
+                  onClick={closeSidebarOnMobile}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded transition-all group relative duration-200',
                     isActive
@@ -171,6 +193,7 @@ export function AppShell() {
                         <Link
                           key={sub.name}
                           to={sub.path}
+                          onClick={closeSidebarOnMobile}
                           className={cn(
                             'flex items-center gap-2 py-1.5 text-xs transition-colors',
                             isSubActive
@@ -205,8 +228,8 @@ export function AppShell() {
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 dark:bg-slate-900 dark:border-slate-800">
-          <div className="flex items-center gap-4 flex-1">
+        <header className="h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between shrink-0 dark:bg-slate-900 dark:border-slate-800">
+          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-1.5 hover:bg-slate-50 rounded text-slate-400 transition-all border border-transparent hover:border-slate-100 cursor-pointer dark:hover:bg-slate-800 dark:hover:border-slate-700"
@@ -224,7 +247,7 @@ export function AppShell() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={toggleTheme}
               className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-md transition-all cursor-pointer dark:hover:text-slate-300"
@@ -236,7 +259,7 @@ export function AppShell() {
               <Bell size={18} />
               <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-600 rounded-full border-2 border-white dark:border-slate-900"></span>
             </button>
-            <div className="h-6 w-px bg-slate-200 mx-1 dark:bg-slate-700"></div>
+            <div className="hidden sm:block h-6 w-px bg-slate-200 mx-1 dark:bg-slate-700"></div>
             <div className="flex items-center gap-3 group p-1.5 rounded-lg transition-all">
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-semibold text-slate-900 leading-none mb-1 dark:text-slate-100">{user.nome}</p>
@@ -252,7 +275,7 @@ export function AppShell() {
         </header>
 
         <div className="flex-1 overflow-y-auto scroll-smooth">
-          <div className="p-8 max-w-7xl mx-auto">
+          <div className="w-full max-w-7xl mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:p-8">
             <Outlet />
           </div>
         </div>

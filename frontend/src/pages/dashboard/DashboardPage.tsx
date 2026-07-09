@@ -92,6 +92,7 @@ export default function DashboardPage() {
       icon: Briefcase,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
+      to: '/projetos?status=ATIVO',
     },
     {
       name: 'Total de Projetos',
@@ -99,6 +100,7 @@ export default function DashboardPage() {
       icon: Users,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
+      to: '/projetos',
     },
     {
       name: 'Solicitações Pendentes',
@@ -106,6 +108,7 @@ export default function DashboardPage() {
       icon: Clock,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
+      to: `/solicitacoes?status=${StatusSolicitacao.SUBMETIDA}`,
     },
     {
       name: 'Aprovadas',
@@ -113,14 +116,15 @@ export default function DashboardPage() {
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
+      to: `/solicitacoes?status=${StatusSolicitacao.APROVADA}`,
     },
   ];
 
   return (
-    <div className="space-y-8 animate-in slide-in-up">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-6">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-up">
+      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between sm:pb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-950">Dashboard Operacional</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-950">Dashboard Operacional</h2>
           <p className="text-slate-700 text-sm mt-1">
             Bem-vindo, {user?.nome}. Visão geral dos ativos e recursos do Polo.
           </p>
@@ -128,7 +132,7 @@ export default function DashboardPage() {
         {podeCriarProjeto && (
           <Link
             to="/projetos/novo"
-            className="flex items-center bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded font-semibold text-xs uppercase tracking-wider transition-all"
+            className="flex w-full items-center justify-center bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded font-semibold text-xs uppercase tracking-wider transition-all sm:w-auto"
           >
             <Plus size={16} className="mr-2" />
             Novo Projeto
@@ -143,19 +147,24 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex items-center"
           >
-            <div
-              className={`w-12 h-12 rounded flex items-center justify-center ${stat.bg} ${stat.color} mr-4`}
+            <Link
+              to={stat.to}
+              aria-label={`Ver ${stat.name.toLowerCase()}`}
+              className="group bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm flex items-center transition-all hover:border-slate-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-900/10"
             >
-              <stat.icon size={24} />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                {stat.name}
-              </p>
-              <p className="text-xl font-bold text-slate-950">{stat.value}</p>
-            </div>
+              <div
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded flex items-center justify-center ${stat.bg} ${stat.color} mr-3 sm:mr-4 shrink-0 transition-transform group-hover:scale-105`}
+              >
+                <stat.icon size={22} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  {stat.name}
+                </p>
+                <p className="text-xl font-bold text-slate-950">{stat.value}</p>
+              </div>
+            </Link>
           </motion.div>
         ))}
       </div>
@@ -165,18 +174,18 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="lg:col-span-3 bg-white p-6 rounded-lg border border-slate-200 shadow-sm"
+          className="lg:col-span-3 bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm"
         >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-1 h-5 bg-slate-950 rounded-full"></div>
-            <h3 className="text-sm font-bold text-slate-950 uppercase tracking-wider">
+          <div className="flex flex-wrap items-start gap-3 mb-6">
+            <div className="w-1 h-5 bg-slate-950 rounded-full shrink-0"></div>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-950 uppercase tracking-wider leading-5">
               Desembolso Mensal Previsto por Fonte Pagadora
             </h3>
-            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest ml-auto">
+            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest sm:ml-auto">
               TODO: endpoint relatórios
             </span>
           </div>
-          <div className="h-[350px] w-full">
+          <div className="h-[280px] w-full sm:h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartData}
@@ -218,7 +227,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-          className="lg:col-span-1 bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex flex-col"
+          className="lg:col-span-1 bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm flex flex-col"
         >
           <div className="flex items-center gap-2 mb-6">
             <div className="p-2 bg-slate-950 text-white rounded">
@@ -232,9 +241,10 @@ export default function DashboardPage() {
             {Object.values(StatusSolicitacao).map((status) => {
               const count = solicitacoes.filter((s) => s.status === status).length;
               return (
-                <div
+                <Link
                   key={status}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100"
+                  to={`/solicitacoes?status=${status}`}
+                  className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100 transition-all hover:border-slate-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 >
                   <span className="text-xs font-bold text-slate-700">
                     {STATUS_SOLICITACAO_LABELS[status]}
@@ -242,7 +252,7 @@ export default function DashboardPage() {
                   <span className="text-xs font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
                     {isLoading ? '—' : count}
                   </span>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -257,8 +267,8 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-5 bg-slate-950 rounded-full"></div>
                 <h3 className="text-sm font-bold text-slate-950 uppercase tracking-wider">
@@ -279,7 +289,7 @@ export default function DashboardPage() {
               <p className="text-sm text-slate-400 py-8 text-center">Nenhum projeto encontrado</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full min-w-[520px] text-left">
                   <thead>
                     <tr className="text-[10px] font-bold text-slate-600 uppercase tracking-widest border-b border-slate-100">
                       <th className="pb-4">Código</th>
@@ -299,7 +309,7 @@ export default function DashboardPage() {
                             <span className="font-bold text-slate-950 group-hover:text-blue-600 transition-colors text-sm">
                               {projeto.codigo}
                             </span>
-                            <span className="text-[10px] font-medium text-slate-600 truncate w-48">
+                            <span className="text-[10px] font-medium text-slate-600 truncate w-40 sm:w-48">
                               {projeto.titulo}
                             </span>
                           </div>
@@ -324,7 +334,7 @@ export default function DashboardPage() {
         </div>
 
         <div>
-          <div className="bg-slate-900 text-white p-6 rounded-lg shadow-sm border border-slate-800 relative overflow-hidden">
+          <div className="bg-slate-900 text-white p-4 sm:p-6 rounded-lg shadow-sm border border-slate-800 relative overflow-hidden">
             <button
               onClick={() => setIsChartMaximized(true)}
               className="absolute top-4 right-4 p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-slate-300 hover:text-white z-10 cursor-pointer"
@@ -363,7 +373,7 @@ export default function DashboardPage() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex items-end justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <span className="text-3xl font-bold tracking-tight block">11%</span>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Saldo Restante</p>
@@ -382,28 +392,28 @@ export default function DashboardPage() {
 
       {isChartMaximized && (
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center p-8 bg-slate-900/90 backdrop-blur-md animate-in fade-in duration-300"
+          className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-8 bg-slate-900/90 backdrop-blur-md animate-in fade-in duration-300"
           onClick={() => setIsChartMaximized(false)}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white w-full max-w-6xl p-10 rounded-xl shadow-2xl relative"
+            className="bg-white w-full max-w-6xl max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 sm:p-10 rounded-xl shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-10">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-10">
+              <div className="flex items-center gap-4 min-w-0">
                 <div className="p-3 bg-blue-600 text-white rounded-lg"><TrendingUp size={24} /></div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">               Execução Orçamentária Global</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-slate-900">Execução Orçamentária Global</h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Dados mockados — aguarda endpoint de relatórios</p>
                 </div>
               </div>
-              <button onClick={() => setIsChartMaximized(false)} className="p-3 bg-slate-100 hover:bg-slate-200 rounded-full transition-all cursor-pointer">
+              <button onClick={() => setIsChartMaximized(false)} className="self-start p-3 bg-slate-100 hover:bg-slate-200 rounded-full transition-all cursor-pointer sm:self-auto">
                 <X size={24} />
               </button>
             </div>
-            <div className="h-[400px] w-full">
+            <div className="h-[300px] w-full sm:h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={budgetData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

@@ -186,7 +186,7 @@ export default function ProjetoDetailPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in slide-in-up">
+    <div className="space-y-6 sm:space-y-8 animate-in slide-in-up">
       <div className="flex items-center justify-between border-b border-slate-200 pb-4">
         <button
           onClick={() => navigate('/projetos')}
@@ -197,16 +197,16 @@ export default function ProjetoDetailPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="lg:col-span-2 space-y-6 sm:space-y-8">
           {/* Informações gerais */}
-          <section className="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
-            <div className="flex flex-col gap-4 mb-8">
-              <div className="flex items-center justify-between">
+          <section className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-slate-200">
+            <div className="flex flex-col gap-4 mb-6 sm:mb-8">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-slate-700 font-bold text-lg">{projeto.sigla}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {podeEditarDadosProjeto && (
                     <Link
                       to={`/projetos/${projeto.id}/editar`}
@@ -221,13 +221,13 @@ export default function ProjetoDetailPage() {
                   </span>
                 </div>
               </div>
-              <h2 className="text-3xl font-bold text-slate-950 leading-tight">{projeto.titulo}</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-950 leading-tight">{projeto.titulo}</h2>
               {projeto.descricao && (
                 <p className="text-slate-800 text-sm leading-relaxed">{projeto.descricao}</p>
               )}
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 py-6 border-y border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 py-6 border-y border-slate-100">
               {projeto.codigo && (
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Código</p>
@@ -267,7 +267,7 @@ export default function ProjetoDetailPage() {
                 {projeto.fontes_financiamento.map((fonte) => (
                   <span
                     key={fonte.fonte}
-                    className="inline-flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800"
+                    className="inline-flex w-full items-center justify-between gap-2 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 sm:w-auto sm:justify-start"
                   >
                     {FONTE_LABELS[fonte.fonte]}:
                     <strong className="text-slate-950">{formatCurrency(fonte.valor)}</strong>
@@ -278,8 +278,8 @@ export default function ProjetoDetailPage() {
           </section>
 
           {podeVerOperacional && (
-          <section className="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-8">
+          <section className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-slate-200">
+            <div className="flex flex-col gap-4 mb-6 sm:mb-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-slate-100 text-slate-600 rounded">
                   <Users size={20} />
@@ -295,10 +295,10 @@ export default function ProjetoDetailPage() {
               </div>
 
               {podeEditar && (
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:items-center">
                   <Link
                     to={`/projetos/${projeto.id}/implantacao`}
-                    className={`flex items-center px-4 py-2 border rounded font-bold text-[10px] uppercase tracking-wider transition-all ${
+                    className={`flex items-center justify-center px-4 py-2 border rounded font-bold text-[10px] uppercase tracking-wider transition-all ${
                       implantacaoBloqueada
                         ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none'
                         : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
@@ -309,7 +309,7 @@ export default function ProjetoDetailPage() {
                   </Link>
                   <Link
                     to={`/projetos/${projeto.id}/alteracao`}
-                    className={`flex items-center px-4 py-2 rounded font-bold text-[10px] uppercase tracking-wider transition-all shadow-sm ${
+                    className={`flex items-center justify-center px-4 py-2 rounded font-bold text-[10px] uppercase tracking-wider transition-all shadow-sm ${
                       !alteracaoBloqueada
                         ? 'bg-slate-900 text-white hover:bg-slate-800'
                         : 'bg-slate-300 text-slate-500 cursor-not-allowed pointer-events-none'
@@ -337,7 +337,7 @@ export default function ProjetoDetailPage() {
             ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
+                  <table className="w-full min-w-[720px] text-left">
                     <thead>
                       <tr className="text-[10px] font-bold text-slate-600 uppercase tracking-widest border-b border-slate-200">
                         <th className="pb-3 px-2">Pesquisador</th>
@@ -395,7 +395,7 @@ export default function ProjetoDetailPage() {
                 </div>
 
                 {membrosPag.pages > 1 && (
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-4 pt-4 border-t border-slate-100">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                       Página {membrosPag.page} de {membrosPag.pages} · {membrosPag.total} no total
                     </p>
@@ -431,7 +431,7 @@ export default function ProjetoDetailPage() {
         {podeVerOperacional && (
         <div className="space-y-4">
           {/* Versoes RH */}
-          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <ClipboardList size={14} className="text-slate-600" />
               <h4 className="font-bold text-slate-950 uppercase tracking-wider text-[11px]">
@@ -447,7 +447,7 @@ export default function ProjetoDetailPage() {
                 {versoesLimitadas.map((v) => (
                   <div
                     key={v.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100"
+                    className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded border border-slate-100"
                   >
                     <div>
                       <p className="text-xs font-bold text-slate-900">Versão {v.numero_versao}</p>
@@ -473,7 +473,7 @@ export default function ProjetoDetailPage() {
           </div>
 
           {/* Solicitacoes */}
-          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Activity size={14} className="text-slate-600" />
@@ -496,7 +496,7 @@ export default function ProjetoDetailPage() {
                   <Link
                     key={sol.id}
                     to={`/solicitacoes/${sol.id}/comparacao`}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-100 hover:bg-slate-100 transition-all group"
+                    className="flex flex-col gap-3 p-3 bg-slate-50 rounded border border-slate-100 hover:bg-slate-100 transition-all group sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <FileText size={12} className="text-slate-400 shrink-0" />

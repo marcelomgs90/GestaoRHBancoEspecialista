@@ -2,6 +2,7 @@ export enum FonteFinanciamento {
   EMBRAPII = 'EMBRAPII',
   EMPRESA = 'EMPRESA',
   SEBRAE = 'SEBRAE',
+  IFPB = 'IFPB',
 }
 
 export enum TipoSolicitacao {
@@ -61,7 +62,14 @@ export const FONTE_LABELS: Record<FonteFinanciamento, string> = {
   [FonteFinanciamento.EMBRAPII]: 'EMBRAPII',
   [FonteFinanciamento.EMPRESA]: 'Empresa',
   [FonteFinanciamento.SEBRAE]: 'SEBRAE',
+  [FonteFinanciamento.IFPB]: 'IFPB',
 }
+
+export const FONTES_RH_OPERACIONAIS: FonteFinanciamento[] = [
+  FonteFinanciamento.EMPRESA,
+  FonteFinanciamento.EMBRAPII,
+  FonteFinanciamento.SEBRAE,
+]
 
 export const STATUS_SOLICITACAO_LABELS: Record<StatusSolicitacao, string> = {
   [StatusSolicitacao.EM_EDICAO]: 'Em Edição',
