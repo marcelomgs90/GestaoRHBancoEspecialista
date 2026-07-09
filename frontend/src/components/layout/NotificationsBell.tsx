@@ -22,9 +22,10 @@ interface Notificacao {
   icon: LucideIcon;
   titulo: string;
   descricao: string;
-  count: number;
   nivel: Nivel;
   href: string;
+  /** Ordem de exibição: menor = mais no topo. */
+  peso: number;
 }
 
 function diasAte(iso: string): number {
@@ -36,6 +37,10 @@ function diasAte(iso: string): number {
   return Math.ceil((alvo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function rotuloProjeto(p: Projeto): string {
+  return p.sigla || p.codigo || p.titulo || `Projeto #${p.id}`;
+}
+
 function calcular(
   projetos: Projeto[],
   solicitacoes: Solicitacao[],
@@ -43,51 +48,53 @@ function calcular(
 ): Notificacao[] {
   const list: Notificacao[] = [];
 
+  // 1) Solicitações SUBMETIDAS — uma por item, leva à página de comparação.
   if (podeAprovar) {
-    const submetidas = solicitacoes.filter((s) => s.status === StatusSolicitacao.SUBMETIDA).length;
-    if (submetidas > 0) {
+    for (const s of solicitacoes) {
+      if (s.status !== StatusSolicitacao.SUBMETIDA) continue;
       list.push({
-        id: 'sol-submetidas',
+        id: `sol-${s.id}`,
         icon: ClipboardCheck,
-        titulo: 'Solicitações aguardando aprovação',
-        descricao: `${submetidas} submetida${submetidas > 1 ? 's' : ''} pendente${submetidas > 1 ? 's' : ''}`,
-        count: submetidas,
+        titulo: `Solicitação ${s.identificador}`,
+        descricao: 'Aguardando aprovação',
         nivel: 'normal',
-        href: `/solicitacoes?status=${StatusSolicitacao.SUBMETIDA}`,
+        href: `/solicitacoes/${s.id}/comparacao`,
+        peso: 100, // depois dos projetos urgentes
       });
     }
   }
 
-  const ativos = projetos.filter((p) => p.status === StatusProjeto.ATIVO);
-  const vencidos = ativos.filter((p) => diasAte(p.data_fim) < 0);
-  const vencendo = ativos.filter((p) => {
+  // 2) Projetos ATIVOS por proximidade do fim.
+  for (const p of projetos) {
+    if (p.status !== StatusProjeto.ATIVO) continue;
     const d = diasAte(p.data_fim);
-    return d >= 0 && d <= 60;
-  });
+    if (d < 0) {
+      list.push({
+        id: `proj-vencido-${p.id}`,
+        icon: AlertCircle,
+        titulo: rotuloProjeto(p),
+        descricao: `Vigência vencida há ${-d} dia${d === -1 ? '' : 's'}`,
+        nivel: 'urgente',
+        href: `/projetos/${p.id}`,
+        peso: -d, // mais vencido, mais no topo
+      });
+    } else if (d <= 60) {
+      list.push({
+        id: `proj-vencendo-${p.id}`,
+        icon: Clock,
+        titulo: rotuloProjeto(p),
+        descricao: d === 0 ? 'Termina hoje' : `Termina em ${d} dia${d === 1 ? '' : 's'}`,
+        nivel: d <= 30 ? 'urgente' : 'normal',
+        href: `/projetos/${p.id}`,
+        peso: d + 1, // quanto mais perto de acabar, mais no topo
+      });
+    }
+  }
 
-  if (vencidos.length > 0) {
-    list.push({
-      id: 'proj-vencidos',
-      icon: AlertCircle,
-      titulo: 'Projetos com vigência vencida',
-      descricao: `${vencidos.length} ativo${vencidos.length > 1 ? 's' : ''} sem renovação`,
-      count: vencidos.length,
-      nivel: 'urgente',
-      href: '/projetos?status=ATIVO',
-    });
-  }
-  if (vencendo.length > 0) {
-    const proximos = vencendo.filter((p) => diasAte(p.data_fim) <= 30).length;
-    list.push({
-      id: 'proj-vencendo',
-      icon: Clock,
-      titulo: 'Projetos próximos ao fim',
-      descricao: `${vencendo.length} termina${vencendo.length > 1 ? 'm' : ''} em ≤ 60 dias`,
-      count: vencendo.length,
-      nivel: proximos > 0 ? 'urgente' : 'normal',
-      href: '/projetos?status=ATIVO',
-    });
-  }
+  list.sort((a, b) => {
+    if (a.nivel !== b.nivel) return a.nivel === 'urgente' ? -1 : 1;
+    return a.peso - b.peso;
+  });
 
   return list;
 }
@@ -137,7 +144,7 @@ export function NotificationsBell() {
     () => calcular(projetos, solicitacoes, podeAprovarSolicitacao),
     [projetos, solicitacoes, podeAprovarSolicitacao],
   );
-  const total = items.reduce((acc, i) => acc + i.count, 0);
+  const total = items.length;
   const hasUrgente = items.some((i) => i.nivel === 'urgente');
 
   return (
@@ -203,23 +210,13 @@ export function NotificationsBell() {
                       <item.icon size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
                         {item.titulo}
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                         {item.descricao}
                       </p>
                     </div>
-                    <span
-                      className={cn(
-                        'text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0',
-                        item.nivel === 'urgente'
-                          ? 'bg-red-50 text-red-600'
-                          : 'bg-slate-100 text-slate-600 dark:text-slate-300',
-                      )}
-                    >
-                      {item.count}
-                    </span>
                   </Link>
                 </li>
               ))}
