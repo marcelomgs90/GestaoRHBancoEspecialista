@@ -14,6 +14,7 @@ class FonteFinanciamento(str, Enum):
     EMBRAPII = "EMBRAPII"
     EMPRESA = "EMPRESA"
     SEBRAE = "SEBRAE"
+    IFPB = "IFPB"
 
 
 class TipoSolicitacao(str, Enum):

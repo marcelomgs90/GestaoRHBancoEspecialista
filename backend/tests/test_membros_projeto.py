@@ -19,6 +19,7 @@ from datetime import date, timedelta
 
 import pytest
 from fastapi import HTTPException
+from pydantic import ValidationError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -155,6 +156,21 @@ def test_projeto_service_atualiza_dados_sem_alterar_codigo_ou_fontes(
     assert atualizado.coordenador_id == coordenador.id
     assert len(atualizado.fontes_financiamento) == 1
     assert atualizado.fontes_financiamento[0].fonte == FonteFinanciamento.EMPRESA
+
+
+def test_membro_create_rejeita_fonte_ifpb_economica():
+    """IFPB compoe total economico do projeto, mas nao e fonte pagadora de RH."""
+    with pytest.raises(ValidationError) as exc_info:
+        MembroCreate(
+            ref_pesquisador="PESQ-IFPB",
+            nome_pesquisador="Pesquisador IFPB",
+            categoria_bolsa=CategoriaBolsa.PESQUISADOR_JUNIOR,
+            fonte_financiamento=FonteFinanciamento.IFPB,
+            carga_horaria_semanal=20,
+            data_inicio=date.today(),
+        )
+
+    assert "economica/contrapartida" in str(exc_info.value)
 
 
 def test_projeto_service_permite_edicao_para_gestor(db, projeto, gestor):
@@ -1545,4 +1561,3 @@ def test_put_com_payload_filtrado_pelo_frontend_e_aceito(client, db_session):
     # `valor_bolsa` é recalculado pelo backend (não vem do payload)
     assert "valor_bolsa" in membro_atualizado
     assert membro_atualizado["valor_bolsa"] != 9999  # não aceita o valor parasita
-

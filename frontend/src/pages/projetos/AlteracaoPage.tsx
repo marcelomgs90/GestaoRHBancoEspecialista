@@ -17,7 +17,7 @@ import {
 import { projetoService } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
 import { especialistaService, type Especialista } from '@/services/especialistaService';
-import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao, FONTE_LABELS } from '@/types/enums';
+import { CategoriaBolsa, FonteFinanciamento, TipoSolicitacao, FONTE_LABELS, FONTES_RH_OPERACIONAIS } from '@/types/enums';
 import { CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import { MembroEditor, type MembroLocalProps } from './MembroEditor';
 import { KpiFontesBolas } from '@/components/orcamento/KpiFontesBolsas';
@@ -211,8 +211,7 @@ export default function AlteracaoPage() {
         ref_pesquisador: ref,
         nome_pesquisador: nome,
         categoria_bolsa: categoria,
-        fonte_financiamento:
-          projeto?.fontes_financiamento[0]?.fonte ?? FonteFinanciamento.EMPRESA,
+        fonte_financiamento: fontesDoProjeto[0] ?? FonteFinanciamento.EMPRESA,
         carga_horaria_semanal: 20,
         data_inicio: projeto?.data_inicio ?? '',
         data_fim: projeto?.data_fim,
@@ -265,7 +264,9 @@ export default function AlteracaoPage() {
     0,
   );
   const excedeOrcamento = totalEquipeProposta > totalFontes;
-  const fontesDoProjeto = (projeto?.fontes_financiamento ?? []).map((fonte) => fonte.fonte);
+  const fontesDoProjeto = (projeto?.fontes_financiamento ?? [])
+    .map((fonte) => fonte.fonte)
+    .filter((fonte) => FONTES_RH_OPERACIONAIS.includes(fonte));
   const temMembrosProposta = equipeProposta.length > 0;
 
   const validarEquipeProposta = () => {
