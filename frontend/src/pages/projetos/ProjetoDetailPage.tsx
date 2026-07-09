@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { projetoService } from '@/services/projetoService';
 import type { Paginated } from '@/services/projetoService';
 import { solicitacaoService } from '@/services/solicitacaoService';
+import { AnexosSection } from '@/components/anexos/AnexosSection';
 import { formatDate, formatCurrency, CATEGORIA_BOLSA_LABELS } from '@/types/projeto';
 import {
   FONTE_LABELS,
@@ -519,6 +520,9 @@ export default function ProjetoDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Anexos */}
+          <AnexosSection projetoId={projetoId} />
         </div>
         )}
       </div>

@@ -22,10 +22,12 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 10
+    MAX_ANEXOS_USUARIO_POR_PROJETO: int = 4
 
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"
 
 
 @lru_cache()
