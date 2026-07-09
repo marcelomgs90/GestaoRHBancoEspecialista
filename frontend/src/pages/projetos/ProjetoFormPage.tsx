@@ -832,7 +832,7 @@ export default function ProjetoFormPage() {
                 )}
               </div>
               <p className="md:col-span-2 text-[10px] font-bold uppercase tracking-widest text-emerald-800">
-                * Valor econômico/contrapartida relacionado às instalações disponibilizadas pelo IFPB. Não é fonte pagadora de RH, mas compõe o valor total do projeto.
+                * Contrapartida econômica do IFPB, referente ao uso de instalações e estrutura institucional. Não financia bolsas ou RH, mas integra o valor total do projeto.
               </p>
             </div>
 
